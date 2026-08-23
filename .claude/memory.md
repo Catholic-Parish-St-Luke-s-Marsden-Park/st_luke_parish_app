@@ -3,8 +3,8 @@
 ## Active State
 - **Current Feature:** 01-bootstrap-app
 - **Current Branch:** feature/01-bootstrap-app
-- **Current Phase:** verifier
-- **Active Agent:** VERIFIER_AGENT
+- **Current Phase:** deployer
+- **Active Agent:** DEPLOYER_AGENT
 - **Awaiting User Approval:** yes
 
 ## Workflow Model
@@ -16,9 +16,11 @@
 - Rebase with main before PR
 
 ## Current Risks
-- _Add active risks here_
+- See `.claude/risks/active-risks.md` — RISK-002 (Android live-run/visual verification, golden tests) open/accepted, non-blocking for 01-bootstrap-app.
 
 ## Latest Session Logs
+- 2026-08-23_16-28: Deployer phase artifacts produced for 01-bootstrap-app (deployer plan, release readiness note, store preparation note, PR readiness note, rollback notes); local validation re-run and passing (flutter analyze/format/test/build apk debug); RISK-002 carried forward unchanged; no rebase/push/PR performed. Phase-closed, awaiting user approval before rebase/PR-creation handoff.
+- 2026-08-23_16-30: Verifier phase (conditional pass) approved by user; advancing to deployer phase for 01-bootstrap-app
 - 2026-08-23_16-26: Completed phase verifier for 01-bootstrap-app
 - 2026-08-23_16-24: Completed phase verifier for 01-bootstrap-app
 - 2026-08-23_16-20: Verifier phase completed with CONDITIONAL PASS; RISK-001 (uncommitted code across phases) resolved via commit ac86f4c and orchestrator script fix (complete_phase now `git add -A`, prepare_pr gained a dirty-tree guard); RISK-002 (Android live-run, golden tests) remains open/accepted. Phase-closed, awaiting user approval before deployer handoff.
