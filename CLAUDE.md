@@ -2,7 +2,7 @@
 
 ## Development Process
 
-All feature work in this repository follows the Claude Code AI Vibe Coding SDLC: every feature moves through BA → Coder → Tester → Verifier → Deployer, with explicit user approval required between each phase. Before starting or resuming any feature work:
+All feature work in this repository follows the Claude Code AI Vibe Coding SDLC: every feature moves through BA → Coder → Tester → App-Visualiser → Verifier → Deployer, with explicit user approval required between each phase. Before starting or resuming any feature work:
 
 - Read `.claude/memory.md` for the current feature, branch, and phase.
 - Read `.claude/agents/<phase>-agent.md` for the active phase's role, inputs, outputs, and rules.

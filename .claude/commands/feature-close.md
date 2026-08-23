@@ -11,6 +11,7 @@ Prepare the feature for PR readiness.
 5. Rerun validation
 6. Update test summary
 7. Update release and PR artifacts
-8. Stop for user approval
+8. Confirm/refresh the feature's row in `.claude/context/feature-index.md`
+9. Stop for user approval
 
 See `.claude/hooks/before-pr.md` for the full checklist this command performs.
