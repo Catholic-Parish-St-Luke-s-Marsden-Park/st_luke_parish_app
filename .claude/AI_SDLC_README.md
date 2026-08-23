@@ -216,6 +216,11 @@ Then:
 
 `/phase-close` fills in the journal, memory, and `feature-index.md`; `complete-phase` commits the phase artifacts.
 
+- **Why `/phase-close`:** records your approval before anything is committed — it fills in the journal entry, advances `.claude/memory.md` to the next phase, and updates the feature's row in `feature-index.md`, so the git commit that follows has an accurate paper trail.
+- **After it, check:** the BA journal entry is filled in, `.claude/memory.md` shows the phase advancing past `ba`, and the feature's `feature-index.md` row reflects the BA plan link.
+- **Why `complete-phase`:** commits the approved BA plan and journal/memory/index updates to git — nothing is durably recorded until this runs.
+- **After it, check:** `git log` shows a new commit referencing the BA plan artifact under `.claude/plans/ba/`, and `git status` is clean before starting the coder phase.
+
 ### 3. Coder phase — consume the coder-agent
 
 > Use the **coder-agent** to implement the approved BA plan at `.claude/plans/ba/01-bootstrap-app-*.md`.
@@ -230,6 +235,11 @@ The agent implements only the approved scope, following the layered architecture
 ```bash
 ./.claude/scripts/agent_orchestrator.sh . complete-phase 01 bootstrap-app coder
 ```
+
+- **Why `/phase-close`:** records your approval of the implementation before it's committed — updates the journal, advances `.claude/memory.md` past `coder`, and updates `feature-index.md`.
+- **After it, check:** the coder journal entry references the code changes and any decision records or selector-registry entries added, and `.claude/memory.md` shows the next phase as `tester`.
+- **Why `complete-phase`:** commits the entire working tree (`git add -A`) — the actual code changes land in the same commit as the plan/journal, not a separate manual commit.
+- **After it, check:** `git status` is clean, `git log` shows a commit including both the code changes and the coder plan/journal, and nothing unrelated was swept in by the `git add -A`.
 
 ### 4. Tester phase — consume the tester-agent
 
@@ -246,6 +256,11 @@ The agent derives tests from the BA plan's acceptance criteria (not guesswork), 
 ./.claude/scripts/agent_orchestrator.sh . complete-phase 01 bootstrap-app tester
 ```
 
+- **Why `/phase-close`:** records your approval of the test results before it's committed — updates the journal, advances `.claude/memory.md` past `tester`, and updates `feature-index.md`.
+- **After it, check:** the tester journal entry lists the commands run and their results/gaps, and `.claude/memory.md` shows the next phase as `visualiser`.
+- **Why `complete-phase`:** commits the test plan, results, and journal to git so the tested state is durably recorded before manual preview.
+- **After it, check:** `git log` shows a commit referencing the tester plan under `.claude/plans/tester/`, and `git status` is clean before starting the visualiser phase.
+
 ### 5. App-Visualiser phase — consume the visualiser-agent
 
 > Use the **visualiser-agent** to let me preview feature 01 on a simulator.
@@ -260,6 +275,11 @@ The agent asks which platform to preview (Android, iOS, or both), boots or creat
 ```bash
 ./.claude/scripts/agent_orchestrator.sh . complete-phase 01 bootstrap-app visualiser
 ```
+
+- **Why `/phase-close`:** records your approval before it's committed — updates the journal, advances `.claude/memory.md` past `visualiser`, and updates `feature-index.md`. Approval here means the preview happened and feedback was captured, not that every filed issue is fixed.
+- **After it, check:** the visualiser journal entry lists the platform(s) previewed and links the filed GitHub issues, and `.claude/memory.md` shows the next phase as `verifier`.
+- **Why `complete-phase`:** commits the visualiser journal/plan artifacts to git — the filed GitHub issues themselves live outside `.claude/` and are not part of this commit.
+- **After it, check:** `git log` shows a commit referencing the visualiser plan/journal, the GitHub issues (labels `bug,visualiser-feedback`) are visible in the repo's Issues tab, and `git status` is clean before starting the verifier phase.
 
 ### 6. Verifier phase — consume the verifier-agent
 
@@ -276,6 +296,11 @@ The agent builds the requirement → code → test traceability matrix and issue
 ./.claude/scripts/agent_orchestrator.sh . complete-phase 01 bootstrap-app verifier
 ```
 
+- **Why `/phase-close`:** records your approval of the verification verdict before it's committed — updates the journal, advances `.claude/memory.md` past `verifier`, and updates `feature-index.md`.
+- **After it, check:** the verifier journal entry links the traceability report, `.claude/memory.md` shows the next phase as `deployer`, and any risks the agent flagged appear in `.claude/risks/active-risks.md`.
+- **Why `complete-phase`:** commits the traceability report and verdict to git so the verification outcome is durably recorded before deployment prep begins.
+- **After it, check:** `git log` shows a commit referencing the report under `.claude/verification/`, and `git status` is clean before starting the deployer phase.
+
 ### 7. Deployer phase — consume the deployer-agent
 
 > Use the **deployer-agent** to prepare feature 01 for release and PR.
@@ -290,6 +315,11 @@ The agent prepares local release-readiness (build/format/analyze checks), store-
 ```bash
 ./.claude/scripts/agent_orchestrator.sh . complete-phase 01 bootstrap-app deployer
 ```
+
+- **Why `/phase-close`:** records your approval of release readiness before it's committed — updates the journal, advances `.claude/memory.md` past `deployer`, and updates `feature-index.md`.
+- **After it, check:** the deployer journal entry references the release-readiness notes, `.claude/memory.md` shows the next phase as PR prep, and `feature-index.md` reflects the deployer artifact link.
+- **Why `complete-phase`:** commits the deployer's release-readiness, store-prep, and PR-readiness artifacts to git before you move on to `/feature-close`.
+- **After it, check:** `git log` shows a commit referencing the deployer artifacts under `.claude/releases/` and/or `.claude/store-metadata/`, and `git status` is clean before running `/feature-close`.
 
 ### 8. Prepare PR and merge
 
