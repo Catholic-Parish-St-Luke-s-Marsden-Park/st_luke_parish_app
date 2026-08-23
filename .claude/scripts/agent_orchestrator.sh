@@ -221,7 +221,10 @@ complete_phase() {
   update_memory_state "${FEATURE_NAME}" "$(branch_name)" "${phase}" "${agent}"
   append_memory_log "Completed phase ${phase} for ${FEATURE_NAME}"
 
-  git add .claude/plans .claude/journal .claude/verification .claude/memory.md
+  # Stage SDLC bookkeeping artifacts plus the actual working tree (app code,
+  # tests, pubspec, platform folders, etc.) so phase commits are never
+  # docs-only. .gitignore already excludes build/.dart_tool/etc.
+  git add -A
   git commit -m "$(commit_type_for_phase "$phase")(feature-${FEATURE_ID}): ${phase} phase for ${FEATURE_SLUG}
 
 Agent: ${agent}
@@ -237,6 +240,13 @@ Memory: .claude/memory.md" || true
 
 prepare_pr() {
   require_git_repo
+
+  if [[ -n "$(git status --porcelain)" ]]; then
+    echo "Refusing to rebase: working tree has uncommitted changes." >&2
+    echo "Commit them (e.g. via complete-phase) before running prepare-pr." >&2
+    exit 1
+  fi
+
   git fetch origin main || true
   git rebase origin/main || true
 
