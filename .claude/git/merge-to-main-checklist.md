@@ -1,0 +1,21 @@
+# Merge to Main Checklist
+
+- [ ] Branch created from `main`
+- [ ] BA phase complete and approved
+- [ ] Coder phase complete and approved
+- [ ] Tester phase complete and approved
+- [ ] Verifier phase complete and approved
+- [ ] Deployer phase complete and approved
+- [ ] Latest `main` fetched
+- [ ] Feature branch rebased with latest `main`
+- [ ] Merge conflicts resolved
+- [ ] `dart format .` completed
+- [ ] `flutter analyze` completed
+- [ ] `flutter test` completed
+- [ ] Build validation completed as needed
+- [ ] Test summary updated after rebase
+- [ ] Verification report updated
+- [ ] Journal updated
+- [ ] Memory updated
+- [ ] PR description completed
+- [ ] User approval recorded
