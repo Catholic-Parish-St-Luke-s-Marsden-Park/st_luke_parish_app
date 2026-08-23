@@ -16,9 +16,10 @@
 - Rebase with main before PR
 
 ## Current Risks
-- See `.claude/risks/active-risks.md` — RISK-002 (Android live-run/visual verification, golden tests) open/accepted, non-blocking for 01-bootstrap-app.
+- None open. See `.claude/risks/active-risks.md` — RISK-002 resolved 2026-08-23 via live Android emulator verification; golden-test follow-up deferred by design for the next feature slice.
 
 ## Latest Session Logs
+- 2026-08-23_16-40: RISK-002 resolved — booted Android emulator (Medium_Phone_API_36.1), installed debug APK, verified live: themed home shell renders, bottom-nav tab switch (Parish -> Masses & Events) works, navigation drawer opens correctly, no Flutter/app errors in logcat. Updated `.claude/risks/active-risks.md` (RISK-002 moved to Resolved).
 - 2026-08-23_16-28: Deployer phase artifacts produced for 01-bootstrap-app (deployer plan, release readiness note, store preparation note, PR readiness note, rollback notes); local validation re-run and passing (flutter analyze/format/test/build apk debug); RISK-002 carried forward unchanged; no rebase/push/PR performed. Phase-closed, awaiting user approval before rebase/PR-creation handoff.
 - 2026-08-23_16-30: Verifier phase (conditional pass) approved by user; advancing to deployer phase for 01-bootstrap-app
 - 2026-08-23_16-26: Completed phase verifier for 01-bootstrap-app

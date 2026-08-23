@@ -15,16 +15,18 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
 
 ## Open Risks
 
+_None currently open._
+
+## Resolved Risks
+
 - **Risk ID:** RISK-002
 - **Title:** REQ-F01-001 (themed shell) and REQ-F01-006 (no overflow/clipping) are not fully end-to-end verified
 - **Feature:** 01-bootstrap-app
-- **Impact:** Low-medium for this bootstrap slice; would grow if left unaddressed as real feature content lands. Android build succeeds (independently confirmed by the verifier) but the app has not been run/visually confirmed on an Android emulator or device by any phase. Separately, the REQ-F01-006 overflow/clipping test suite only catches Flutter's exception-raising layout failures (`RenderFlex overflowed`, etc.) — silent visual clipping that fits within bounds without throwing an exception would not be caught, since no golden-image tests exist yet.
-- **Likelihood:** Medium — shell-only slice has low visual complexity today, but risk grows as real feature screens replace placeholders.
-- **Mitigation:** Run the app on a booted Android emulator (build already confirmed working) before/shortly after this feature deploys, to close the Android visual-verification gap. Introduce golden-image tests once placeholder screens are replaced by stabilized real feature UI (premature to add them now per root `CLAUDE.md`'s "stable, important UI states" guidance and the BA/coder plans' own note that placeholders will be reworked).
-- **Owner:** Tester/Coder for the next feature slice that touches these screens
-- **Status:** accepted (non-blocking for this bootstrap slice, tracked for follow-up)
-
-## Resolved Risks
+- **Impact:** Low-medium for this bootstrap slice; would grow if left unaddressed as real feature content lands. Android build succeeded (confirmed by verifier) but had not been run/visually confirmed on an Android emulator or device by any phase. Separately, the REQ-F01-006 overflow/clipping test suite only catches Flutter's exception-raising layout failures (`RenderFlex overflowed`, etc.) — silent visual clipping that fits within bounds without throwing an exception would not be caught, since no golden-image tests exist yet.
+- **Likelihood:** Was medium — shell-only slice has low visual complexity today, but risk would grow as real feature screens replace placeholders.
+- **Mitigation:** 2026-08-23: Booted Android emulator `Medium_Phone_API_36.1` (API 36), installed debug APK, launched the app live via `adb`/`monkey`. Confirmed: Parish home screen renders with themed shell (navy/gold, church icon, serif title); tapping the "Masses" bottom-nav tab correctly switches app bar title/icon/content to "Masses & Events" and highlights the active tab; the navigation drawer opens showing "St Luke's Parish" header plus Resources/Prayer Request entries. `adb logcat -d "*:E"` showed no Flutter/app errors or crashes during the session — only unrelated Play Store (Finsky) noise. This closes the Android live-run visual-verification gap. Golden-image tests remain intentionally deferred until placeholder screens are replaced by stabilized real feature UI (per root `CLAUDE.md`'s "stable, important UI states" guidance and the BA/coder plans' own note that placeholders will be reworked) — tracked as follow-up work for the next feature slice, not a residual risk on this one.
+- **Owner:** Deployer (verified 2026-08-23); Tester/Coder for the next feature slice owns golden-test follow-up
+- **Status:** resolved (Android live-run verified 2026-08-23; golden-test follow-up deferred by design, not a blocking risk)
 
 - **Risk ID:** RISK-001
 - **Title:** Orchestrator `complete-phase` step is not committing implementation/test code across phase transitions
