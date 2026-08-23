@@ -19,5 +19,7 @@
 - _Add active risks here_
 
 ## Latest Session Logs
+- 2026-08-23_15-39: Completed phase ba for 01-bootstrap-app
+- 2026-08-23_15-16: BA plan for 01-bootstrap-app completed and phase-closed (journal + feature-index updated); awaiting user approval before complete-phase/coder handoff
 - 2026-08-23_15-16: Started feature 01-bootstrap-app on branch feature/01-bootstrap-app
 - _Newest entries go at the top_
