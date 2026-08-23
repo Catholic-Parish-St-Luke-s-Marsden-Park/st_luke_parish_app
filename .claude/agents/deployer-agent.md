@@ -20,10 +20,10 @@ Prepare the feature for local release readiness, PR readiness, and app store pre
 
 ## Required Outputs
 - deployer plan in `.claude/plans/deployer/`
-- release readiness note
-- store preparation note
-- PR readiness note
-- rollback notes
+- release readiness note, in `.claude/releases/`
+- store preparation note, in `.claude/store-metadata/` — only when the feature actually affects store-facing content (description, screenshots); most features won't touch it
+- PR readiness note, in `.claude/releases/`
+- rollback notes, in the deployer plan or release readiness note
 
 ## Rules
 - Do not mark deploy-ready without evidence.

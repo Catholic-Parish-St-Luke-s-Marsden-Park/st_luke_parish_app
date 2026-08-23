@@ -1,14 +1,16 @@
 # Agent Operational Manual
 
-Single reference index for how the five SDLC agents fit together. Each agent's full role, inputs, outputs, and rules live in its own file under `.claude/agents/` — this manual only summarizes phase entry/exit criteria and handoffs. See `.claude/AI_SDLC_README.md` for the full end-to-end usage walkthrough.
+Single reference index for how the six SDLC agents fit together. Each agent's full role, inputs, outputs, and rules live in its own file under `.claude/agents/` — this manual only summarizes phase entry/exit criteria and handoffs. See `.claude/AI_SDLC_README.md` for the full end-to-end usage walkthrough.
 
 | Phase | Agent doc | Entry criteria | Exit criteria (produces) | Approval gate |
 |---|---|---|---|---|
 | 1. BA | [.claude/agents/ba-agent.md](agents/ba-agent.md) | Feature request exists; branch created via `start-feature` | BA plan in `.claude/plans/ba/` with requirement IDs (`REQ-FXX-001`), in/out of scope, acceptance criteria | User approves BA plan before Coder starts |
 | 2. Coder | [.claude/agents/coder-agent.md](agents/coder-agent.md) | BA plan approved | Code changes scoped to the BA plan; coder plan in `.claude/plans/coder/`; journal entry | User approves implementation before Tester starts |
-| 3. Tester | [.claude/agents/tester-agent.md](agents/tester-agent.md) | Coder plan approved | Tests derived from BA acceptance criteria; tester plan in `.claude/plans/tester/`; pass/fail results in journal | User approves test results before Verifier starts |
-| 4. Verifier | [.claude/agents/verifier-agent.md](agents/verifier-agent.md) | Tester plan approved | Verifier plan in `.claude/plans/verifier/`; verification report in `.claude/verification/` with requirement→code→test traceability matrix; pass/conditional pass/fail verdict | User approves verification before Deployer starts |
-| 5. Deployer | [.claude/agents/deployer-agent.md](agents/deployer-agent.md) | Verification passed | Deployer plan in `.claude/plans/deployer/`; release readiness, store-prep, and PR-readiness notes; rollback notes | User approves deployment readiness before `prepare-pr` / merge |
+| 3. Tester | [.claude/agents/tester-agent.md](agents/tester-agent.md) | Coder plan approved | Tests derived from BA acceptance criteria; tester plan in `.claude/plans/tester/`; pass/fail results in journal | User approves test results before App-Visualiser starts |
+| 4. App-Visualiser | [.claude/agents/visualiser-agent.md](agents/visualiser-agent.md) | Tester plan approved | Visualiser plan in `.claude/plans/visualiser/` with platform/device used and commands run; journal entry with the user's manual feedback; one GitHub issue per confirmed defect | User approves that the manual preview happened and feedback was captured/filed (open issues do not block) before Verifier starts |
+| 5. Verifier | [.claude/agents/verifier-agent.md](agents/verifier-agent.md) | Visualiser phase approved | Verifier plan in `.claude/plans/verifier/`; verification report in `.claude/verification/` with requirement→code→test traceability matrix; pass/conditional pass/fail verdict | User approves verification before Deployer starts |
+| 6. Deployer | [.claude/agents/deployer-agent.md](agents/deployer-agent.md) | Verification passed | Deployer plan in `.claude/plans/deployer/`; release readiness, store-prep, and PR-readiness notes; rollback notes | User approves deployment readiness before `prepare-pr` / PR-agent |
+| 7. PR (post-phase, not a numbered SDLC phase) | [.claude/agents/pr-agent.md](agents/pr-agent.md) | Deployer approved; `prepare-pr` script has run and produced a PR-readiness note | Verified merge checklist; filled `.claude/git/pr-template.md`; pushed feature branch; opened GitHub PR against `main` | User approves before push/PR-open; merge itself stays a manual, GitHub-UI step outside the agent |
 
 ## Handoff rule
 

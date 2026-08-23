@@ -11,16 +11,46 @@ FEATURE_NAME="${FEATURE_ID}-${FEATURE_SLUG}"
 
 cd "$ROOT"
 
+PHASE_ORDER=(ba coder tester visualiser verifier deployer)
+
 usage() {
   echo "Usage:"
   echo "  $0 <root> start-feature <feature-id> <feature-slug>"
-  echo "  $0 <root> complete-phase <feature-id> <feature-slug> <ba|coder|tester|verifier|deployer>"
+  echo "  $0 <root> complete-phase <feature-id> <feature-slug> <ba|coder|tester|visualiser|verifier|deployer>"
   echo "  $0 <root> prepare-pr <feature-id> <feature-slug>"
   exit 1
 }
 
 require_git_repo() {
   git rev-parse --is-inside-work-tree >/dev/null 2>&1 || { echo 'Not a git repo'; exit 1; }
+}
+
+require_valid_feature_name() {
+  if [[ ! "$FEATURE_ID" =~ ^[a-zA-Z0-9]+$ ]]; then
+    echo "Invalid feature-id '${FEATURE_ID}': must be non-empty alphanumeric." >&2
+    exit 1
+  fi
+  if [[ ! "$FEATURE_SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+    echo "Invalid feature-slug '${FEATURE_SLUG}': must be non-empty lowercase-kebab-case." >&2
+    exit 1
+  fi
+}
+
+warn_if_out_of_sequence() {
+  local phase="$1"
+  local current_phase
+  current_phase="$(grep '^- \*\*Current Phase:\*\*' .claude/memory.md 2>/dev/null | sed 's/^- \*\*Current Phase:\*\* //')"
+  [[ -z "$current_phase" ]] && return 0
+
+  local phase_idx=-1 current_idx=-1 i
+  for i in "${!PHASE_ORDER[@]}"; do
+    [[ "${PHASE_ORDER[$i]}" == "$phase" ]] && phase_idx="$i"
+    [[ "$current_phase" == "${PHASE_ORDER[$i]}"* ]] && current_idx="$i"
+  done
+
+  if [[ "$phase_idx" -ge 0 && "$current_idx" -ge 0 && "$phase_idx" -gt $((current_idx + 1)) ]]; then
+    echo "Warning: completing phase '${phase}' but memory.md's Current Phase is '${current_phase}' — this skips ahead in ${PHASE_ORDER[*]}. Continuing anyway." >&2
+  fi
 }
 
 branch_name() {
@@ -32,6 +62,7 @@ agent_name_for_phase() {
     ba) echo "BA_AGENT" ;;
     coder) echo "CODER_AGENT" ;;
     tester) echo "TESTER_AGENT" ;;
+    visualiser) echo "VISUALISER_AGENT" ;;
     verifier) echo "VERIFIER_AGENT" ;;
     deployer) echo "DEPLOYER_AGENT" ;;
     *) echo "UNKNOWN_AGENT" ;;
@@ -43,6 +74,7 @@ commit_type_for_phase() {
     ba) echo "docs" ;;
     coder) echo "feat" ;;
     tester) echo "test" ;;
+    visualiser) echo "docs" ;;
     verifier) echo "docs" ;;
     deployer) echo "chore" ;;
     *) echo "chore" ;;
@@ -176,8 +208,41 @@ EOF2
   echo "$report_file"
 }
 
+latest_or_create_plan() {
+  local phase="$1"
+  local existing
+  existing="$(ls -t ".claude/plans/${phase}/"*"-${FEATURE_NAME}.md" 2>/dev/null | head -n1 || true)"
+  if [[ -n "$existing" ]]; then
+    echo "$existing"
+  else
+    create_phase_plan "$phase"
+  fi
+}
+
+latest_or_create_journal() {
+  local phase="$1"
+  local existing
+  existing="$(ls -t ".claude/journal/"*"-${FEATURE_NAME}-${phase}.md" 2>/dev/null | head -n1 || true)"
+  if [[ -n "$existing" ]]; then
+    echo "$existing"
+  else
+    create_journal "$phase"
+  fi
+}
+
+latest_or_create_verification_report() {
+  local existing
+  existing="$(ls -t ".claude/verification/"*"-${FEATURE_NAME}.md" 2>/dev/null | head -n1 || true)"
+  if [[ -n "$existing" ]]; then
+    echo "$existing"
+  else
+    create_verification_report
+  fi
+}
+
 start_feature() {
   require_git_repo
+  require_valid_feature_name
   git fetch origin main || true
   git checkout main
   git pull origin main || true
@@ -206,16 +271,19 @@ Memory: .claude/memory.md" || true
 
 complete_phase() {
   local phase="$1"
+  require_git_repo
+  require_valid_feature_name
+  warn_if_out_of_sequence "$phase"
   local agent
   agent="$(agent_name_for_phase "$phase")"
   local plan_file
-  plan_file="$(create_phase_plan "$phase")"
+  plan_file="$(latest_or_create_plan "$phase")"
   local journal_file
-  journal_file="$(create_journal "$phase")"
+  journal_file="$(latest_or_create_journal "$phase")"
   local verification_file=""
 
   if [[ "$phase" == "verifier" ]]; then
-    verification_file="$(create_verification_report)"
+    verification_file="$(latest_or_create_verification_report)"
   fi
 
   update_memory_state "${FEATURE_NAME}" "$(branch_name)" "${phase}" "${agent}"
@@ -240,6 +308,7 @@ Memory: .claude/memory.md" || true
 
 prepare_pr() {
   require_git_repo
+  require_valid_feature_name
 
   if [[ -n "$(git status --porcelain)" ]]; then
     echo "Refusing to rebase: working tree has uncommitted changes." >&2
@@ -248,7 +317,12 @@ prepare_pr() {
   fi
 
   git fetch origin main || true
-  git rebase origin/main || true
+  if ! git rebase origin/main; then
+    git rebase --abort || true
+    echo "Rebase onto origin/main failed (conflicts). Aborted the rebase to leave a clean tree." >&2
+    echo "Resolve conflicts manually (git rebase origin/main, fix, git rebase --continue), then re-run prepare-pr." >&2
+    exit 1
+  fi
 
   local pr_note=".claude/releases/${TIMESTAMP}-${FEATURE_NAME}-pr-ready.md"
   cat > "$pr_note" <<EOF2
@@ -267,6 +341,7 @@ prepare_pr() {
 - [ ] flutter test completed
 - [ ] build validation completed
 - [ ] test summary updated
+- [ ] visualiser feedback captured/filed as GitHub issues
 - [ ] verification reviewed
 - [ ] journal updated
 - [ ] memory updated

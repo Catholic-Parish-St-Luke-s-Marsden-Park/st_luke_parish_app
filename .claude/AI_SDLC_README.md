@@ -31,8 +31,10 @@ This workflow exists to make AI-assisted development:
     ba-agent.md
     coder-agent.md
     tester-agent.md
+    visualiser-agent.md
     verifier-agent.md
     deployer-agent.md
+    pr-agent.md
   skills/
   commands/
     session-start.md
@@ -52,6 +54,7 @@ This workflow exists to make AI-assisted development:
     ba/
     coder/
     tester/
+    visualiser/
     verifier/
     deployer/
   journal/
@@ -96,8 +99,10 @@ Each phase is a real Claude Code subagent, defined with frontmatter in `.claude/
 | **ba-agent** | Scoped, testable BA plan with requirement IDs |
 | **coder-agent** | Implementation limited to the approved BA scope |
 | **tester-agent** | Tests derived from BA acceptance criteria, with results |
+| **visualiser-agent** | Manual preview on the user's chosen Android/iOS simulator, with feedback filed as GitHub issues |
 | **verifier-agent** | Requirement → code → test traceability report and verdict |
 | **deployer-agent** | Release readiness, store-prep, and PR-readiness artifacts |
+| **pr-agent** (post-phase, not a numbered SDLC phase) | Verified merge checklist, filled PR template, pushed branch, and an opened GitHub PR — never merges |
 
 ## Skills
 
@@ -112,7 +117,7 @@ The `skills/` folder contains reusable capability guides used by one or more age
 | `/session-start` | At the start of every session, or after `start-feature` | Reads root `CLAUDE.md`, `.claude/memory.md`, the active feature's row in `feature-index.md`, and the latest plan/journal/verification artifacts; confirms current branch/feature/phase. See `.claude/hooks/before-phase.md`. |
 | `/phase-close` | Immediately after an agent produces a phase artifact and you've reviewed/approved it — **before** running `complete-phase` | Saves/confirms the plan artifact, saves the journal, updates `.claude/memory.md`, and updates the feature's row in `.claude/context/feature-index.md`. See `.claude/hooks/after-phase.md`. |
 | `/claude-save` | Any time mid-session you want to checkpoint context without closing the phase (e.g. a long BA discussion not yet finalized) | Updates memory, journal, files/commands/tests run, decisions and risks, next handoff — so context survives across sessions even mid-phase. |
-| `/feature-close` | Once all 5 phases are approved and verification has passed — **before** running `prepare-pr` | Confirms all phases + verification are complete, rebases on latest `main`, resolves conflicts, reruns validation, updates the test summary and release/PR artifacts. See `.claude/hooks/before-pr.md`. |
+| `/feature-close` | Once all 6 phases are approved and verification has passed — **before** running `prepare-pr` | Confirms all phases + verification are complete, rebases on latest `main`, resolves conflicts, reruns validation, updates the test summary and release/PR artifacts. See `.claude/hooks/before-pr.md`. |
 
 **Recommended pairing per phase:** agent produces artifact → you review/approve → `/phase-close` → `./.claude/scripts/agent_orchestrator.sh complete-phase ...` (commits). Same pairing at the end: `/feature-close` → `prepare-pr`.
 
@@ -136,7 +141,7 @@ These 4 files are reference-only — nothing executes them automatically.
 | `branching-policy.md` | You / any agent | Describes the branch rules the orchestrator's `branch_name()`/`start_feature()` already implement in code — keep both in sync if either changes. Also enforced live by the `guard-main-branch.sh` hook (see Hooks below). |
 | `commit-template.md` | You / any agent | Describes the commit message format `complete_phase()` already generates — reference for anyone committing by hand. |
 | `merge-to-main-checklist.md` | You, via `/feature-close` | Walked top to bottom before opening a PR. |
-| `pr-template.md` | You / **deployer-agent**, via `/feature-close` and `prepare-pr` | Filled in right before opening the GitHub PR. |
+| `pr-template.md` | You / **pr-agent**, via `/feature-close` and the pr-agent step after `prepare-pr` | Filled in right before opening the GitHub PR. |
 
 ## Supporting Artifact Folders
 
@@ -144,6 +149,7 @@ These 4 files are reference-only — nothing executes them automatically.
 |---|---|---|---|
 | `journal/<timestamp>-<feature>-<phase>.md` | Orchestrator `create_journal` (`start-feature`/`complete-phase`) | The active phase's subagent, plus `/phase-close` and `/claude-save` | Every phase |
 | `plans/<agent>/<timestamp>-<feature>.md` | Orchestrator `create_phase_plan` | That phase's subagent | Every phase |
+| GitHub issues (`bug,visualiser-feedback` labels) | Not tracked under `.claude/` | **visualiser-agent**, one per confirmed defect reported during manual preview | Visualiser phase only. This is the tracking mechanism for visualiser findings — not `risks/active-risks.md`, and it never blocks the phase gate or later phases. |
 | `verification/<timestamp>-<feature>.md` | Orchestrator `create_verification_report` | **verifier-agent** | Verifier phase only |
 | `releases/` | Orchestrator `prepare_pr` (PR-readiness note) | **deployer-agent** (release-readiness note) | Deployer phase / PR prep — not per-phase |
 | `risks/active-risks.md` | Already exists as one running log (not per-feature stubs) | Any agent that spots a risk — most commonly **ba-agent** at scoping and **verifier-agent**/**deployer-agent** at review | Whenever a risk is identified |
@@ -158,7 +164,7 @@ Three *adjacent* moments do map to real Claude Code events, and are registered a
 | Hook event | Script | What it does |
 |---|---|---|
 | `SessionStart` | `.claude/scripts/print-session-state.sh` | Prints the "Active State" block of `.claude/memory.md` at the start of every session, so current feature/branch/phase is visible without remembering to run `/session-start`. |
-| `PreToolUse` (matcher: `Bash`) | `.claude/scripts/guard-main-branch.sh` | Blocks (exit 2) `git commit`/`git push` while on `main`, `git push --force`/`-f` on any branch, and `git branch -D main` — enforcing `.claude/git/branching-policy.md` automatically instead of relying on discipline. |
+| `PreToolUse` (matcher: `Bash`) | `.claude/scripts/guard-main-branch.sh` | Blocks (exit 2) `git commit`/`git push` while on `main`, `git push --force`/`--force-with-lease`/`-f` on any branch, and `git branch -d`/`-D`/`--delete main` — including when chained with `;`, `&&`, `\|`, or `\|\|` — enforcing `.claude/git/branching-policy.md` automatically instead of relying on discipline. |
 | `SubagentStop` | `.claude/scripts/remind-phase-close.sh` | Fires exactly when a phase subagent (`ba-agent`, `coder-agent`, etc.) finishes — the real native "phase just ended" boundary. Reminds you to review the artifact and run `/phase-close`. |
 
 ## End-to-End Flow
@@ -240,7 +246,22 @@ The agent derives tests from the BA plan's acceptance criteria (not guesswork), 
 ./.claude/scripts/agent_orchestrator.sh . complete-phase 01 bootstrap-app tester
 ```
 
-### 5. Verifier phase — consume the verifier-agent
+### 5. App-Visualiser phase — consume the visualiser-agent
+
+> Use the **visualiser-agent** to let me preview feature 01 on a simulator.
+
+The agent asks which platform to preview (Android, iOS, or both), boots or creates the simulator/emulator, and runs the app on it (`flutter run -d <device_id>`). It then hands control back to you to try the app manually. Whatever you report is parsed into distinct defects, confirmed with you as a list, and filed as one GitHub issue per defect (labels `bug,visualiser-feedback`) — it does not loop back to Coder or BA, and does not block progress even if issues remain open.
+
+**You review the filed issues and approve — confirming the preview happened and feedback was captured, not that every issue is fixed — before continuing.**
+
+```
+/phase-close
+```
+```bash
+./.claude/scripts/agent_orchestrator.sh . complete-phase 01 bootstrap-app visualiser
+```
+
+### 6. Verifier phase — consume the verifier-agent
 
 > Use the **verifier-agent** to verify feature 01.
 
@@ -255,7 +276,7 @@ The agent builds the requirement → code → test traceability matrix and issue
 ./.claude/scripts/agent_orchestrator.sh . complete-phase 01 bootstrap-app verifier
 ```
 
-### 6. Deployer phase — consume the deployer-agent
+### 7. Deployer phase — consume the deployer-agent
 
 > Use the **deployer-agent** to prepare feature 01 for release and PR.
 
@@ -270,7 +291,7 @@ The agent prepares local release-readiness (build/format/analyze checks), store-
 ./.claude/scripts/agent_orchestrator.sh . complete-phase 01 bootstrap-app deployer
 ```
 
-### 7. Prepare PR and merge
+### 8. Prepare PR and merge
 
 ```
 /feature-close
@@ -282,12 +303,13 @@ Claude confirms all phases + verification are complete, rebases on latest `main`
 ./.claude/scripts/agent_orchestrator.sh . prepare-pr 01 bootstrap-app
 ```
 
-This writes a PR-readiness note with an unchecked checklist and commits it. You then:
+This writes a PR-readiness note with an unchecked checklist and commits it. Then:
 
-1. Walk `.claude/git/merge-to-main-checklist.md` top to bottom.
-2. Fill in `.claude/git/pr-template.md` (feature summary, artifact links, validation results).
-3. Push the branch and open the PR against the GitHub org repo (`Catholic-Parish-St-Luke-s-Marsden-Park`).
-4. Record your final approval, then merge.
+> Use the **pr-agent** to walk the checklist, fill in the PR template, push, and open the PR.
+
+The agent walks `.claude/git/merge-to-main-checklist.md` top to bottom against real evidence (re-running validation where needed), fills in `.claude/git/pr-template.md` (feature summary, artifact links, validation results), and pauses for your approval before touching git or GitHub. Once approved, it pushes the branch and opens the PR against the GitHub org repo (`Catholic-Parish-St-Luke-s-Marsden-Park`), then reports the PR URL and stops.
+
+**Merging is not automated.** Review and merge the PR manually from the GitHub UI.
 
 ## Standard Commands
 
@@ -298,8 +320,10 @@ This writes a PR-readiness note with an unchecked checklist and commits it. You 
 
 ### Complete a phase
 ```bash
-./.claude/scripts/agent_orchestrator.sh . complete-phase <feature-id> <feature-slug> <ba|coder|tester|verifier|deployer>
+./.claude/scripts/agent_orchestrator.sh . complete-phase <feature-id> <feature-slug> <ba|coder|tester|visualiser|verifier|deployer>
 ```
+
+`complete-phase` stages and commits the **entire working tree** (`git add -A`), not just the phase's SDLC bookkeeping files — this is intentional so the coder phase's actual code changes land in the same commit as its plan/journal, rather than requiring a separate manual commit. `.gitignore` already excludes build artifacts. Make sure nothing unrelated is sitting in the working tree before running it.
 
 ### Prepare PR
 ```bash
@@ -312,6 +336,7 @@ You must review and approve, in order, before the next phase may begin:
 - BA scope
 - implementation
 - tests
+- manual preview / app-visualiser feedback
 - verification
 - deployment readiness
 - PR readiness

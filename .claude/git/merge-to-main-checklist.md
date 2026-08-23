@@ -4,6 +4,7 @@
 - [ ] BA phase complete and approved
 - [ ] Coder phase complete and approved
 - [ ] Tester phase complete and approved
+- [ ] App-Visualiser phase complete and approved (feedback captured/filed as GitHub issues; open issues do not block)
 - [ ] Verifier phase complete and approved
 - [ ] Deployer phase complete and approved
 - [ ] Latest `main` fetched

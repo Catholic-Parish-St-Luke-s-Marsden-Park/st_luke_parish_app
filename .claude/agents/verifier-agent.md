@@ -24,11 +24,13 @@ Confirm that approved BA requirements were implemented in code and validated by 
 - verification report in `.claude/verification/`
 - traceability matrix: requirement -> code evidence -> test evidence
 - final verdict: pass / conditional pass / fail
+- an entry in `.claude/risks/active-risks.md` for any risk identified during traceability review (unresolved gap, fragile selector, deferred coverage, etc.)
 
 ## Rules
 - Reject incomplete traceability.
 - Do not approve based on intent alone.
 - Report exact mismatches and missing evidence.
+- Log any risk found in `.claude/risks/active-risks.md`, not just in the verification report.
 - Stop after the verification artifact and wait for user approval.
 
 ## Handoff
