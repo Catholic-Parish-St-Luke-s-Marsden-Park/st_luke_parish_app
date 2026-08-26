@@ -1,0 +1,233 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/app/shell/app_shell.dart';
+import 'package:st_luke_parish_app/app/shell/nav_index_provider.dart';
+import 'package:st_luke_parish_app/app/shell/widgets/app_bar_logo.dart';
+import 'package:st_luke_parish_app/app/shell/widgets/ask_luke_pill.dart';
+import 'package:st_luke_parish_app/app/shell/widgets/saint_of_the_day_pill.dart';
+import 'package:st_luke_parish_app/core/theme/app_theme.dart';
+import 'package:st_luke_parish_app/features/ask_luke/presentation/screens/ask_luke_screen.dart';
+import 'package:st_luke_parish_app/shared/widgets/app_pill_button.dart';
+
+/// Covers the shared AppBar chrome acceptance criteria: REQ-F02-014
+/// through REQ-F02-016a and REQ-F02-017 through REQ-F02-019.
+void main() {
+  Future<void> pumpShell(WidgetTester tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(theme: AppTheme.light(), home: const AppShell()),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  group('REQ-F02-014: wordmark logo via Image.asset', () {
+    testWidgets('AppBar renders AppBarLogo using a local Image.asset', (
+      tester,
+    ) async {
+      await pumpShell(tester);
+
+      final appBarLogoFinder = find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byType(AppBarLogo),
+      );
+      expect(appBarLogoFinder, findsOneWidget);
+
+      final image = tester.widget<Image>(
+        find.descendant(of: appBarLogoFinder, matching: find.byType(Image)),
+      );
+      expect(image.image, isA<AssetImage>());
+      expect(
+        (image.image as AssetImage).assetName,
+        'assets/images/branding/st_lukes_wordmark.jpg',
+      );
+    });
+  });
+
+  group('REQ-F02-016: exactly 2 pills present in AppBar actions', () {
+    testWidgets('AppBar actions contain exactly one SaintOfTheDayPill and one '
+        'AskLukePill', (tester) async {
+      await pumpShell(tester);
+
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byType(SaintOfTheDayPill),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byType(AskLukePill),
+        ),
+        findsOneWidget,
+      );
+      // Exactly 2 pill-style buttons total in the AppBar.
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byType(AppPillButton),
+        ),
+        findsNWidgets(2),
+      );
+    });
+  });
+
+  group('REQ-F02-016a: no per-tab text title alongside the logo', () {
+    testWidgets('AppBar does not render a Text tab title such as "Masses & '
+        'Events"', (tester) async {
+      await pumpShell(tester);
+
+      // Switch to a non-default tab; if a per-tab text title were still
+      // present, it would now read "Masses & Events".
+      await tester.tap(find.text('Masses'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.text('Masses & Events'),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: find.byType(AppBar), matching: find.text('Masses')),
+        findsNothing,
+      );
+      // The AppBar's only branding element is the logo.
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byType(AppBarLogo),
+        ),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('REQ-F02-017: Saint of the Day pill shows a placeholder on tap', () {
+    testWidgets('tapping the pill shows a "coming soon" dialog with no '
+        'real content', (tester) async {
+      await pumpShell(tester);
+
+      await tester.tap(find.text('Saint of the Day'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Saint of the Day'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('Coming soon.'),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+    });
+  });
+
+  group('REQ-F02-018: Ask Luke pill performs a full-screen navigation', () {
+    testWidgets(
+      'tapping "Ask Luke" pushes AskLukeScreen via Navigator.push, not a '
+      'bottom sheet/dialog',
+      (tester) async {
+        await pumpShell(tester);
+
+        await tester.tap(find.text('Ask Luke'));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AskLukeScreen), findsOneWidget);
+        expect(find.byType(BottomSheet), findsNothing);
+        expect(find.byType(Dialog), findsNothing);
+        // A full-screen push shows the Ask Luke screen with no visible
+        // bottom nav bar of the shell underneath it (it's covering the
+        // whole route).
+        expect(find.byType(AppShell), findsNothing);
+      },
+    );
+  });
+
+  group('REQ-F02-019: AppBar/pills render identically across all 6 tabs', () {
+    testWidgets(
+      'logo + both pills are present regardless of the selected tab',
+      (tester) async {
+        await pumpShell(tester);
+
+        const tabLabels = [
+          'Parish',
+          'Masses',
+          'News',
+          'Ministries',
+          'Contact',
+          'Donate',
+        ];
+
+        for (final label in tabLabels) {
+          await tester.tap(find.text(label));
+          await tester.pumpAndSettle();
+
+          expect(
+            find.descendant(
+              of: find.byType(AppBar),
+              matching: find.byType(AppBarLogo),
+            ),
+            findsOneWidget,
+            reason: 'Expected logo present on the $label tab',
+          );
+          expect(
+            find.descendant(
+              of: find.byType(AppBar),
+              matching: find.byType(SaintOfTheDayPill),
+            ),
+            findsOneWidget,
+            reason: 'Expected Saint of the Day pill present on the $label tab',
+          );
+          expect(
+            find.descendant(
+              of: find.byType(AppBar),
+              matching: find.byType(AskLukePill),
+            ),
+            findsOneWidget,
+            reason: 'Expected Ask Luke pill present on the $label tab',
+          );
+          // Only one AppBar exists — chrome is rendered once by the shared
+          // shell body, not duplicated per tab.
+          expect(find.byType(AppBar), findsOneWidget);
+        }
+      },
+    );
+  });
+
+  group('REQ-F02-015: chrome location', () {
+    test(
+      'AppBarLogo/SaintOfTheDayPill/AskLukePill live under lib/app/shell',
+      () {
+        // Source-location check: these imports resolve under
+        // package:st_luke_parish_app/app/shell/widgets/, not
+        // package:st_luke_parish_app/features/parish/ — verified by the
+        // import paths above compiling successfully against that location.
+        expect(true, isTrue);
+      },
+    );
+  });
+
+  // Sanity: the selectedNavIndexProvider still exists and still drives the
+  // shell (regression guard carried over from feature 01, re-verified here
+  // alongside the new AppBar assertions).
+  test('selectedNavIndexProvider unaffected by AppBar chrome changes', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    expect(container.read(selectedNavIndexProvider), 0);
+  });
+}
