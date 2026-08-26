@@ -1,0 +1,11 @@
+- **Decision ID:** ADR-0001
+- **Title:** Give "Ask Luke" its own feature module (`lib/features/ask_luke/`) instead of nesting it under Parish or `lib/app/shell/`
+- **Feature:** 02-parish-tab
+- **Date:** 2026-08-26
+- **Status:** accepted
+- **Context:** The "Ask Luke" quick-reply assistant is triggered from a shared AppBar pill (app-level chrome, present on all 6 tabs), but its own full-screen UI and hardcoded topic->response config are not Parish-tab content and are not simple chrome — they are expected to grow real backend/AI integration in a future phase per the approved BA plan. The BA plan explicitly recommended (but left as Coder's call) a dedicated feature module rather than folding this into `lib/features/parish/` or leaving it inline in `lib/app/shell/`.
+- **Decision:** Created `lib/features/ask_luke/` following the standard feature template (`presentation/`, `domain/`, `data/`). `lib/app/shell/widgets/ask_luke_pill.dart` only holds the trigger pill and performs `Navigator.push` to `AskLukeScreen`; all screen UI, the `AskLukeTopic` entity, and the static topic/response config live inside the `ask_luke` feature module.
+- **Alternatives Considered:**
+  - Nest under `lib/features/parish/` — rejected: "Ask Luke" is not Parish-tab content (REQ-F02-015 spirit) and would blur an unrelated feature's domain.
+  - Keep inline in `lib/app/shell/` — rejected: `app/shell/` is meant for cross-cutting chrome, not a full screen's business/domain logic and future backend integration surface; would violate the "keep feature concerns isolated" rule in root `CLAUDE.md`.
+- **Consequences:** Slightly more scaffolding (an extra feature folder) for a currently simple, hardcoded-response screen. In exchange, the module is ready for Phase 2 backend/AI integration behind a clean `data/` layer without needing to relocate code out of `app/shell/` or `parish/` later.

@@ -10,20 +10,18 @@ import '../../features/parish/presentation/screens/parish_screen.dart';
 import 'bottom_nav.dart';
 import 'nav_index_provider.dart';
 import 'side_drawer.dart';
+import 'widgets/app_bar_logo.dart';
+import 'widgets/ask_luke_pill.dart';
+import 'widgets/saint_of_the_day_pill.dart';
 
 /// Hosts the bottom-nav + side-drawer chrome and swaps between the 6
 /// primary tabs using an [IndexedStack], preserving each tab's state.
+///
+/// The `AppBar` (wordmark logo + "Saint of the Day"/"Ask Luke" pills) is
+/// shared app-level chrome rendered identically regardless of the selected
+/// tab — it intentionally carries no per-tab text title (REQ-F02-016a).
 class AppShell extends ConsumerWidget {
   const AppShell({super.key});
-
-  static const _tabTitles = [
-    'Parish',
-    'Masses & Events',
-    'News & Bulletins',
-    'Ministries',
-    'Contact & Map',
-    'Donate',
-  ];
 
   static const _tabBuilders = <Widget Function()>[
     ParishScreen.new,
@@ -73,14 +71,17 @@ class _AppShellBodyState extends State<_AppShellBody> {
   @override
   Widget build(BuildContext context) {
     final tabBuilders = AppShell._tabBuilders;
-    final tabTitles = AppShell._tabTitles;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          tabTitles[widget.selectedIndex],
-          overflow: TextOverflow.ellipsis,
-        ),
+        titleSpacing: 4,
+        title: const AppBarLogo(),
+        actions: const [
+          SaintOfTheDayPill(),
+          SizedBox(width: 8),
+          AskLukePill(),
+          SizedBox(width: 8),
+        ],
       ),
       drawer: const SideDrawer(),
       body: IndexedStack(
