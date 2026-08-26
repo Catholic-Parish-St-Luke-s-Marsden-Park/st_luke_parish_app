@@ -3,8 +3,8 @@
 ## Active State
 - **Current Feature:** 02-parish-tab
 - **Current Branch:** feature/02-parish-tab
-- **Current Phase:** ba
-- **Active Agent:** BA_AGENT
+- **Current Phase:** coder
+- **Active Agent:** CODER_AGENT
 - **Awaiting User Approval:** yes
 
 ## Workflow Model
@@ -19,6 +19,9 @@
 - None open. See `.claude/risks/active-risks.md` — RISK-002 resolved 2026-08-23 via live Android emulator verification; golden-test follow-up deferred by design for the next feature slice.
 
 ## Latest Session Logs
+- 2026-08-26_22-47: Completed phase coder for 02-parish-tab
+- 2026-08-26_21-30: Coder phase for 02-parish-tab reviewed and approved by user (independently re-verified `flutter analyze`/`dart format . --set-exit-if-changed` clean, spot-checked AppBar chrome, Church Leadership config, Ask Luke topics, and bundled assets/pubspec against the approved BA plan). Feature index updated. Phase-closed; awaiting complete-phase (commit) then tester-agent handoff.
+- 2026-08-26_21-05: Completed phase coder for 02-parish-tab. Implemented all REQ-F02-001..029 (incl. REQ-F02-016a): Parish tab content (`lib/features/parish/` — hero, About St Luke's, 3-part Church Leadership section with typed config), shared AppBar chrome (`lib/app/shell/` + `lib/shared/widgets/` — wordmark logo, Saint of the Day pill, Ask Luke pill, no per-tab text title), and a new `lib/features/ask_luke/` feature module (full-screen quick-reply assistant, 4 hardcoded topics, no free-text input) — see ADR `.claude/decisions/0001-ask-luke-own-feature-module.md`. Downloaded and bundled all 5 required images locally under `assets/images/`; added `url_launcher` dependency behind an injectable `UrlLauncherService`. `flutter analyze` clean, `dart format` clean; `flutter test` 20/21 passing (1 pre-existing feature-01 test now expectedly fails per REQ-F02-001, flagged for Tester). Fixed a real bug found via `flutter test` (`LeadershipEntryTile` missing `Material` ancestor). Corrected this file's stale Active State header (was still showing ba/BA_AGENT despite BA phase already being closed and approved). Coder plan: `.claude/plans/coder/2026-08-26_21-05-02-parish-tab.md`. Journal: `.claude/journal/2026-08-26_21-05-02-parish-tab-coder.md`. Phase-closed in code/artifacts; awaiting user review/approval before TESTER_AGENT handoff (per instructions, did not invoke tester-agent or run phase-close/orchestrator scripts).
 - 2026-08-26_20-11: Completed phase ba for 02-parish-tab
 - 2026-08-26_19-50: BA plan for 02-parish-tab approved by user; all open confirmation items resolved (Deacon Tony Hoban dropped, Ged Oblea row has no link, AppBar drops text title). Journal and feature index updated; phase-closed, awaiting complete-phase (commit) then coder-agent handoff.
 - 2026-08-26_18-54: Started feature 02-parish-tab on branch feature/02-parish-tab
