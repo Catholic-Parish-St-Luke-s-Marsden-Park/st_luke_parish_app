@@ -15,7 +15,23 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
 
 ## Open Risks
 
-_None currently open._
+- **Risk ID:** RISK-003
+- **Title:** Leadership-entry external links (Pope Leo XIV, Bishop Vincent Long, Fr Gayan Thamel) silently fail to launch on real Android devices — missing AndroidManifest `<queries>` block
+- **Feature:** 02-parish-tab
+- **Impact:** High for user-facing correctness of REQ-F02-005/006/007. Tapping any of the 3 tappable Church Leadership entries produces no visible effect on a real Android device/emulator (confirmed live on `emulator-5554`, API 36) even though the corresponding widget tests pass. Root cause: `android/app/src/main/AndroidManifest.xml` has no `<queries>` entry for a browsable `http`/`https` `VIEW` intent, so on Android 11+ (API 30+) package-visibility rules cause `url_launcher`'s `canLaunchUrl` (called at `lib/core/services/url_launcher_service.dart:24`) to return `false` for every browser package, and `launchExternal` silently returns `false` without ever calling `launchUrl` — no exception, no crash, no visible feedback to the user. Widget-test evidence for REQ-F02-005/006/007 (`test/features/parish/parish_screen_test.dart`) cannot catch this by design, since those tests inject a fake `UrlLauncherService` via `urlLauncherServiceProvider.overrideWithValue(...)` specifically to avoid touching platform channels — a reasonable test-design choice that nonetheless leaves this exact class of platform-configuration bug undetectable by any current automated test.
+- **Likelihood:** Certain — already reproduced live (before/after screenshots identical, `adb logcat` shows no exception around the tap).
+- **Mitigation:** Add a browsable-intent `<queries>` block to `android/app/src/main/AndroidManifest.xml` (an `<intent>` with `android.intent.action.VIEW`, category `android.intent.category.BROWSABLE`, and `<data android:scheme="https"/>`), then re-verify live on an Android emulator/device that all 3 leadership-link taps (Pope Leo XIV, Bishop Vincent Long, Fr Gayan Thamel) open an external browser. Tracked as GitHub issue #12 (https://github.com/Catholic-Parish-St-Luke-s-Marsden-Park/st_luke_parish_app/issues/12), filed by the App-Visualiser phase with root cause and suggested fix included. This is a manifest-only fix; no `lib/`/`test/` code changes are required.
+- **Owner:** Deployer (or a targeted Coder follow-up before merge, at the user's discretion)
+- **Status:** open
+
+- **Risk ID:** RISK-004
+- **Title:** iOS external-link launching for the same 3 leadership entries is unverified — `Info.plist` has no `LSApplicationQueriesSchemes` entry and no iOS simulator/device run has been performed for this feature
+- **Feature:** 02-parish-tab
+- **Impact:** Medium. Confirmed via direct read of `ios/Runner/Info.plist` (this phase) that no `LSApplicationQueriesSchemes` key exists. `https` is a standard system URL scheme that `canLaunchUrl`/`url_launcher` typically does not require an `LSApplicationQueriesSchemes` entry for on iOS (unlike custom app schemes), so this may already be fine — but this has not been positively confirmed by running the app on an iOS simulator/device, and the Android-side RISK-003 demonstrates this exact class of platform package-visibility/query-declaration gap is a real, live risk category for this dependency, not merely theoretical.
+- **Likelihood:** Low-medium — plausible given RISK-003's precedent for the same dependency, but unconfirmed either way.
+- **Mitigation:** Run the app on an iOS simulator/device and tap all 3 leadership entries to confirm the external browser opens; if a gap is found, add the required `LSApplicationQueriesSchemes` entries to `ios/Runner/Info.plist`. Recommended before or during the Deployer phase's iOS build/release-readiness work.
+- **Owner:** Deployer
+- **Status:** open
 
 ## Resolved Risks
 
