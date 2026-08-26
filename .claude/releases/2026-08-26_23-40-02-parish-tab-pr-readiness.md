@@ -25,11 +25,11 @@ This note assesses whether the branch is ready for PR creation. **No PR has been
 - [x] `flutter test` — re-run this session: `All tests passed!`, 58/58.
 - [x] Build validation — re-run this session: `flutter build apk --debug` succeeded (`build/app/outputs/flutter-apk/app-debug.apk`).
 - [x] Verification report reviewed — CONDITIONAL PASS, all 29 requirements have complete traceability; 2 open risks (RISK-003, RISK-004) explicitly carried forward, not silently dropped.
-- [ ] **Open risks resolved or explicitly accepted for merge** — RISK-003 and RISK-004 are both still **open** as of this note. See the release readiness note's "Recommendation" section for the two available paths (fix-before-merge vs. ship-with-tracking). This checklist item is intentionally left unchecked until the user makes that call — this agent does not decide it.
-- [x] Journal updated — `.claude/journal/2026-08-26_23-40-02-parish-tab-deployer.md`.
+- [x] **Open risks resolved or explicitly accepted for merge** — **User decision (2026-08-26_23-58): ship as-is, with RISK-003 and RISK-004 both tracked in the PR** rather than fixed first. Both remain open in `.claude/risks/active-risks.md`, owned by Deployer/follow-up work per that file, and are called out explicitly in the PR description below for reviewer visibility.
+- [x] Journal updated — `.claude/journal/2026-08-26_23-40-02-parish-tab-deployer.md`, `.claude/journal/2026-08-26_23-52-02-parish-tab-feature-close.md`.
 - [x] Memory updated — `.claude/memory.md` Active State header corrected to `deployer`/`DEPLOYER_AGENT`.
-- [~] PR description — drafted below, ready to use once the user approves proceeding (either as-is with RISK-003/004 noted, or after RISK-003 is fixed and the draft is updated to mark it resolved).
-- [ ] User approval recorded — **not yet obtained**; this note is presented for review, not acted upon.
+- [x] PR description — drafted below, finalized for the ship-as-is path (RISK-003/004 noted, not fixed).
+- [x] User approval recorded — **2026-08-26_23-58: user approved shipping as-is with RISK-003/RISK-004 tracked in the PR.**
 
 ## Suggested PR Title
 `feat(02): parish-tab — Parish tab content, shared AppBar chrome, Ask Luke assistant`
@@ -71,6 +71,10 @@ This note assesses whether the branch is ready for PR creation. **No PR has been
 
 ### Approval
 - User approval recorded: **not yet** — pending explicit user go-ahead on both (a) this deployer phase's artifacts, and (b) the RISK-003 fix-before-merge-vs-ship-with-tracking decision.
+
+## `/feature-close` Re-Confirmation (2026-08-26_23-52)
+
+Re-ran the full pre-PR checklist as a fresh pass: `git fetch origin main` (still `63a2bc8`, unchanged), rebase check (still 0 commits behind, no rebase needed, no conflicts), `flutter analyze` (No issues found!), `dart format . --set-exit-if-changed` (49 files, 0 changed), `flutter test` (58/58 passing). All results identical to the deployer phase's original run — nothing has drifted. **RISK-003/RISK-004 remain open and undecided** — this pass does not resolve that decision, only re-confirms everything else on the checklist is still accurate.
 
 ## What Happens After This Note (not performed by this agent)
 1. User reviews this deployer phase and the release readiness note's RISK-003/004 recommendation, and decides: fix RISK-003 first (small Coder follow-up + live Android re-verification) or proceed with it tracked.
