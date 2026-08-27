@@ -1,11 +1,11 @@
 # System Memory & SDLC State Tracker
 
 ## Active State
-- **Current Feature:** 02-parish-tab
-- **Current Branch:** feature/02-parish-tab
-- **Current Phase:** PR open — awaiting manual merge
-- **Active Agent:** none
-- **Awaiting User Approval:** no — PR #16 opened; user reviews and merges manually via GitHub UI when ready. RISK-003/RISK-004 tracked in the PR description, both still open in `.claude/risks/active-risks.md`.
+- **Current Feature:** 03-multi-pages
+- **Current Branch:** feature/03-multi-pages
+- **Current Phase:** ba
+- **Active Agent:** BA_AGENT
+- **Awaiting User Approval:** yes
 
 ## Workflow Model
 - Claude Code-specific SDLC
@@ -19,6 +19,7 @@
 - 2 open. See `.claude/risks/active-risks.md` — RISK-003 (leadership-entry external links silently fail on real Android devices, missing AndroidManifest `<queries>` block, tracked via GitHub issue #12) and RISK-004 (iOS `Info.plist` `LSApplicationQueriesSchemes` unverified for the same class of gap), both logged 2026-08-26 during the 02-parish-tab verifier phase. RISK-002 (01-bootstrap-app) remains resolved.
 
 ## Latest Session Logs
+- 2026-08-27_20-56: Started feature 03-multi-pages on branch feature/03-multi-pages
 - 2026-08-26 (PR agent): Independently re-verified the merge-to-main checklist against fresh repo evidence before opening the PR: `git fetch origin main` (still `63a2bc8`, 0 commits behind, 6 ahead, no rebase needed), `dart format . --set-exit-if-changed` (49 files, 0 changed), `flutter analyze` (No issues found!), `flutter test` (58/58 passing), working tree clean. Did not re-run `flutter build apk --debug` this session — relied on the Deployer phase's already-passing build-validation result (`.claude/memory.md` 2026-08-26_23-40 entry), noted explicitly as not independently re-confirmed in this pass. Filled `.claude/git/pr-templates/2026-08-26_23-40-02-parish-tab-pr.md` from the PR-readiness note's draft (risk disclosure for RISK-003/GitHub issue #12 and RISK-004 kept intact and prominent, plus issues #13-#15 referenced). Pushed `feature/02-parish-tab` to origin and opened [PR #16](https://github.com/Catholic-Parish-St-Luke-s-Marsden-Park/st_luke_parish_app/pull/16) against `main` using account `johannisanth-ux` (verified via `gh auth status` to have `repo` scope; the other locally authenticated account, `NisanthSimon`, was left inactive). Updated feature index PR Status column and this file's Active State header to reflect "PR open — awaiting manual merge." Did not run `gh pr merge` or any merge/close action; merge remains manual via GitHub UI.
 - 2026-08-26_23-58: User decided to ship feature 02-parish-tab as-is, with RISK-003 (Android manifest link bug) and RISK-004 (iOS unverified) both tracked in the PR rather than fixed first. Finalized PR readiness note (`.claude/releases/2026-08-26_23-40-02-parish-tab-pr-readiness.md`) — all checklist items now checked, user approval recorded. Ready for pr-agent to push the branch and open the PR.
 - 2026-08-26_23-52: `/feature-close` pre-PR pass for 02-parish-tab. Confirmed all 6 phase artifacts present, verification report present. `git fetch origin main` — unchanged (`63a2bc8`); rebase check — 0 behind, 6 ahead, no rebase/conflicts needed. Reran `flutter analyze` (clean), `dart format . --set-exit-if-changed` (clean, 49 files), `flutter test` (58/58) — all identical to the deployer phase's own run, no drift. Updated PR readiness note with a re-confirmation section. RISK-003/RISK-004 remain open and undecided — not resolved by this pass. Journal: `.claude/journal/2026-08-26_23-52-02-parish-tab-feature-close.md`. Stopping here per feature-close's own rule; awaiting user decision on RISK-003 and approval before PR creation.
