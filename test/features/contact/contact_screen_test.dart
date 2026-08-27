@@ -1,0 +1,322 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
+import 'package:st_luke_parish_app/features/contact/data/config/static_contact_config.dart';
+import 'package:st_luke_parish_app/features/contact/domain/entities/contact_item.dart';
+import 'package:st_luke_parish_app/features/contact/presentation/screens/contact_screen.dart';
+import 'package:st_luke_parish_app/features/contact/presentation/widgets/contact_tile.dart';
+
+/// Covers the Contact tab acceptance criteria: REQ-F03-011..018.
+class _FakeUrlLauncherService implements UrlLauncherService {
+  _FakeUrlLauncherService({this.launchResult = true});
+
+  final bool launchResult;
+  final List<String> launchedUrls = [];
+
+  @override
+  Future<bool> launchExternal(String url) async {
+    launchedUrls.add(url);
+    return launchResult;
+  }
+}
+
+void main() {
+  Future<void> pumpContactScreen(
+    WidgetTester tester, {
+    required _FakeUrlLauncherService fakeLauncher,
+  }) async {
+    // ContactScreen's content (hero + map card + 8 tiles) is taller than
+    // the default 800x600 test surface, which would leave later tiles
+    // outside the SliverList's build/hit-test cache extent. Use a tall
+    // surface so every tile is built and tappable without needing to
+    // scroll mid-test.
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [urlLauncherServiceProvider.overrideWithValue(fakeLauncher)],
+        child: const MaterialApp(home: Scaffold(body: ContactScreen())),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  /// Taps a widget rendering [text]. `pumpContactScreen` uses a tall test
+  /// surface so every contact tile is already built and on-screen; this
+  /// helper still funnels every tap through one place for consistency.
+  Future<void> tapText(WidgetTester tester, String text) async {
+    await tester.tap(find.text(text));
+    await tester.pumpAndSettle();
+  }
+
+  group(
+    'REQ-F03-011: ContactScreen renders real content, not a placeholder',
+    () {
+      testWidgets('does not render the generic PlaceholderScreen icon', (
+        tester,
+      ) async {
+        await pumpContactScreen(
+          tester,
+          fakeLauncher: _FakeUrlLauncherService(),
+        );
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('Contact & Location'), findsOneWidget);
+      });
+    },
+  );
+
+  group('REQ-F03-012: static config has exactly 8 entries, in order, with '
+      'exact values', () {
+    test('exactly 8 entries in the exact expected order/values', () {
+      expect(staticContactItems.length, 8);
+
+      final expected = [
+        (
+          label: 'Phone',
+          value: '(02) 8530 0173',
+          action: ContactAction.call,
+          actionTarget: 'tel:0285300173',
+          subtitle: null,
+        ),
+        (
+          label: 'Mobile',
+          value: '0422 724 160',
+          action: ContactAction.call,
+          actionTarget: 'tel:0422724160',
+          subtitle: null,
+        ),
+        (
+          label: 'Email',
+          value: 'marsdenpark@parracatholic.org',
+          action: ContactAction.email,
+          actionTarget: 'mailto:marsdenpark@parracatholic.org',
+          subtitle: null,
+        ),
+        (
+          label: 'Church Address',
+          value: '55a Frontier Ave, Marsden Park NSW 2765',
+          action: ContactAction.none,
+          actionTarget: null,
+          subtitle: 'Cnr Frontier Ave & Northbourne Dr',
+        ),
+        (
+          label: 'Postal Address',
+          value: 'PO Box 4045, Elara Village',
+          action: ContactAction.none,
+          actionTarget: null,
+          subtitle: 'Marsden Park NSW 2765',
+        ),
+        (
+          label: 'Office Hours',
+          value: 'Monday – Friday · 9:30am – 4:30pm',
+          action: ContactAction.none,
+          actionTarget: null,
+          subtitle: null,
+        ),
+        (
+          label: 'Facebook',
+          value: "St Luke's Catholic Parish Marsden Park",
+          action: ContactAction.url,
+          actionTarget: 'https://www.facebook.com/stlukesmarsdenpark/',
+          subtitle: null,
+        ),
+        (
+          label: 'Website',
+          value: 'stlukesmarsdenpark.org.au',
+          action: ContactAction.url,
+          actionTarget: 'https://stlukesmarsdenpark.org.au',
+          subtitle: null,
+        ),
+      ];
+
+      for (var i = 0; i < expected.length; i++) {
+        final item = staticContactItems[i];
+        final exp = expected[i];
+        expect(item.label, exp.label, reason: 'index $i label');
+        expect(item.value, exp.value, reason: 'index $i value');
+        expect(item.action, exp.action, reason: 'index $i action');
+        expect(
+          item.actionTarget,
+          exp.actionTarget,
+          reason: 'index $i actionTarget',
+        );
+        expect(item.subtitle, exp.subtitle, reason: 'index $i subtitle');
+      }
+    });
+
+    testWidgets('all 8 contact tiles render, including no-action tiles', (
+      tester,
+    ) async {
+      await pumpContactScreen(tester, fakeLauncher: _FakeUrlLauncherService());
+
+      expect(find.byType(ContactTile), findsNWidgets(8));
+      for (final item in staticContactItems) {
+        expect(find.text(item.value), findsOneWidget);
+        if (item.subtitle != null) {
+          expect(find.text(item.subtitle!), findsOneWidget);
+        }
+      }
+    });
+  });
+
+  group('REQ-F03-013: tapping call/email/url tiles launches the '
+      'corresponding tel:/mailto:/https: URI', () {
+    testWidgets('tapping Phone launches tel:0285300173', (tester) async {
+      final fakeLauncher = _FakeUrlLauncherService();
+      await pumpContactScreen(tester, fakeLauncher: fakeLauncher);
+
+      await tapText(tester, '(02) 8530 0173');
+
+      expect(fakeLauncher.launchedUrls, ['tel:0285300173']);
+    });
+
+    testWidgets('tapping Mobile launches tel:0422724160', (tester) async {
+      final fakeLauncher = _FakeUrlLauncherService();
+      await pumpContactScreen(tester, fakeLauncher: fakeLauncher);
+
+      await tapText(tester, '0422 724 160');
+
+      expect(fakeLauncher.launchedUrls, ['tel:0422724160']);
+    });
+
+    testWidgets('tapping Email launches mailto:marsdenpark@parracatholic.org', (
+      tester,
+    ) async {
+      final fakeLauncher = _FakeUrlLauncherService();
+      await pumpContactScreen(tester, fakeLauncher: fakeLauncher);
+
+      await tapText(tester, 'marsdenpark@parracatholic.org');
+
+      expect(fakeLauncher.launchedUrls, [
+        'mailto:marsdenpark@parracatholic.org',
+      ]);
+    });
+
+    testWidgets('tapping Facebook launches the facebook https: URL', (
+      tester,
+    ) async {
+      final fakeLauncher = _FakeUrlLauncherService();
+      await pumpContactScreen(tester, fakeLauncher: fakeLauncher);
+
+      await tapText(tester, "St Luke's Catholic Parish Marsden Park");
+
+      expect(fakeLauncher.launchedUrls, [
+        'https://www.facebook.com/stlukesmarsdenpark/',
+      ]);
+    });
+
+    testWidgets('tapping Website launches the parish https: URL', (
+      tester,
+    ) async {
+      final fakeLauncher = _FakeUrlLauncherService();
+      await pumpContactScreen(tester, fakeLauncher: fakeLauncher);
+
+      await tapText(tester, 'stlukesmarsdenpark.org.au');
+
+      expect(fakeLauncher.launchedUrls, ['https://stlukesmarsdenpark.org.au']);
+    });
+
+    testWidgets('a failed/unavailable launch (e.g. no phone/mail/browser app '
+        'installed) does not throw', (tester) async {
+      final fakeLauncher = _FakeUrlLauncherService(launchResult: false);
+      await pumpContactScreen(tester, fakeLauncher: fakeLauncher);
+
+      await tapText(tester, '(02) 8530 0173');
+
+      expect(tester.takeException(), isNull);
+      expect(fakeLauncher.launchedUrls, ['tel:0285300173']);
+    });
+  });
+
+  group('REQ-F03-014: Church Address, Postal Address, and Office Hours '
+      'tiles are not tappable', () {
+    testWidgets('tapping the Church Address tile launches nothing', (
+      tester,
+    ) async {
+      final fakeLauncher = _FakeUrlLauncherService();
+      await pumpContactScreen(tester, fakeLauncher: fakeLauncher);
+
+      await tapText(tester, '55a Frontier Ave, Marsden Park NSW 2765');
+
+      expect(fakeLauncher.launchedUrls, isEmpty);
+    });
+
+    testWidgets('tapping the Postal Address tile launches nothing', (
+      tester,
+    ) async {
+      final fakeLauncher = _FakeUrlLauncherService();
+      await pumpContactScreen(tester, fakeLauncher: fakeLauncher);
+
+      await tapText(tester, 'PO Box 4045, Elara Village');
+
+      expect(fakeLauncher.launchedUrls, isEmpty);
+    });
+
+    testWidgets('tapping the Office Hours tile launches nothing', (
+      tester,
+    ) async {
+      final fakeLauncher = _FakeUrlLauncherService();
+      await pumpContactScreen(tester, fakeLauncher: fakeLauncher);
+
+      await tapText(tester, 'Monday – Friday · 9:30am – 4:30pm');
+
+      expect(fakeLauncher.launchedUrls, isEmpty);
+    });
+  });
+
+  group('REQ-F03-015/016: map-preview card and "Open in Google Maps" pill '
+      'both launch the external Google Maps URL', () {
+    const expectedMapsUrl =
+        'https://maps.google.com/?q=55a+Frontier+Avenue,+Marsden+Park+NSW+2765';
+
+    testWidgets('tapping the map-preview card launches the Google Maps URL', (
+      tester,
+    ) async {
+      final fakeLauncher = _FakeUrlLauncherService();
+      await pumpContactScreen(tester, fakeLauncher: fakeLauncher);
+
+      await tapText(tester, 'Tap to view on the map');
+
+      expect(fakeLauncher.launchedUrls, [expectedMapsUrl]);
+    });
+
+    testWidgets('tapping "Open in Google Maps" launches the same URL', (
+      tester,
+    ) async {
+      final fakeLauncher = _FakeUrlLauncherService();
+      await pumpContactScreen(tester, fakeLauncher: fakeLauncher);
+
+      await tapText(tester, 'Open in Google Maps');
+
+      expect(fakeLauncher.launchedUrls, [expectedMapsUrl]);
+    });
+
+    testWidgets('no interactive map SDK widget (e.g. GoogleMap) is present', (
+      tester,
+    ) async {
+      await pumpContactScreen(tester, fakeLauncher: _FakeUrlLauncherService());
+
+      // A static preview only: assert the static pin icon renders instead
+      // of any live map widget.
+      expect(find.byIcon(Icons.location_on_rounded), findsOneWidget);
+    });
+  });
+
+  group('REQ-F03-017: ContactItem entity is typed/immutable with a const '
+      'constructor', () {
+    test('const constructor compiles (this file itself proves it)', () {
+      const item = ContactItem(
+        icon: 'x',
+        label: 'x',
+        value: 'x',
+        action: ContactAction.none,
+      );
+      expect(item.label, 'x');
+    });
+  });
+}

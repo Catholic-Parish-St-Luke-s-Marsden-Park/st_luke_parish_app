@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:st_luke_parish_app/features/contact/presentation/screens/contact_screen.dart';
-import 'package:st_luke_parish_app/features/donate/presentation/screens/donate_screen.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_screen.dart';
-import 'package:st_luke_parish_app/features/ministries/presentation/screens/ministries_screen.dart';
 import 'package:st_luke_parish_app/features/news/presentation/screens/news_screen.dart';
 import 'package:st_luke_parish_app/features/prayer_request/presentation/screens/prayer_request_screen.dart';
 import 'package:st_luke_parish_app/features/resources/presentation/screens/resources_screen.dart';
 
-/// Covers REQ-F01-004: each of the remaining 7 nav destinations renders a
+/// Covers REQ-F01-004: each of the remaining nav destinations renders a
 /// distinct placeholder screen with no build errors. "No reference to real
 /// feature data" is verified by asserting each screen's own rendered
 /// title/icon (its only content) rather than any live/fetched data.
@@ -18,6 +15,17 @@ import 'package:st_luke_parish_app/features/resources/presentation/screens/resou
 /// stub, so it no longer belongs in this shared "still a placeholder"
 /// table. Its own real-content coverage now lives in
 /// `test/features/parish/parish_screen_test.dart`.
+///
+/// `MinistriesScreen`, `ContactScreen`, and `DonateScreen` were removed from
+/// this table as of feature 03-multi-pages (REQ-F03-001/011/019): none of
+/// the three renders the generic `PlaceholderScreen` stub any longer. Their
+/// own real-content coverage now lives in
+/// `test/features/ministries/ministries_screen_test.dart`,
+/// `test/features/ministries/ministry_detail_screen_test.dart`,
+/// `test/features/contact/contact_screen_test.dart`, and
+/// `test/shared/webview/simple_webview_screen_test.dart`
+/// (+ `test/features/donate/donate_screen_test.dart`). Masses and News
+/// remain untouched placeholder stubs (REQ-F03-026) and stay in this table.
 void main() {
   Future<void> pumpScreen(WidgetTester tester, Widget screen) async {
     await tester.pumpWidget(MaterialApp(home: screen));
@@ -34,21 +42,6 @@ void main() {
       screen: const NewsScreen(),
       title: 'News & Bulletins',
       icon: Icons.article_rounded,
-    ),
-    'MinistriesScreen': (
-      screen: const MinistriesScreen(),
-      title: 'Ministries',
-      icon: Icons.groups_rounded,
-    ),
-    'ContactScreen': (
-      screen: const ContactScreen(),
-      title: 'Contact & Map',
-      icon: Icons.location_on_rounded,
-    ),
-    'DonateScreen': (
-      screen: const DonateScreen(),
-      title: 'Donate',
-      icon: Icons.favorite_rounded,
     ),
     'ResourcesScreen': (
       screen: const ResourcesScreen(),
@@ -76,7 +69,7 @@ void main() {
     });
   }
 
-  test('all 7 destination titles are distinct from each other', () {
+  test('all remaining destination titles are distinct from each other', () {
     final titles = cases.values.map((c) => c.title).toSet();
     expect(titles.length, cases.length);
   });

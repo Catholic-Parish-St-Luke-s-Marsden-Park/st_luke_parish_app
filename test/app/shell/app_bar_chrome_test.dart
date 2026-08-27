@@ -175,7 +175,11 @@ void main() {
 
         for (final label in tabLabels) {
           await tester.tap(find.text(label));
-          await tester.pumpAndSettle();
+          // Donate's WebView loading state uses an indefinitely-animating
+          // CircularProgressIndicator, which would make pumpAndSettle hang
+          // forever; a bounded pump is sufficient to build the tab body.
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 300));
 
           expect(
             find.descendant(

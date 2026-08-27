@@ -1,0 +1,11 @@
+- **Decision ID:** ADR-0002
+- **Title:** Fix `UrlLauncherServiceImpl.launchExternal` to not require a host for `tel:`/`mailto:` schemes
+- **Feature:** 03-multi-pages
+- **Date:** 2026-08-27
+- **Status:** accepted
+- **Context:** `UrlLauncherService` (introduced in 02-parish-tab) validated every URL with `!uri.hasScheme || uri.host.isEmpty`. That check was only ever exercised against `https:` links (Church Leadership rows). `tel:` and `mailto:` URIs have no authority/host component by design (`Uri.parse('tel:0285300173').host` and `Uri.parse('mailto:foo@bar.com').host` are both `''`), so reusing the existing service unmodified for this feature's new `tel:`/`mailto:` launches (Ministries "Join Us" CTA, Contact Phone/Mobile/Email tiles) would make every one of those launches silently fail validation and return `false`, even though the URIs are perfectly valid.
+- **Decision:** Narrowed the host-required check to only the schemes that actually carry an authority component (`http`, `https`), via a small `_schemesRequiringHost` set. `tel:`/`mailto:` URIs now only need a valid scheme to pass validation before `canLaunchUrl`/`launchUrl` are attempted.
+- **Alternatives Considered:**
+  - Add a second, `tel`/`mailto`-specific launcher service — rejected: duplicates the abstraction the BA plan explicitly asked to reuse, and fragments the single injectable seam widget tests rely on (`urlLauncherServiceProvider`).
+  - Bypass `UrlLauncherService` for `tel:`/`mailto:` and call `url_launcher` directly in the CTA/tile widgets — rejected: violates root `CLAUDE.md`'s "no direct network/platform calls in widgets" rule and REQ-F03-027's testability requirement.
+- **Consequences:** `UrlLauncherService` now correctly validates all three schemes this app uses (`https`, `tel`, `mailto`). No behavior change for existing `https:` call sites (Parish tab leadership links). This is a shared `core/` file; any future feature adding another schemeless URI type (e.g. `sms:`) should extend `_schemesRequiringHost`'s exclusion, not re-add a host check.

@@ -12,13 +12,22 @@ abstract class UrlLauncherService {
   Future<bool> launchExternal(String url);
 }
 
+/// URI schemes that carry an authority/host component (e.g.
+/// `https://example.com`). `tel:` and `mailto:` URIs are valid without one
+/// (e.g. `tel:0285300173`, `mailto:someone@example.com`), so the host check
+/// below only applies to schemes in this set.
+const Set<String> _schemesRequiringHost = {'http', 'https'};
+
 class UrlLauncherServiceImpl implements UrlLauncherService {
   const UrlLauncherServiceImpl();
 
   @override
   Future<bool> launchExternal(String url) async {
     final uri = Uri.tryParse(url);
-    if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+    if (uri == null || !uri.hasScheme) {
+      return false;
+    }
+    if (_schemesRequiringHost.contains(uri.scheme) && uri.host.isEmpty) {
       return false;
     }
     if (!await canLaunchUrl(uri)) {
