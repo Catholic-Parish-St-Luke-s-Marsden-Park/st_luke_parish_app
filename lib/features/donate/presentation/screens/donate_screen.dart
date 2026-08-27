@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/placeholder_screen.dart';
+import '../../../../core/constants/external_links.dart';
+import '../../../../shared/webview/simple_webview_screen.dart';
 
-/// Placeholder for the Donate destination. The real donate flow (webview
-/// integration) is explicitly out of scope for this bootstrap slice.
+/// Donate destination: an in-app WebView loading the parish website's
+/// Donate page (`ExternalLinks.donate`). Renders as bare tab-body content
+/// inside `AppShell`'s shared `AppBar`/`Scaffold` — no per-tab title, per
+/// REQ-F02-016a.
 class DonateScreen extends StatelessWidget {
   const DonateScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const PlaceholderScreen(
-      title: 'Donate',
-      icon: Icons.favorite_rounded,
-    );
+    return const SimpleWebViewScreen(url: ExternalLinks.donate);
   }
 }
