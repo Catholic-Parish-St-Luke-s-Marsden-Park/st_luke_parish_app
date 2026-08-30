@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for release builds to make network requests, e.g. the
+         Donate tab's WebView and the News tab's live bulletins RSS fetch. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="st_luke_parish_app"
         android:name="${applicationName}"
