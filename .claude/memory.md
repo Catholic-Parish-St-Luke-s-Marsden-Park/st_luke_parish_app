@@ -1,11 +1,11 @@
 # System Memory & SDLC State Tracker
 
 ## Active State
-- **Current Feature:** 03-multi-pages
-- **Current Branch:** feature/03-multi-pages
-- **Current Phase:** pr
-- **Active Agent:** PR_AGENT
-- **Awaiting User Approval:** no — PR #17 open, awaiting manual merge via GitHub UI
+- **Current Feature:** 04-masses-tab
+- **Current Branch:** feature/04-masses-tab
+- **Current Phase:** ba
+- **Active Agent:** BA_AGENT
+- **Awaiting User Approval:** yes
 
 ## Workflow Model
 - Claude Code-specific SDLC
@@ -19,6 +19,7 @@
 - 3 open. See `.claude/risks/active-risks.md` — RISK-003 (leadership-entry + this feature's new `tel:`/`mailto:`/`https:` external links silently fail on real Android devices, missing AndroidManifest `<queries>` block, tracked via GitHub issue #12; scope addendum added 2026-08-27 during 03-multi-pages verifier phase to cover `tel`/`mailto`, not just `https`) and RISK-004 (iOS `Info.plist` `LSApplicationQueriesSchemes` unverified for the same class of gap), both originally logged 2026-08-26 during the 02-parish-tab verifier phase. RISK-005 (new, logged 2026-08-27 during the 03-multi-pages verifier phase): release/`main` AndroidManifest is missing `android.permission.INTERNET`, which the Donate tab's WebView needs to load any content in a release build — masked in all testing so far because debug/profile builds each carry their own dev-only copy of that permission; flagged higher priority than RISK-003/004 for Deployer. RISK-002 (01-bootstrap-app) remains resolved.
 
 ## Latest Session Logs
+- 2026-08-30_11-22: Started feature 04-masses-tab on branch feature/04-masses-tab
 - 2026-08-27 (PR agent): Independently re-verified the merge-to-main checklist against fresh repo evidence before opening the PR: working tree clean apart from this phase's own pending memory-header update; `git fetch origin main` + `git rev-list --left-right --count origin/main...feature/03-multi-pages` (0 behind, 6 ahead — no rebase needed); `dart format . --set-exit-if-changed` (67 files, 0 changed); `flutter analyze` (No issues found!); `flutter test` (98/98 passing); confirmed all six phase plan artifacts plus the verification report present on disk. Did not re-run `flutter build apk --debug` this session — relied on the deployer phase's already-passing build-validation result (`.claude/releases/2026-08-27_22-22-03-multi-pages-release-readiness.md`), explicitly noted as not independently re-confirmed in this pass, matching 02-parish-tab's PR-agent precedent. Confirmed via `gh auth status` that `johannisanth-ux` is the active account with `repo` scope (same account used for PR #1 and PR #16); the other locally authenticated account, `NisanthSimon`, was left inactive. Filled `.claude/git/pr-templates/2026-08-27_22-22-03-multi-pages-pr.md` from the PR-readiness note's draft, with RISK-005 given prominent, standalone, first-read disclosure ahead of RISK-003 (GitHub issue #12)/RISK-004, per the user's explicit instruction and the deployer-agent's release-readiness note. Pushed `feature/03-multi-pages` to origin and opened [PR #17](https://github.com/Catholic-Parish-St-Luke-s-Marsden-Park/st_luke_parish_app/pull/17) against `main`. Updated feature index PR Status column and this file's Active State header to reflect "PR open — awaiting manual merge." Did not run `gh pr merge` or any merge/close action; merge remains manual via GitHub UI.
 - 2026-08-27 (user): Deployer phase for 03-multi-pages approved and committed (`a80509a`); user requested pr-agent to push the branch and open the PR against main. Advancing to PR phase.
 - 2026-08-27_22-31: Completed phase deployer for 03-multi-pages
