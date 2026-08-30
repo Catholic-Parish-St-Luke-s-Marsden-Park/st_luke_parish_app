@@ -43,6 +43,15 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
 - **Owner:** Deployer
 - **Status:** open
 
+- **Risk ID:** RISK-006
+- **Title:** No confirmed live-render pass/fail sign-off for the Masses tab (04-masses-tab) — visualiser phase closed on a clean, exception-free app launch only, with no human review of the actual rendered content
+- **Feature:** 04-masses-tab
+- **Impact:** Medium. Independently read `.claude/plans/visualiser/2026-08-30_13-17-04-masses-tab.md` and `.claude/journal/2026-08-30_13-17-04-masses-tab-visualiser.md` this session: the app was launched successfully on an iPhone 16e simulator with no exceptions in the launch log, and the user was given a 6-point manual-check checklist (hero without address subtitle, "What's On" sub-group order, 9 total rows across both sections, no icons/emoji, no tappable rows, weekday+time-only rows), but the user did not report specific pass/fail feedback before requesting the verifier-agent directly. Unlike every prior feature in this SDLC (01-bootstrap-app, 02-parish-tab, 03-multi-pages), this visualiser pass produced no explicit approval and no filed defects — only "it built and launched." Widget-test coverage (a 9-combination screen-size x `TextScaler` overflow sweep) is thorough and confirms no *exception*-raising overflow, but cannot substitute for a human confirming legibility/spacing/wrapping on a real rendering engine — e.g. whether "Marsden Park Care Community Mass" or "Reconciliation from 4:30-5:25pm" wrap awkwardly, or whether section/sub-group spacing reads well at a glance. This is a lower-severity gap than RISK-002 was (that gap turned out to hide nothing; 02-parish-tab's analogous gap did hide a real bug), since this feature has no network calls, no external links, and no platform-channel code, but it is a genuine, unconfirmed gap in the SDLC's verification chain nonetheless.
+- **Likelihood:** Unknown/unconfirmed either way — no evidence currently exists to rule a real live-render defect in or out for this feature.
+- **Mitigation:** Run the app on an iOS or Android simulator/device and have a human visually confirm the Masses tab: hero banner (no address subtitle), "What's On" section (3 sub-groups in order, 7 rows, no icons/tap affordance), "Reconciliation & Sacraments" section (3 rows), and specifically confirm the two longer strings ("Marsden Park Care Community Mass", "Reconciliation from 4:30-5:25pm") wrap cleanly at default and increased system text size. Recommended before or during the Deployer phase, mirroring how RISK-002 (01-bootstrap-app's analogous gap) was closed via a live emulator run.
+- **Owner:** Deployer (or a targeted Visualiser follow-up before merge, at the user's discretion)
+- **Status:** open
+
 ## Resolved Risks
 
 - **Risk ID:** RISK-002

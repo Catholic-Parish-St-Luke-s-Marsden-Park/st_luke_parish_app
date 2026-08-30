@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_screen.dart';
 import 'package:st_luke_parish_app/features/news/presentation/screens/news_screen.dart';
 import 'package:st_luke_parish_app/features/prayer_request/presentation/screens/prayer_request_screen.dart';
 import 'package:st_luke_parish_app/features/resources/presentation/screens/resources_screen.dart';
@@ -24,8 +23,13 @@ import 'package:st_luke_parish_app/features/resources/presentation/screens/resou
 /// `test/features/ministries/ministry_detail_screen_test.dart`,
 /// `test/features/contact/contact_screen_test.dart`, and
 /// `test/shared/webview/simple_webview_screen_test.dart`
-/// (+ `test/features/donate/donate_screen_test.dart`). Masses and News
-/// remain untouched placeholder stubs (REQ-F03-026) and stay in this table.
+/// (+ `test/features/donate/donate_screen_test.dart`).
+///
+/// `MassesScreen` was removed from this table as of feature 04-masses-tab
+/// (REQ-F04-001): it no longer renders the generic `PlaceholderScreen`
+/// stub either. Its own real-content coverage now lives in
+/// `test/features/masses/masses_screen_test.dart`. News remains the last
+/// untouched placeholder stub and stays in this table.
 void main() {
   Future<void> pumpScreen(WidgetTester tester, Widget screen) async {
     await tester.pumpWidget(MaterialApp(home: screen));
@@ -33,11 +37,6 @@ void main() {
   }
 
   final cases = <String, ({Widget screen, String title, IconData icon})>{
-    'MassesScreen': (
-      screen: const MassesScreen(),
-      title: 'Masses & Events',
-      icon: Icons.calendar_month_rounded,
-    ),
     'NewsScreen': (
       screen: const NewsScreen(),
       title: 'News & Bulletins',
