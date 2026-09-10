@@ -41,6 +41,21 @@ flutter run
 on generated output (`.g.dart`), and the app will not compile without it. Use
 `dart run build_runner watch --delete-conflicting-outputs` while developing.
 
+### Saint of the Day (OpenRouter API key)
+
+The "Saint of the Day" feature calls OpenRouter directly and needs an API key
+supplied at build/run time — it is never hardcoded in source (see
+`.claude/decisions/0005-saint-of-the-day-direct-openrouter-call.md`):
+
+```bash
+flutter run --dart-define=OPENROUTER_API_KEY=sk-or-...
+```
+
+For a release build, pass the same `--dart-define` flag to `flutter build`.
+Without it, the screen shows a "not configured" message instead of sending an
+unauthenticated request. CI/release-build wiring for this define is a
+Deployer-phase follow-up for feature 06, not yet automated.
+
 Checks to run before opening a pull request:
 
 ```bash

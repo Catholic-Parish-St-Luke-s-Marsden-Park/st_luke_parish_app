@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riverpod/misc.dart' show Override;
 import 'package:st_luke_parish_app/app/shell/app_shell.dart';
 import 'package:st_luke_parish_app/app/shell/nav_index_provider.dart';
 import 'package:st_luke_parish_app/app/shell/widgets/app_bar_logo.dart';
@@ -8,14 +9,21 @@ import 'package:st_luke_parish_app/app/shell/widgets/ask_luke_pill.dart';
 import 'package:st_luke_parish_app/app/shell/widgets/saint_of_the_day_pill.dart';
 import 'package:st_luke_parish_app/core/theme/app_theme.dart';
 import 'package:st_luke_parish_app/features/ask_luke/presentation/screens/ask_luke_screen.dart';
+import 'package:st_luke_parish_app/features/saint_of_the_day/domain/entities/saint_of_the_day.dart';
+import 'package:st_luke_parish_app/features/saint_of_the_day/presentation/providers/saint_of_the_day_provider.dart';
+import 'package:st_luke_parish_app/features/saint_of_the_day/presentation/screens/saint_of_the_day_screen.dart';
 import 'package:st_luke_parish_app/shared/widgets/app_pill_button.dart';
 
 /// Covers the shared AppBar chrome acceptance criteria: REQ-F02-014
 /// through REQ-F02-016a and REQ-F02-017 through REQ-F02-019.
 void main() {
-  Future<void> pumpShell(WidgetTester tester) async {
+  Future<void> pumpShell(
+    WidgetTester tester, {
+    List<Override> overrides = const [],
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
+        overrides: overrides,
         child: MaterialApp(theme: AppTheme.light(), home: const AppShell()),
       ),
     );
@@ -107,35 +115,48 @@ void main() {
     });
   });
 
-  group('REQ-F02-017: Saint of the Day pill shows a placeholder on tap', () {
-    testWidgets('tapping the pill shows a "coming soon" dialog with no '
-        'real content', (tester) async {
-      await pumpShell(tester);
+  group(
+    'REQ-F06-001: Saint of the Day pill performs a full-screen navigation '
+    '(supersedes REQ-F02-017\'s placeholder dialog, removed by feature 06)',
+    () {
+      testWidgets('tapping "Saint of the Day" pushes SaintOfTheDayScreen via '
+          'Navigator.push, not a dialog/bottom sheet', (tester) async {
+        await pumpShell(
+          tester,
+          overrides: [
+            // Never the real OpenRouter datasource/SharedPreferences in a
+            // shell-level test — the screen's own content/failure states
+            // are covered by saint_of_the_day_screen_test.dart.
+            saintOfTheDayProvider.overrideWith(
+              (ref) async => const SaintOfTheDay(
+                name: 'Saint Example',
+                feast: '',
+                bornDied: '',
+                about: '',
+                saying: '',
+                didYouKnow: '',
+                patronOf: '',
+                prayer: '',
+                dateKey: '2026-09-01',
+                displayDate: 'September 1',
+              ),
+            ),
+          ],
+        );
 
-      await tester.tap(find.text('Saint of the Day'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Saint of the Day'));
+        await tester.pumpAndSettle();
 
-      expect(find.byType(AlertDialog), findsOneWidget);
-      expect(
-        find.descendant(
-          of: find.byType(AlertDialog),
-          matching: find.text('Saint of the Day'),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(
-          of: find.byType(AlertDialog),
-          matching: find.text('Coming soon.'),
-        ),
-        findsOneWidget,
-      );
-
-      await tester.tap(find.text('Close'));
-      await tester.pumpAndSettle();
-      expect(find.byType(AlertDialog), findsNothing);
-    });
-  });
+        expect(find.byType(SaintOfTheDayScreen), findsOneWidget);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(BottomSheet), findsNothing);
+        // A full-screen push shows the Saint of the Day screen with no
+        // visible shell underneath it (it's covering the whole route) —
+        // same assertion style as the Ask Luke pill's REQ-F02-018 test.
+        expect(find.byType(AppShell), findsNothing);
+      });
+    },
+  );
 
   group('REQ-F02-018: Ask Luke pill performs a full-screen navigation', () {
     testWidgets(

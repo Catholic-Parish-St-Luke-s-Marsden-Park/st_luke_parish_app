@@ -120,8 +120,16 @@ void main() {
             ),
           ),
         ],
+        // Riverpod 3.x retries a failing provider automatically (up to
+        // 10x with backoff) before settling into AsyncError; disabled
+        // here so the failure surfaces immediately and deterministically.
+        retry: (retryCount, error) => null,
       );
       addTearDown(container.dispose);
+
+      // Autodispose providers can otherwise be torn down while still
+      // loading; an active listener keeps this one alive until it settles.
+      container.listen(bulletinsProvider, (_, _) {});
 
       await expectLater(
         container.read(bulletinsProvider.future),
@@ -140,8 +148,13 @@ void main() {
             ),
           ),
         ],
+        // See the network-failure test above for why retry is disabled.
+        retry: (retryCount, error) => null,
       );
       addTearDown(container.dispose);
+
+      // See the network-failure test above for why this listener is needed.
+      container.listen(bulletinsProvider, (_, _) {});
 
       await expectLater(
         container.read(bulletinsProvider.future),
