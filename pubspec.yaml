@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+    
+  flutter_dotenv: ^5.1.0 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -44,6 +46,12 @@ dependencies:
   http: ^1.2.2
   xml: ^6.5.0
   shared_preferences: ^2.3.3
+
+  # Firebase & Notifications Dependencies
+  firebase_core: ^3.0.0
+  firebase_messaging: ^15.0.0
+  flutter_local_notifications: ^17.0.0
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
@@ -85,6 +93,8 @@ flutter:
   assets:
     - assets/images/branding/
     - assets/images/leadership/
+    # App-side config only. Never bundle server/.env: it holds the API key.
+    - assets/app.env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

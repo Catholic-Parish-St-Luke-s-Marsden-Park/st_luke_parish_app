@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "899235635763",
+    "project_id": "st-luke-s-parish-app",
+    "storage_bucket": "st-luke-s-parish-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:899235635763:android:4e861b1c25b974e5c87946",
+        "android_client_info": {
+          "package_name": "au.org.stlukesmarsdenpark.st_luke_parish_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBegkfGZj9wXJqr5gI_20k2drCjzaimcJQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
