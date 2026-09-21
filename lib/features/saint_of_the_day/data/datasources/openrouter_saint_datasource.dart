@@ -79,25 +79,55 @@ class OpenRouterSaintDatasource {
       );
     }
 
-    final Map<String, dynamic> data;
+    // Decoded explicitly rather than via `response.body`. Not a bug fix:
+    // `http` 1.6.0 already special-cases `application/json` with no
+    // charset to UTF-8, which is exactly what OpenRouter sends. This
+    // just removes the dependence on that behaviour — `response.body`
+    // falls back to *latin1* for any other content type, so a proxy or
+    // gateway answering `text/plain` would turn "Thérèse" into
+    // "ThÃ©rÃ¨se" and cache the mojibake for the whole day. JSON is
+    // UTF-8 by spec (RFC 8259), so decode the bytes as UTF-8 outright.
+    final String body;
     try {
-      data = jsonDecode(response.body) as Map<String, dynamic>;
+      body = utf8.decode(response.bodyBytes);
     } catch (e) {
       throw SaintOfTheDayParsingFailure(
-        'OpenRouter response was not valid JSON: $e',
+        'OpenRouter response was not valid UTF-8: $e',
       );
     }
 
-    final choices = data['choices'] as List?;
-    String? text;
-    if (choices != null && choices.isNotEmpty) {
+    // Everything that reads into the response envelope is inside this
+    // try: `choices` may be absent or not a list, its first element may
+    // not be an object, and `content` is a list of parts rather than a
+    // string on some providers/models. Left outside, any of those threw a
+    // raw TypeError that escaped as an untyped error and was relabelled
+    // downstream as a *network* failure — so the user was told to check
+    // their connection over a response-shape problem.
+    final String? text;
+    try {
+      final data = jsonDecode(body) as Map<String, dynamic>;
+      final choices = data['choices'] as List?;
+      if (choices == null || choices.isEmpty) {
+        throw const SaintOfTheDayParsingFailure(
+          'No content returned from the model.',
+        );
+      }
       final message =
           (choices.first as Map<String, dynamic>)['message']
               as Map<String, dynamic>?;
       text = message?['content'] as String?;
+    } on SaintOfTheDayFailure {
+      rethrow;
+    } catch (e) {
+      throw SaintOfTheDayParsingFailure(
+        'OpenRouter response had an unexpected shape: $e',
+      );
     }
 
-    if (text == null || text.isEmpty) {
+    // `trim`, not a bare `isEmpty`: a truncated or refused generation can
+    // come back as whitespace only, which would otherwise sail past the
+    // one guard that exists to catch it.
+    if (text == null || text.trim().isEmpty) {
       throw const SaintOfTheDayParsingFailure(
         'No content returned from the model.',
       );

@@ -43,8 +43,15 @@ class SaintOfTheDaySectionCard extends StatelessWidget {
         children: [
           Text(
             label.toUpperCase(),
+            // Both label colours are set for WCAG AA (4.5:1), measured
+            // against the worst point of each background:
+            //   - textMuted #6B7A99 on white measured 4.31:1 (fails);
+            //     textSecondary #4A4A6A measures 8.47:1.
+            //   - lightGold #E8C060 measured 3.07:1 against the
+            //     lightBlue end of heroGradient (fails); paleGold
+            //     #FDF3D0 measures 4.79:1 and stays in the gold family.
             style: textTheme.labelMedium?.copyWith(
-              color: emphasized ? AppColors.lightGold : AppColors.textMuted,
+              color: emphasized ? AppColors.paleGold : AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),

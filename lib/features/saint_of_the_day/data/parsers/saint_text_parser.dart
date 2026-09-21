@@ -31,7 +31,19 @@ class ParsedSaintText {
 /// empty string" behaviour (REQ-F06-006).
 String _extractSection(String text, String label) {
   final regex = RegExp(
-    '\\*\\*$label:\\*\\*\\s*([\\s\\S]*?)(?=\\*\\*[A-Z]|\$)',
+    // The label is escaped rather than interpolated raw: every current
+    // caller passes a metachar-free literal, but a future label
+    // containing `(`, `+` or `?` would otherwise silently change the
+    // pattern's meaning or throw a FormatException.
+    //
+    // The terminator looks for the next bold label *with a colon*
+    // (`**PATRON OF:**`) rather than merely the next bold run. The
+    // previous `(?=\*\*[A-Z])` was applied under `caseSensitive: false`,
+    // where `[A-Z]` also matches lowercase, so any emphasis inside a
+    // section body — "declared **Doctor of the Church** in 1997" — ended
+    // the match there and silently truncated the rest of the section.
+    '\\*\\*${RegExp.escape(label)}:\\*\\*\\s*'
+    '([\\s\\S]*?)(?=\\*\\*[^*\\n]{1,40}:\\*\\*|\$)',
     caseSensitive: false,
   );
   final match = regex.firstMatch(text);

@@ -92,4 +92,53 @@ Saint John Vianney, pray for us that we may love the Sacrament of Confession.
 
     expect(parsed.name, 'Saint Lower Case');
   });
+
+  group('bold emphasis inside a section body', () {
+    // The terminator used to be `(?=\*\*[A-Z])` under
+    // `caseSensitive: false`, where `[A-Z]` also matches lowercase — so
+    // any `**...**` emphasis inside a body ended the match there and
+    // silently dropped the rest of the section. Section headers are
+    // distinguished by their trailing colon, not by being bold.
+    test('does not truncate the section at emphasised text', () {
+      const text = '''
+**SAINT NAME:**
+Saint Thérèse of Lisieux
+
+**ABOUT:**
+She was declared a **Doctor of the Church** in 1997, one of only four women so honoured.
+
+**PRAYER:**
+A short prayer.
+''';
+
+      final parsed = parseSaintText(text);
+
+      expect(parsed.about, contains('Doctor of the Church'));
+      expect(parsed.about, contains('one of only four women so honoured.'));
+      expect(parsed.prayer, 'A short prayer.');
+    });
+
+    test('still stops at the next real section header', () {
+      const text = '''
+**ABOUT:**
+Body text here.
+
+**PRAYER:**
+A short prayer.
+''';
+
+      final parsed = parseSaintText(text);
+
+      expect(parsed.about, 'Body text here.');
+      expect(parsed.prayer, 'A short prayer.');
+    });
+
+    test('emphasis in the final section runs to the end of the text', () {
+      const text = '**PRAYER:**\nLord, through **Saint Luke**, hear us.\n';
+
+      final parsed = parseSaintText(text);
+
+      expect(parsed.prayer, 'Lord, through **Saint Luke**, hear us.');
+    });
+  });
 }

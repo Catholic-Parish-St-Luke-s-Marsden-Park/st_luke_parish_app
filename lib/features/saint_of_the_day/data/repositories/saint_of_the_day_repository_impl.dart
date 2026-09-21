@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import '../../domain/entities/saint_of_the_day.dart';
 import '../../domain/failures/saint_of_the_day_failure.dart';
 import '../../domain/repositories/saint_of_the_day_repository.dart';
@@ -11,26 +13,38 @@ import '../sydney_date.dart';
 /// failure mode into a [SaintOfTheDayFailure] subtype rather than letting a
 /// raw exception escape to the provider/UI.
 class SaintOfTheDayRepositoryImpl implements SaintOfTheDayRepository {
-  SaintOfTheDayRepositoryImpl(this._datasource, this._cache);
+  /// [clock] returns the current Sydney-local wall-clock time. It exists
+  /// so tests can drive the day-rollover behaviour in REQ-F06-009
+  /// directly; production call sites use the default. Without the seam a
+  /// repository test can only assert against the real wall clock, which
+  /// both fails to cover rollover and is itself flaky across Sydney
+  /// midnight.
+  SaintOfTheDayRepositoryImpl(
+    this._datasource,
+    this._cache, {
+    DateTime Function() clock = sydneyNow,
+  }) : _clock = clock;
 
   final OpenRouterSaintDatasource _datasource;
   final SaintOfTheDayCache _cache;
+  final DateTime Function() _clock;
 
   @override
   Future<SaintOfTheDay> getTodaysSaint() async {
-    final sydneyLocal = sydneyNow();
+    final sydneyLocal = _clock();
     final dateKey = sydneyDateKey(sydneyLocal);
 
     // REQ-F06-008: cache hit -> no network call.
     final cached = await _cache.read(dateKey);
     if (cached != null) return cached;
 
-    // REQ-F06-003: surfaced as a typed failure before any request is sent.
-    if (!_datasource.isConfigured) {
-      throw const SaintOfTheDayNotConfiguredFailure(
-        'OPENROUTER_API_KEY was not supplied at build/run time.',
-      );
-    }
+    // REQ-F06-003 is enforced by the datasource itself, which owns the
+    // API key and throws SaintOfTheDayNotConfiguredFailure before
+    // issuing a request. That failure reaches the caller through the
+    // `on SaintOfTheDayFailure { rethrow; }` below. A second copy of the
+    // check (and of its message) used to live here and shadowed the
+    // datasource's, making that branch unreachable outside its own unit
+    // test and giving the RISK-008 follow-up two places to edit.
 
     final String rawText;
     try {
@@ -85,7 +99,26 @@ class SaintOfTheDayRepositoryImpl implements SaintOfTheDayRepository {
 
     // REQ-F06-009: write-through; a new date key naturally supersedes
     // yesterday's entry since `read` only matches on an exact date-key hit.
-    await _cache.write(dateKey, result);
+    //
+    // Caching is best-effort and must not be able to fail the read: the
+    // content has already been fetched and paid for. Unguarded, a
+    // shared_preferences platform-channel failure (disk full, channel
+    // error while backgrounding) would discard a good result, show the
+    // generic "something went wrong" view, and escape as a
+    // non-SaintOfTheDayFailure — breaking the contract stated in
+    // `domain/repositories/saint_of_the_day_repository.dart`.
+    try {
+      await _cache.write(dateKey, result);
+    } catch (e) {
+      // Logged, not silent (CLAUDE.md), but deliberately not rethrown:
+      // the user still gets today's saint, they just pay for another
+      // fetch next time the screen is opened. No key or response body is
+      // included.
+      developer.log(
+        'Failed to cache the saint for $dateKey: $e',
+        name: 'SaintOfTheDayRepository',
+      );
+    }
 
     return result;
   }

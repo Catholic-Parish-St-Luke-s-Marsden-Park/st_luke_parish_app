@@ -30,7 +30,10 @@ class SaintOfTheDayHeader extends StatelessWidget {
             child: Text(
               saint.displayDate.toUpperCase(),
               style: AppTypography.body(
-                fontSize: 11,
+                // 12 is the project's documented floor for hardcoded
+                // sizes; this was 11. textPrimary on the gold pill
+                // measures 6.95:1, comfortably past AA.
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
                 letterSpacing: 1.0,
@@ -49,7 +52,13 @@ class SaintOfTheDayHeader extends StatelessWidget {
             Text(
               saint.feast,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.75),
+                // heroGradient runs navy -> lightBlue, and the feast line
+                // sits at the bottom of the header where it wraps into
+                // the lighter end. At alpha 0.75 that measured 3.76:1
+                // against lightBlue #3A6BB5 — under the 4.5:1 AA floor.
+                // 0.92 measures 4.77:1 and matches the emphasized section
+                // card's body treatment.
+                color: Colors.white.withValues(alpha: 0.92),
                 fontStyle: FontStyle.italic,
               ),
             ),

@@ -29,10 +29,30 @@ class _FakeDatasource implements OpenRouterSaintDatasource {
   @override
   final bool isConfigured;
 
+  /// Mirrors the real datasource: the not-configured check lives here,
+  /// where the API key lives, and throws before any request is made. The
+  /// repository no longer duplicates it.
   @override
   Future<String> fetchSaintText(String fullDate) async {
+    if (!isConfigured) {
+      throw const SaintOfTheDayNotConfiguredFailure(
+        'OPENROUTER_API_KEY was not supplied at build/run time.',
+      );
+    }
     if (_error != null) throw _error;
     return _text!;
+  }
+}
+
+/// A cache whose `write` always fails, for asserting that caching is
+/// best-effort and cannot fail a read that already succeeded.
+class _FailingWriteCache implements SaintOfTheDayCache {
+  @override
+  Future<SaintOfTheDay?> read(String dateKey) async => null;
+
+  @override
+  Future<void> write(String dateKey, SaintOfTheDay value) async {
+    throw Exception('shared_preferences write failed');
   }
 }
 
@@ -198,6 +218,76 @@ void main() {
         expect(cache.writeCount, 0);
       },
     );
+  });
+
+  group('getTodaysSaint — caching is best-effort', () {
+    test(
+      'a cache write failure does not fail an otherwise good read',
+      () async {
+        // The content has already been fetched and paid for; a
+        // shared_preferences failure must not turn it into an error state.
+        final datasource = _FakeDatasource.returningText(
+          '**SAINT NAME:**\nSaint Resilient\n**ABOUT:**\nStill returned.\n',
+        );
+        final repository = SaintOfTheDayRepositoryImpl(
+          datasource,
+          _FailingWriteCache(),
+        );
+
+        final result = await repository.getTodaysSaint();
+
+        expect(result.name, 'Saint Resilient');
+        expect(result.about, 'Still returned.');
+      },
+    );
+  });
+
+  group('getTodaysSaint — injectable clock (REQ-F06-009)', () {
+    // The repository takes a clock so day rollover can be driven
+    // directly, rather than the test depending on the real wall clock
+    // (which cannot cover rollover and is flaky across Sydney midnight).
+    const sourceText = '**SAINT NAME:**\nSaint Monday\n**ABOUT:**\nA saint.\n';
+
+    test('derives the cache key from the injected clock', () async {
+      final cache = _FakeCache();
+      final repository = SaintOfTheDayRepositoryImpl(
+        _FakeDatasource.returningText(sourceText),
+        cache,
+        clock: () => DateTime(2026, 9, 1, 9),
+      );
+
+      final result = await repository.getTodaysSaint();
+
+      expect(result.dateKey, '2026-09-01');
+      expect(result.displayDate, 'September 1');
+    });
+
+    test('a new day misses the previous day\'s entry and re-fetches', () async {
+      final cache = _FakeCache();
+      var now = DateTime(2026, 9, 1, 23);
+
+      final repository = SaintOfTheDayRepositoryImpl(
+        _FakeDatasource.returningText(sourceText),
+        cache,
+        clock: () => now,
+      );
+
+      final day1 = await repository.getTodaysSaint();
+      expect(day1.dateKey, '2026-09-01');
+      expect(cache.writeCount, 1);
+
+      // Same day again -> cache hit, no additional write.
+      await repository.getTodaysSaint();
+      expect(cache.writeCount, 1);
+
+      // Roll over past Sydney midnight.
+      now = DateTime(2026, 9, 2, 1);
+      final day2 = await repository.getTodaysSaint();
+
+      expect(day2.dateKey, '2026-09-02');
+      expect(day2.displayDate, 'September 2');
+      expect(cache.writeCount, 2);
+    });
   });
 
   group('getTodaysSaint — datasource failure propagation', () {
