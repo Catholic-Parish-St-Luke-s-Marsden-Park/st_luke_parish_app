@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/data/cache/saint_of_the_day_cache.dart';
@@ -77,6 +79,80 @@ void main() {
     expect(await cache.read('2026-09-01'), isNull);
     final result = await cache.read('2026-09-02');
     expect(result?.name, 'Saint Tomorrow');
+  });
+
+  group('commit-last write ordering', () {
+    test('the value is written before the date key it is read by', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final cache = SharedPreferencesSaintOfTheDayCache(prefs);
+
+      await cache.write('2026-09-01', saint);
+
+      // Both keys are present after a complete write; the ordering only
+      // matters for what an *interrupted* write leaves behind, which the
+      // next two tests cover.
+      expect(prefs.getString('saint_of_the_day_cache_value'), isNotNull);
+      expect(prefs.getString('saint_of_the_day_cache_date_key'), '2026-09-01');
+    });
+
+    test(
+      'an interrupted write cannot serve yesterday under today\'s key',
+      () async {
+        // Simulates a process killed between the two writes under the old
+        // key-first ordering: the date key says today, the stored value is
+        // still yesterday's. That entry must never be served.
+        SharedPreferences.setMockInitialValues({
+          'saint_of_the_day_cache_date_key': '2026-09-02',
+          'saint_of_the_day_cache_value': jsonEncode({
+            'name': 'Yesterday Saint',
+            'feast': '',
+            'bornDied': '',
+            'about': 'Stale content',
+            'saying': '',
+            'didYouKnow': '',
+            'patronOf': '',
+            'prayer': '',
+            'dateKey': '2026-09-01',
+            'displayDate': 'September 1',
+          }),
+        });
+        final prefs = await SharedPreferences.getInstance();
+        final cache = SharedPreferencesSaintOfTheDayCache(prefs);
+
+        expect(await cache.read('2026-09-02'), isNull);
+      },
+    );
+
+    test('an interrupted write leaves a clean miss, not a stale hit', () async {
+      // Under commit-last, the failure window leaves the *old* date key
+      // beside the new value — which simply does not match today, so the
+      // next read misses and re-fetches.
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final cache = SharedPreferencesSaintOfTheDayCache(prefs);
+      await cache.write('2026-09-01', saint);
+
+      // The value for the new day lands, but the process dies before the
+      // date key is committed.
+      await prefs.setString(
+        'saint_of_the_day_cache_value',
+        jsonEncode({
+          'name': 'Today Saint',
+          'feast': '',
+          'bornDied': '',
+          'about': 'Fresh content',
+          'saying': '',
+          'didYouKnow': '',
+          'patronOf': '',
+          'prayer': '',
+          'dateKey': '2026-09-02',
+          'displayDate': 'September 2',
+        }),
+      );
+
+      expect(await cache.read('2026-09-02'), isNull);
+    });
   });
 
   test('a corrupted cache entry is treated as a miss, not a crash', () async {

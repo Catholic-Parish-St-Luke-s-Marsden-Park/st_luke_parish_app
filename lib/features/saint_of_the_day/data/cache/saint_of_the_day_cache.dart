@@ -43,6 +43,11 @@ class SharedPreferencesSaintOfTheDayCache implements SaintOfTheDayCache {
 
     try {
       final json = jsonDecode(raw) as Map<String, dynamic>;
+      // Second line of defence behind `write`'s commit-last ordering: the
+      // stored entry carries its own date key, so an entry that does not
+      // belong to the requested date is a miss even if the standalone
+      // key field says otherwise.
+      if (json['dateKey'] != dateKey) return null;
       return SaintOfTheDay(
         name: json['name'] as String,
         feast: json['feast'] as String,
@@ -65,8 +70,16 @@ class SharedPreferencesSaintOfTheDayCache implements SaintOfTheDayCache {
 
   @override
   Future<void> write(String dateKey, SaintOfTheDay value) async {
-    await _prefs.setString(_dateKeyKey, dateKey);
-    await _prefs.setString(
+    // Commit-last ordering. The date key is the field `read` matches on,
+    // so it is written *after* the value it points at, never before: if
+    // the process is killed (backgrounded, OOM) or the second write fails
+    // partway through, the still-stale key simply fails to match and the
+    // next read is a clean miss that re-fetches. Writing the key first
+    // would instead leave today's key pointing at yesterday's entry,
+    // which decodes successfully and renders as a silent `AsyncData`
+    // success — yesterday's saint, with yesterday's date in the header,
+    // for the rest of the day and with no retry path out of it.
+    final wroteValue = await _prefs.setString(
       _valueKey,
       jsonEncode({
         'name': value.name,
@@ -81,5 +94,10 @@ class SharedPreferencesSaintOfTheDayCache implements SaintOfTheDayCache {
         'displayDate': value.displayDate,
       }),
     );
+    // A failed value write leaves the cache untouched rather than
+    // half-committed — the next read misses and re-fetches.
+    if (!wroteValue) return;
+
+    await _prefs.setString(_dateKeyKey, dateKey);
   }
 }

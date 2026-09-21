@@ -55,6 +55,21 @@ class SaintOfTheDayRepositoryImpl implements SaintOfTheDayRepository {
       );
     }
 
+    // A 200 response carrying no recognisable `**LABEL:**` sections — a
+    // refusal ("I'm sorry, I can't help with that"), a truncated
+    // generation, or plain prose — parses tolerantly into the default
+    // name and eight empty strings. Left unchecked, that renders as an
+    // `AsyncData` success: header only, zero section cards, no error view
+    // and no "Try again" button. Caching it would then pin the user to
+    // that blank page for the rest of the Sydney day. Treat it as a
+    // parsing failure so the retry-capable error view is shown instead,
+    // and so nothing is written to the cache.
+    if (!_hasRenderableContent(parsed)) {
+      throw const SaintOfTheDayParsingFailure(
+        'The model response contained no recognisable saint sections.',
+      );
+    }
+
     final result = SaintOfTheDay(
       name: parsed.name,
       feast: parsed.feast,
@@ -74,4 +89,18 @@ class SaintOfTheDayRepositoryImpl implements SaintOfTheDayRepository {
 
     return result;
   }
+
+  /// Whether [parsed] carries at least one section the screen can
+  /// actually render. `name` is deliberately excluded: it falls back to
+  /// "Saint of the Day" when absent (REQ-F06-006), so it is never empty
+  /// and cannot distinguish a good parse from a failed one. `feast` is
+  /// excluded for the same practical reason — on its own it yields a
+  /// header pill and no content.
+  bool _hasRenderableContent(ParsedSaintText parsed) =>
+      parsed.about.isNotEmpty ||
+      parsed.bornDied.isNotEmpty ||
+      parsed.saying.isNotEmpty ||
+      parsed.didYouKnow.isNotEmpty ||
+      parsed.patronOf.isNotEmpty ||
+      parsed.prayer.isNotEmpty;
 }

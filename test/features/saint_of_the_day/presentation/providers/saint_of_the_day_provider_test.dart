@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/app/provider_retry.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/domain/entities/saint_of_the_day.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/domain/failures/saint_of_the_day_failure.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/domain/repositories/saint_of_the_day_repository.dart';
@@ -61,10 +62,11 @@ void main() {
           ),
         ),
       ],
-      // Riverpod 3.x retries a failing provider automatically (up to 10x
-      // with backoff) before settling into AsyncError; disabled here so
-      // the failure surfaces immediately and deterministically in tests.
-      retry: (retryCount, error) => null,
+      // The app's own retry policy (`main.dart` passes the same symbol
+      // to its ProviderScope): no automatic retry, so a failure settles
+      // into AsyncError immediately. Using it here rather than a
+      // test-local literal keeps test and production behaviour in step.
+      retry: noAutomaticRetry,
     );
     addTearDown(container.dispose);
 
@@ -88,7 +90,7 @@ void main() {
         ),
       ],
       // See the network-failure test above for why retry is disabled.
-      retry: (retryCount, error) => null,
+      retry: noAutomaticRetry,
     );
     addTearDown(container.dispose);
 
