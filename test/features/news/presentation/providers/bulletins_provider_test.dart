@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/app/provider_retry.dart';
 import 'package:st_luke_parish_app/features/news/domain/entities/bulletin.dart';
 import 'package:st_luke_parish_app/features/news/domain/failures/bulletins_failure.dart';
 import 'package:st_luke_parish_app/features/news/domain/repositories/bulletins_repository.dart';
@@ -120,8 +121,17 @@ void main() {
             ),
           ),
         ],
+        // The app's own retry policy (`main.dart` passes the same
+        // symbol to its ProviderScope): no automatic retry, so a failure
+        // settles into AsyncError immediately. Using it here rather than
+        // a test-local literal keeps test and production in step.
+        retry: noAutomaticRetry,
       );
       addTearDown(container.dispose);
+
+      // Autodispose providers can otherwise be torn down while still
+      // loading; an active listener keeps this one alive until it settles.
+      container.listen(bulletinsProvider, (_, _) {});
 
       await expectLater(
         container.read(bulletinsProvider.future),
@@ -140,8 +150,13 @@ void main() {
             ),
           ),
         ],
+        // See the network-failure test above for why retry is disabled.
+        retry: noAutomaticRetry,
       );
       addTearDown(container.dispose);
+
+      // See the network-failure test above for why this listener is needed.
+      container.listen(bulletinsProvider, (_, _) {});
 
       await expectLater(
         container.read(bulletinsProvider.future),

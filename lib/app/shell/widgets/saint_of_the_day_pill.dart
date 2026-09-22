@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../../../features/saint_of_the_day/presentation/screens/saint_of_the_day_screen.dart';
 import '../../../shared/widgets/app_pill_button.dart';
 
-/// AppBar pill that shows a hardcoded "coming soon" placeholder for
-/// Saint of the Day — no real saint-of-the-day data, date logic, or
-/// content lookup exists anywhere in this feature.
+/// AppBar pill that performs a full-screen navigation to
+/// [SaintOfTheDayScreen] (REQ-F06-001) — the "Coming soon." placeholder
+/// dialog has been removed. Rendered with a solid gold fill (REQ-F06-018),
+/// matching this app's existing `filledButtonTheme` gold-button precedent,
+/// so it reads as visually distinct from the translucent-white "Ask Luke"
+/// pill beside it.
 class SaintOfTheDayPill extends StatelessWidget {
   const SaintOfTheDayPill({super.key});
 
@@ -13,23 +18,13 @@ class SaintOfTheDayPill extends StatelessWidget {
     return AppPillButton(
       label: 'Saint of the Day',
       icon: Icons.auto_awesome_rounded,
-      onPressed: () => _showComingSoon(context),
-    );
-  }
-
-  void _showComingSoon(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Saint of the Day'),
-        content: const Text('Coming soon.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+      backgroundColor: AppColors.gold,
+      foregroundColor: AppColors.textPrimary,
+      onPressed: () {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const SaintOfTheDayScreen()));
+      },
     );
   }
 }

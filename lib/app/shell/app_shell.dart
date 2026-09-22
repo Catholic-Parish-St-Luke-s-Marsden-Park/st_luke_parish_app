@@ -76,10 +76,13 @@ class _AppShellBodyState extends State<_AppShellBody> {
       appBar: AppBar(
         titleSpacing: 4,
         title: const AppBarLogo(),
+        // Both pills are Flexible so they share whatever width the logo
+        // leaves and ellipsize their labels, rather than overflowing the
+        // toolbar on a narrow phone or at an increased text scale.
         actions: const [
-          SaintOfTheDayPill(),
+          Flexible(child: SaintOfTheDayPill()),
           SizedBox(width: 8),
-          AskLukePill(),
+          Flexible(child: AskLukePill()),
           SizedBox(width: 8),
         ],
       ),

@@ -35,14 +35,15 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
-  flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
+  flutter_riverpod: ^3.4.3
+  riverpod_annotation: ^4.0.7
   go_router: ^14.6.2
   google_fonts: ^6.2.1
   url_launcher: ^6.3.1
   webview_flutter: ^4.14.1
   http: ^1.2.2
   xml: ^6.5.0
+  shared_preferences: ^2.3.3
 
 dev_dependencies:
   flutter_test:
@@ -54,9 +55,17 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  # Only riverpod_annotation/flutter_riverpod are used in app code; riverpod
+  # itself is added here explicitly (not just transitively) because tests
+  # reference its `Override` type directly.
+  riverpod: ^3.4.3
   build_runner: ^2.4.13
-  riverpod_generator: ^2.6.3
+  riverpod_generator: ^4.0.9
   webview_flutter_platform_interface: ^2.15.1
+  # Same rationale: the Saint of the Day cache's write-ordering test
+  # substitutes a recording `SharedPreferencesStorePlatform`, so it
+  # references this interface package directly rather than transitively.
+  shared_preferences_platform_interface: ^2.4.2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
