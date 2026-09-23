@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode, visibleForTesting;
 import 'package:flutter/material.dart';
@@ -231,8 +232,18 @@ class NotificationService {
           await _sendTokenIfChanged(token);
         }
       }
-    } catch (e) {
+    } catch (e, st) {
+      // Swallowed here rather than rethrown, so it never reaches main.dart's
+      // Crashlytics-reporting catchError on setup() — report it directly.
       debugPrint('Could not fetch FCM token: $e');
+      unawaited(
+        FirebaseCrashlytics.instance.recordError(
+          e,
+          st,
+          reason: 'NotificationService.registerDevice failed to fetch FCM token',
+          fatal: false,
+        ),
+      );
     }
 
     // Cancel any existing subscription first so repeated calls to
@@ -258,6 +269,17 @@ class NotificationService {
     final success = await _sendTokenToServer(token);
     if (success) {
       await prefs.setString(_tokenPrefsKey, token);
+    } else {
+      // postToken() stays Firebase-free for unit testing, so the
+      // give-up-after-retries case is reported here instead, one level up.
+      unawaited(
+        FirebaseCrashlytics.instance.recordError(
+          'FCM token registration failed and gave up after retries',
+          StackTrace.current,
+          reason: 'NotificationService._sendTokenIfChanged',
+          fatal: false,
+        ),
+      );
     }
   }
 
