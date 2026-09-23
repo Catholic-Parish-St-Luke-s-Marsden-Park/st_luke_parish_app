@@ -151,6 +151,22 @@ Set `BASE_URL` in `assets/app.env` to the token endpoint (include `/tokens`):
 `assets/app.env` is bundled into the app, so **never put secrets in it**. Do a
 full restart (not hot reload) after changing it.
 
+`assets/app.env` is committed with the emulator URL as the default, for local
+development. **Before building for release**, change `BASE_URL` to the
+production backend, then confirm it with:
+
+```bash
+RELEASE_CHECK=true flutter test test/release_readiness_test.dart
+```
+
+This check is skipped during normal `flutter test` runs, since the emulator
+URL is the correct value day-to-day — it only runs on request, as a release
+gate. It fails if `BASE_URL` is still the emulator loopback address or isn't
+`https`. If it's silently left as the emulator URL in a release build,
+`NotificationService` no-ops token registration with no visible error
+(`debugPrint` is a no-op in release builds), so no device ever registers and
+no push ever arrives.
+
 ### Test a notification
 
 1. Start the server, then run the app and accept the notification permission.

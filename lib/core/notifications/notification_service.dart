@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter/foundation.dart' show kReleaseMode;
+import 'package:flutter/foundation.dart' show kReleaseMode, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -16,19 +16,41 @@ import 'notification_helpers.dart';
 class NotificationService {
   static final NotificationService _instance = NotificationService._();
   factory NotificationService() => _instance;
-  NotificationService._();
+  NotificationService._() : _httpClient = http.Client(), _isRelease = kReleaseMode;
+
+  /// Test-only: bypasses the singleton so tests can inject a fake HTTP client
+  /// and control release-mode behaviour without touching the shared instance
+  /// every other part of the app uses.
+  @visibleForTesting
+  NotificationService.forTesting({
+    required http.Client httpClient,
+    required bool isRelease,
+  }) : _httpClient = httpClient,
+       _isRelease = isRelease;
+
+  final http.Client _httpClient;
+  final bool _isRelease;
 
   /// Token endpoint (including `/tokens`) from BASE_URL in assets/app.env.
   /// Null, with the reason logged, if it is missing, malformed, or (in release
   /// builds) not https, so misconfiguration isn't retried as a network error.
-  Uri? get _backendUri {
-    final raw = dotenv.maybeGet('BASE_URL')?.trim();
-    final uri = (raw == null || raw.isEmpty) ? null : Uri.tryParse(raw);
+  Uri? get _backendUri =>
+      resolveBackendUri(dotenv.maybeGet('BASE_URL'), isRelease: _isRelease);
+
+  /// Validates and parses a raw BASE_URL value into the token endpoint.
+  /// Pulled out of [_backendUri] as a pure function so the validation rules
+  /// are unit-testable without touching dotenv or kReleaseMode.
+  @visibleForTesting
+  static Uri? resolveBackendUri(String? raw, {required bool isRelease}) {
+    final trimmed = raw?.trim();
+    final uri = (trimmed == null || trimmed.isEmpty)
+        ? null
+        : Uri.tryParse(trimmed);
     if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
       debugPrint('BASE_URL is missing or invalid in assets/app.env.');
       return null;
     }
-    if (kReleaseMode && uri.scheme != 'https') {
+    if (isRelease && uri.scheme != 'https') {
       debugPrint('BASE_URL must use https in release builds.');
       return null;
     }
@@ -239,18 +261,28 @@ class NotificationService {
     }
   }
 
-  /// Posts [token] to the backend, retrying with linear backoff on failure.
-  /// Returns true if the server responded with a 2xx status.
-  Future<bool> _sendTokenToServer(
+  /// Resolves the backend URL and posts [token] to it. Returns false without
+  /// making a request if BASE_URL is unset or invalid; see [resolveBackendUri].
+  Future<bool> _sendTokenToServer(String token) async {
+    final uri = _backendUri;
+    if (uri == null) return false;
+    return postToken(uri, token);
+  }
+
+  /// Posts [token] to [uri], retrying with linear backoff on failure. Returns
+  /// true if the server responded with a 2xx status. Split out from
+  /// [_sendTokenToServer] so the retry/backoff behaviour is unit-testable
+  /// against an explicit URI and an injected [http.Client], independent of
+  /// BASE_URL resolution.
+  @visibleForTesting
+  Future<bool> postToken(
+    Uri uri,
     String token, {
     int maxRetries = 3,
   }) async {
-    final uri = _backendUri;
-    if (uri == null) return false;
-
     for (var attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        final response = await http
+        final response = await _httpClient
             .post(
               uri,
               headers: {'Content-Type': 'application/json'},

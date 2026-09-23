@@ -140,10 +140,9 @@ async function pruneToken(token) {
 // value in `data` to be a string, so values are coerced.
 function buildMessage({ title, body, data }) {
   return {
-    notification: { title, body },
-    data: data
-      ? Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)]))
-      : undefined,
+    data: Object.fromEntries(
+      Object.entries({ ...data, title, body }).map(([k, v]) => [k, String(v)]),
+    ),
   };
 }
 

@@ -1,2 +1,6 @@
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
 #include "Generated.xcconfig"
+
+// Read by Runner.entitlements' aps-environment via $(APS_ENVIRONMENT).
+// Also used by the Profile configuration, which shares this xcconfig.
+APS_ENVIRONMENT = production

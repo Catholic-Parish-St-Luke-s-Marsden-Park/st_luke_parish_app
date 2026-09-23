@@ -37,9 +37,6 @@ class NotificationHelpers {
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
-      sound: RawResourceAndroidNotificationSound(
-        NotificationConstants.androidSound,
-      ),
       enableVibration: true,
       icon: NotificationConstants.androidIcon,
     );
@@ -47,7 +44,6 @@ class NotificationHelpers {
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
-      sound: NotificationConstants.iosSound,
     );
     return const NotificationDetails(android: android, iOS: iOS);
   }
@@ -87,9 +83,6 @@ class NotificationHelpers {
       description: NotificationConstants.channelDescription,
       importance: Importance.max,
       playSound: true,
-      sound: RawResourceAndroidNotificationSound(
-        NotificationConstants.androidSound,
-      ),
     );
   }
   NotificationHelpers._();
