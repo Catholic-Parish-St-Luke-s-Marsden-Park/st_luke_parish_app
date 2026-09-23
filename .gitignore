@@ -50,4 +50,3 @@ app.*.map.json
 server/.env
 server/service-account.json
 server/node_modules/
-

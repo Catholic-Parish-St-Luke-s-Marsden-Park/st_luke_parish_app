@@ -17,7 +17,10 @@ import 'notification_helpers.dart';
 class NotificationService {
   static final NotificationService _instance = NotificationService._();
   factory NotificationService() => _instance;
-  NotificationService._() : _httpClient = http.Client(), _isRelease = kReleaseMode;
+
+  NotificationService._()
+    : _httpClient = http.Client(),
+      _isRelease = kReleaseMode;
 
   /// Test-only: bypasses the singleton so tests can inject a fake HTTP client
   /// and control release-mode behaviour without touching the shared instance
@@ -68,8 +71,37 @@ class NotificationService {
 
   /// Emits the message data whenever the user taps a notification, whether it
   /// was shown by FCM (background/terminated) or locally (foreground).
-  final _tapController = StreamController<Map<String, dynamic>>.broadcast();
+  ///
+  /// A broadcast [StreamController] drops events emitted before any listener
+  /// is attached — a real risk here, since the terminated-launch message is
+  /// read in [initialize], which runs before `runApp`/[ProviderScope] even
+  /// exist. [onListen] replays the most recent such message to whichever
+  /// listener attaches first, so it isn't silently lost.
+  Map<String, dynamic>? _pendingTapData;
+  late final StreamController<Map<String, dynamic>> _tapController =
+      StreamController<Map<String, dynamic>>.broadcast(
+    onListen: () {
+      final pending = _pendingTapData;
+      if (pending != null) {
+        _pendingTapData = null;
+        _tapController.add(pending);
+      }
+    },
+  );
   Stream<Map<String, dynamic>> get onTap => _tapController.stream;
+
+  /// Adds [data] if a listener is already attached; otherwise buffers it for
+  /// replay to the first listener via [_tapController]'s `onListen`. Used by
+  /// both FCM taps ([_handleMessage]) and locally-shown-notification taps
+  /// ([_onTap]).
+  void _emitTapData(Map<String, dynamic> data) {
+    if (data.isEmpty) return;
+    if (_tapController.hasListener) {
+      _tapController.add(data);
+    } else {
+      _pendingTapData = data;
+    }
+  }
 
   StreamSubscription<String>? _tokenRefreshSub;
 
@@ -173,9 +205,7 @@ class NotificationService {
   }
 
   void _handleMessage(RemoteMessage message) {
-    if (message.data.isNotEmpty) {
-      _tapController.add(message.data);
-    }
+    _emitTapData(message.data);
   }
 
   // Tap on a locally shown notification; the payload is the JSON written by
@@ -187,7 +217,7 @@ class NotificationService {
     try {
       final decoded = jsonDecode(payload);
       if (decoded is Map<String, dynamic>) {
-        _tapController.add(decoded);
+        _emitTapData(decoded);
       } else {
         debugPrint('Notification payload was not a JSON object: $payload');
       }
@@ -240,7 +270,8 @@ class NotificationService {
         FirebaseCrashlytics.instance.recordError(
           e,
           st,
-          reason: 'NotificationService.registerDevice failed to fetch FCM token',
+          reason:
+              'NotificationService.registerDevice failed to fetch FCM token',
           fatal: false,
         ),
       );
@@ -251,24 +282,44 @@ class NotificationService {
     await _tokenRefreshSub?.cancel();
     _tokenRefreshSub = _messaging.onTokenRefresh.listen((newToken) {
       debugPrint('FCM token refreshed.');
-      _sendTokenIfChanged(newToken);
+      // Unlike the caught-and-swallowed failure above, nothing awaits this
+      // listener callback, so an uncaught error here would surface as an
+      // uncaught zone error (a debug-mode red screen) instead of a log line.
+      unawaited(
+        _sendTokenIfChanged(newToken).catchError((Object e, StackTrace st) {
+          debugPrint('Failed to handle refreshed token: $e');
+          unawaited(
+            FirebaseCrashlytics.instance.recordError(
+              e,
+              st,
+              reason: 'NotificationService.onTokenRefresh handler failed',
+              fatal: false,
+            ),
+          );
+        }),
+      );
     });
   }
 
-  /// Sends [token] to the backend only if it differs from the last
-  /// successfully registered token, to avoid redundant network calls on
-  /// every app launch.
+  /// Sends [token] to the backend only if it, together with the backend
+  /// endpoint, differs from the last successfully registered pair — so
+  /// switching BASE_URL (e.g. emulator to production) forces a fresh
+  /// registration instead of being skipped as "unchanged".
   Future<void> _sendTokenIfChanged(String token) async {
+    final uri = _backendUri;
+    if (uri == null) return;
+
     final prefs = await SharedPreferences.getInstance();
+    final cacheKey = '$token@${uri.origin}';
     final lastSent = prefs.getString(_tokenPrefsKey);
-    if (lastSent == token) {
+    if (lastSent == cacheKey) {
       debugPrint('FCM token unchanged, skipping registration.');
       return;
     }
 
-    final success = await _sendTokenToServer(token);
+    final success = await postToken(uri, token);
     if (success) {
-      await prefs.setString(_tokenPrefsKey, token);
+      await prefs.setString(_tokenPrefsKey, cacheKey);
     } else {
       // postToken() stays Firebase-free for unit testing, so the
       // give-up-after-retries case is reported here instead, one level up.
@@ -283,19 +334,11 @@ class NotificationService {
     }
   }
 
-  /// Resolves the backend URL and posts [token] to it. Returns false without
-  /// making a request if BASE_URL is unset or invalid; see [resolveBackendUri].
-  Future<bool> _sendTokenToServer(String token) async {
-    final uri = _backendUri;
-    if (uri == null) return false;
-    return postToken(uri, token);
-  }
-
   /// Posts [token] to [uri], retrying with linear backoff on failure. Returns
-  /// true if the server responded with a 2xx status. Split out from
-  /// [_sendTokenToServer] so the retry/backoff behaviour is unit-testable
-  /// against an explicit URI and an injected [http.Client], independent of
-  /// BASE_URL resolution.
+  /// true if the server responded with a 2xx status. Takes [uri] explicitly,
+  /// rather than resolving BASE_URL itself, so the retry/backoff behaviour is
+  /// unit-testable against an injected [http.Client] independent of BASE_URL
+  /// resolution.
   @visibleForTesting
   Future<bool> postToken(
     Uri uri,

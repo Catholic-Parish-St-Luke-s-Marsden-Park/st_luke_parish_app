@@ -10,10 +10,13 @@ class NotificationHelpers {
   /// so the same message doesn't create duplicates; falls back to the current
   /// time in seconds when FCM provides no ID.
   static int generateId(RemoteMessage message) {
+    // Masked, not just .abs()'d: String.hashCode isn't bounded to 32 bits, so
+    // an unmasked value can still exceed the signed 32-bit int the platform
+    // channel expects, throwing a ClassCastException on the native side.
     if (message.messageId != null) {
-      return message.messageId.hashCode.abs();
+      return message.messageId.hashCode & 0x7fffffff;
     }
-    return DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    return (DateTime.now().millisecondsSinceEpoch ~/ 1000) & 0x7fffffff;
   }
   /// Serialises the message data into the notification's payload so it can be
   /// recovered when the user taps it. Returns null if there is nothing to

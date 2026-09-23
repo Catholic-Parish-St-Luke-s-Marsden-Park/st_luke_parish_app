@@ -10,14 +10,28 @@ void main() {
 
       final id = NotificationHelpers.generateId(message);
 
-      expect(id, 'abc-123'.hashCode.abs());
+      expect(id, 'abc-123'.hashCode & 0x7fffffff);
       expect(NotificationHelpers.generateId(message), id);
+    });
+
+    test('masks the id into the signed 32-bit range the platform channel '
+        'expects, not just .abs()', () {
+      // A hash outside the 32-bit range would previously throw a
+      // ClassCastException on the native side; & 0x7fffffff always fits.
+      const message = RemoteMessage(messageId: 'a-message-id-with-a-large-hash');
+
+      final id = NotificationHelpers.generateId(message);
+
+      expect(id, inInclusiveRange(0, 0x7fffffff));
     });
 
     test('falls back to a non-negative id when there is no message id', () {
       const message = RemoteMessage();
 
-      expect(NotificationHelpers.generateId(message), greaterThanOrEqualTo(0));
+      expect(
+        NotificationHelpers.generateId(message),
+        inInclusiveRange(0, 0x7fffffff),
+      );
     });
   });
 
