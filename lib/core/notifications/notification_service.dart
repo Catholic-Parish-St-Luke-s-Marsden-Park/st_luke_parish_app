@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode, visibleForTesting;
 import 'package:flutter/material.dart';
@@ -11,9 +10,14 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'notification_helpers.dart';
 
-/// Owns push notification setup: permissions, foreground display, tap
-/// handling, and registering this device's FCM token with the backend.
+/// Owns push notification setup: permissions, foreground display, and
+/// registering this device's FCM token with the backend.
 /// A singleton, so listeners are only attached once per app run.
+///
+/// Tapping a notification only opens the app for now. Each notification's
+/// payload still carries the message data (see
+/// [NotificationHelpers.encodePayload]) so routing can be added when a
+/// feature needs it.
 class NotificationService {
   static final NotificationService _instance = NotificationService._();
   factory NotificationService() => _instance;
@@ -69,40 +73,6 @@ class NotificationService {
   FlutterLocalNotificationsPlugin? _plugin;
   bool _initialized = false;
 
-  /// Emits the message data whenever the user taps a notification, whether it
-  /// was shown by FCM (background/terminated) or locally (foreground).
-  ///
-  /// A broadcast [StreamController] drops events emitted before any listener
-  /// is attached — a real risk here, since the terminated-launch message is
-  /// read in [initialize], which runs before `runApp`/[ProviderScope] even
-  /// exist. [onListen] replays the most recent such message to whichever
-  /// listener attaches first, so it isn't silently lost.
-  Map<String, dynamic>? _pendingTapData;
-  late final StreamController<Map<String, dynamic>> _tapController =
-      StreamController<Map<String, dynamic>>.broadcast(
-        onListen: () {
-          final pending = _pendingTapData;
-          if (pending != null) {
-            _pendingTapData = null;
-            _tapController.add(pending);
-          }
-        },
-      );
-  Stream<Map<String, dynamic>> get onTap => _tapController.stream;
-
-  /// Adds [data] if a listener is already attached; otherwise buffers it for
-  /// replay to the first listener via [_tapController]'s `onListen`. Used by
-  /// both FCM taps ([_handleMessage]) and locally-shown-notification taps
-  /// ([_onTap]).
-  void _emitTapData(Map<String, dynamic> data) {
-    if (data.isEmpty) return;
-    if (_tapController.hasListener) {
-      _tapController.add(data);
-    } else {
-      _pendingTapData = data;
-    }
-  }
-
   StreamSubscription<String>? _tokenRefreshSub;
 
   /// Sets up the local notifications plugin, the Android channel and the FCM
@@ -122,7 +92,6 @@ class NotificationService {
             requestSoundPermission: false,
           ),
         ),
-        onDidReceiveNotificationResponse: _onTap,
       );
       if (Platform.isAndroid) {
         await _createChannel();
@@ -164,13 +133,8 @@ class NotificationService {
         sound: true,
       );
     }
-    // Tap that launched the app from a terminated state.
-    final initial = await _messaging.getInitialMessage();
-    if (initial != null) _handleMessage(initial);
     // Message received while the app is open (FCM shows nothing on Android).
     FirebaseMessaging.onMessage.listen(_showForeground);
-    // Tap on a notification while the app was in the background.
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
   }
 
   /// Requests notification permission. Does not fetch or send the token;
@@ -205,28 +169,6 @@ class NotificationService {
     }
   }
 
-  void _handleMessage(RemoteMessage message) {
-    _emitTapData(message.data);
-  }
-
-  // Tap on a locally shown notification; the payload is the JSON written by
-  // NotificationHelpers.encodePayload.
-  void _onTap(NotificationResponse response) {
-    final payload = response.payload;
-    if (payload == null || payload.isEmpty) return;
-
-    try {
-      final decoded = jsonDecode(payload);
-      if (decoded is Map<String, dynamic>) {
-        _emitTapData(decoded);
-      } else {
-        debugPrint('Notification payload was not a JSON object: $payload');
-      }
-    } catch (e) {
-      debugPrint('Failed to decode notification payload "$payload": $e');
-    }
-  }
-
   /// On iOS the FCM token can only be issued once APNs has handed the device
   /// an APNs token, which can lag behind permission being granted. Polls
   /// briefly; returns false if it never arrives (e.g. simulator without
@@ -247,7 +189,6 @@ class NotificationService {
       _messaging.unsubscribeFromTopic(topic);
 
   void dispose() {
-    _tapController.close();
     _tokenRefreshSub?.cancel();
   }
 
@@ -263,19 +204,10 @@ class NotificationService {
           await _sendTokenIfChanged(token);
         }
       }
-    } catch (e, st) {
-      // Swallowed here rather than rethrown, so it never reaches main.dart's
-      // Crashlytics-reporting catchError on setup() — report it directly.
+    } catch (e) {
+      // Logged rather than rethrown: a token failure shouldn't stop the
+      // refresh listener below from being attached.
       debugPrint('Could not fetch FCM token: $e');
-      unawaited(
-        FirebaseCrashlytics.instance.recordError(
-          e,
-          st,
-          reason:
-              'NotificationService.registerDevice failed to fetch FCM token',
-          fatal: false,
-        ),
-      );
     }
 
     // Cancel any existing subscription first so repeated calls to
@@ -287,16 +219,8 @@ class NotificationService {
       // listener callback, so an uncaught error here would surface as an
       // uncaught zone error (a debug-mode red screen) instead of a log line.
       unawaited(
-        _sendTokenIfChanged(newToken).catchError((Object e, StackTrace st) {
+        _sendTokenIfChanged(newToken).catchError((Object e) {
           debugPrint('Failed to handle refreshed token: $e');
-          unawaited(
-            FirebaseCrashlytics.instance.recordError(
-              e,
-              st,
-              reason: 'NotificationService.onTokenRefresh handler failed',
-              fatal: false,
-            ),
-          );
         }),
       );
     });
@@ -322,16 +246,7 @@ class NotificationService {
     if (success) {
       await prefs.setString(_tokenPrefsKey, cacheKey);
     } else {
-      // postToken() stays Firebase-free for unit testing, so the
-      // give-up-after-retries case is reported here instead, one level up.
-      unawaited(
-        FirebaseCrashlytics.instance.recordError(
-          'FCM token registration failed and gave up after retries',
-          StackTrace.current,
-          reason: 'NotificationService._sendTokenIfChanged',
-          fatal: false,
-        ),
-      );
+      debugPrint('FCM token registration gave up after retries.');
     }
   }
 
