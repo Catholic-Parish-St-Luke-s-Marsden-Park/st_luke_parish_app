@@ -107,7 +107,7 @@ through `POST /send` (one device) or `POST /broadcast` (all devices).
 
 ### Prerequisites
 
-- Node.js and npm.
+- Node.js 22 or later (required by `firebase-admin` 14) and npm.
 - A Firebase project with a **Firestore database in Native mode**. The server
   targets a *named* database, so note its database ID.
 - A Firebase service-account key: Firebase Console → Project Settings →
@@ -126,6 +126,18 @@ npm install
 cp .env.example .env     # then fill in the values below
 node index.js            # prints "Listening on port 8080"
 ```
+
+Run the server's route tests (in-memory fakes, no Firebase project needed):
+
+```bash
+cd server
+npm test
+```
+
+Messages are sent data-only to Android (high priority), and the app posts the
+notification itself, so each push appears exactly once. iOS gets a visible
+APNs alert through the `apns` override, because iOS drops or throttles
+data-only pushes.
 
 | Variable | Description |
 |---|---|
@@ -218,7 +230,7 @@ no push ever arrives.
 | `Cleartext HTTP traffic not permitted` | Android blocks plain `http` to non-localhost hosts. Use `adb reverse` or an `https` URL |
 | Server error `5 NOT_FOUND` | The Firestore database doesn't exist, or `FIRESTORE_DATABASE_ID` doesn't match it |
 | `401 Invalid or missing API key` | `x-api-key` header missing or different from `API_KEY` in `server/.env` |
-| `400` from `/send` or `/broadcast` | `title` or `body` missing or empty |
+| `400` from `/send` or `/broadcast` | `title` or `body` missing or empty, or `data` is not a JSON object |
 | `404 Token is no longer registered` | Stale token (app reinstalled). The server already deleted it; restart the app to register a new one |
 | App registers but never re-registers after switching backend | The app caches the last registered token. Clear app data |
 | iOS: no token / `APNs token unavailable` | APNs key not uploaded to Firebase, Push Notifications capability missing, or running on a simulator |
