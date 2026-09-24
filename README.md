@@ -220,7 +220,8 @@ no push ever arrives.
    returns `{"sent":1,"failed":0,"pruned":0}`.
 4. Test all three app states, since they take different code paths:
    **foreground**, **background** (press Home first) and **terminated**
-   (swipe the app away).
+   (swipe the app away). Each push should appear exactly once. Tapping a
+   notification only opens the app for now, with no deep-link routing yet.
 
 ### Troubleshooting
 
@@ -232,7 +233,6 @@ no push ever arrives.
 | `401 Invalid or missing API key` | `x-api-key` header missing or different from `API_KEY` in `server/.env` |
 | `400` from `/send` or `/broadcast` | `title` or `body` missing or empty, or `data` is not a JSON object |
 | `404 Token is no longer registered` | Stale token (app reinstalled). The server already deleted it; restart the app to register a new one |
-| App registers but never re-registers after switching backend | The app caches the last registered token. Clear app data |
 | iOS: no token / `APNs token unavailable` | APNs key not uploaded to Firebase, Push Notifications capability missing, or running on a simulator |
 | Emulator crash `SIGILL` in `libwebviewchromium.so` | Emulator WebView bug, unrelated to notifications. Update WebView, cold boot the emulator, or test on a real device |
 

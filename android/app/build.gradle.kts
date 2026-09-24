@@ -45,7 +45,7 @@ android {
 }
 
 dependencies {
-    // Import the Firebase BoM
+    // Required by flutter_local_notifications (java.time APIs on older Android).
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
