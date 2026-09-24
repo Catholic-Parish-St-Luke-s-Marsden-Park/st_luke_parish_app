@@ -128,5 +128,11 @@ void main() {
         NotificationConstants.defaultBody,
       );
     });
+
+    test('trims surrounding whitespace', () {
+      const message = RemoteMessage(data: {'body': '  Mass at 9am  '});
+
+      expect(NotificationHelpers.getBody(message), 'Mass at 9am');
+    });
   });
 }

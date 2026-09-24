@@ -24,26 +24,36 @@ class NotificationService {
 
   NotificationService._()
     : _httpClient = http.Client(),
-      _isRelease = kReleaseMode;
+      _isRelease = kReleaseMode,
+      _retryDelayUnit = const Duration(seconds: 2);
 
-  /// Test-only: bypasses the singleton so tests can inject a fake HTTP client
-  /// and control release-mode behaviour without touching the shared instance
-  /// every other part of the app uses.
+  /// Test-only: bypasses the singleton so tests can inject a fake HTTP client,
+  /// control release-mode behaviour and skip retry backoff without touching
+  /// the shared instance every other part of the app uses.
   @visibleForTesting
   NotificationService.forTesting({
     required http.Client httpClient,
     required bool isRelease,
+    Duration retryDelayUnit = Duration.zero,
   }) : _httpClient = httpClient,
-       _isRelease = isRelease;
+       _isRelease = isRelease,
+       _retryDelayUnit = retryDelayUnit;
 
   final http.Client _httpClient;
   final bool _isRelease;
 
+  /// Backoff between registration attempts is `attempt * _retryDelayUnit`.
+  final Duration _retryDelayUnit;
+
   /// Token endpoint (including `/tokens`) from BASE_URL in assets/app.env.
   /// Null, with the reason logged, if it is missing, malformed, or (in release
   /// builds) not https, so misconfiguration isn't retried as a network error.
-  Uri? get _backendUri =>
-      resolveBackendUri(dotenv.maybeGet('BASE_URL'), isRelease: _isRelease);
+  /// dotenv throws if assets/app.env never loaded (main.dart logs and carries
+  /// on), so that case is treated as a missing BASE_URL.
+  Uri? get _backendUri => resolveBackendUri(
+    dotenv.isInitialized ? dotenv.maybeGet('BASE_URL') : null,
+    isRelease: _isRelease,
+  );
 
   /// Validates and parses a raw BASE_URL value into the token endpoint.
   /// Pulled out of [_backendUri] as a pure function so the validation rules
@@ -69,7 +79,9 @@ class NotificationService {
   /// to skip redundant registrations.
   static const _tokenPrefsKey = 'last_registered_fcm_token';
 
-  final _messaging = FirebaseMessaging.instance;
+  // Late so constructing the service (e.g. via forTesting) doesn't require
+  // Firebase.initializeApp to have run; only the FCM-facing methods touch it.
+  late final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   FlutterLocalNotificationsPlugin? _plugin;
   bool _initialized = false;
 
@@ -202,7 +214,7 @@ class NotificationService {
       } else {
         final token = await _messaging.getToken();
         if (token != null) {
-          await _sendTokenIfChanged(token);
+          await sendTokenIfChanged(token);
         }
       }
     } catch (e) {
@@ -220,7 +232,7 @@ class NotificationService {
       // listener callback, so an uncaught error here would surface as an
       // uncaught zone error (a debug-mode red screen) instead of a log line.
       unawaited(
-        _sendTokenIfChanged(newToken).catchError((Object e) {
+        sendTokenIfChanged(newToken).catchError((Object e) {
           debugPrint('Failed to handle refreshed token: $e');
         }),
       );
@@ -231,7 +243,8 @@ class NotificationService {
   /// endpoint, differs from the last successfully registered pair — so
   /// switching BASE_URL (e.g. emulator to production) forces a fresh
   /// registration instead of being skipped as "unchanged".
-  Future<void> _sendTokenIfChanged(String token) async {
+  @visibleForTesting
+  Future<void> sendTokenIfChanged(String token) async {
     final uri = _backendUri;
     if (uri == null) return;
 
@@ -281,7 +294,7 @@ class NotificationService {
       }
 
       if (attempt < maxRetries) {
-        await Future.delayed(Duration(seconds: attempt * 2));
+        await Future.delayed(_retryDelayUnit * attempt);
       }
     }
     return false;

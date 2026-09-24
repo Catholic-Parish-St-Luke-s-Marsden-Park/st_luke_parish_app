@@ -1,6 +1,8 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:st_luke_parish_app/core/notifications/notification_service.dart';
 
 void main() {
@@ -132,6 +134,126 @@ void main() {
 
       expect(result, isTrue);
       expect(callCount, 2);
+    });
+  });
+
+  group('sendTokenIfChanged', () {
+    // Mirrors NotificationService._tokenPrefsKey.
+    const prefsKey = 'last_registered_fcm_token';
+
+    late List<Uri> requests;
+    late int statusCode;
+
+    NotificationService buildService({bool isRelease = false}) {
+      final client = MockClient((request) async {
+        requests.add(request.url);
+        return http.Response('', statusCode);
+      });
+      return NotificationService.forTesting(
+        httpClient: client,
+        isRelease: isRelease,
+      );
+    }
+
+    void setBaseUrl(String url) =>
+        dotenv.loadFromString(envString: 'BASE_URL=$url');
+
+    setUp(() {
+      requests = [];
+      statusCode = 204;
+      SharedPreferences.setMockInitialValues({});
+      setBaseUrl('https://example.onrender.com/tokens');
+    });
+
+    tearDown(dotenv.clean);
+
+    test('posts a new token and caches it with the backend origin', () async {
+      await buildService().sendTokenIfChanged('token-1');
+
+      expect(requests, [Uri.parse('https://example.onrender.com/tokens')]);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(prefsKey), 'token-1@https://example.onrender.com');
+    });
+
+    test('skips an unchanged token for the same backend', () async {
+      final service = buildService();
+
+      await service.sendTokenIfChanged('token-1');
+      await service.sendTokenIfChanged('token-1');
+
+      expect(requests, hasLength(1));
+    });
+
+    test('re-registers a new token for the same backend', () async {
+      final service = buildService();
+
+      await service.sendTokenIfChanged('token-1');
+      await service.sendTokenIfChanged('token-2');
+
+      expect(requests, hasLength(2));
+    });
+
+    test(
+      're-registers the same token when BASE_URL moves to a new backend',
+      () async {
+        final service = buildService();
+        await service.sendTokenIfChanged('token-1');
+
+        setBaseUrl('https://parish-backend.example.org/tokens');
+        await service.sendTokenIfChanged('token-1');
+
+        expect(requests, [
+          Uri.parse('https://example.onrender.com/tokens'),
+          Uri.parse('https://parish-backend.example.org/tokens'),
+        ]);
+      },
+    );
+
+    test(
+      'does not cache a failed registration, so the next call retries',
+      () async {
+        final service = buildService();
+        statusCode = 500;
+
+        await service.sendTokenIfChanged('token-1');
+
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getString(prefsKey), isNull);
+        final failedAttempts = requests.length;
+
+        statusCode = 204;
+        await service.sendTokenIfChanged('token-1');
+
+        expect(requests, hasLength(failedAttempts + 1));
+        expect(
+          prefs.getString(prefsKey),
+          'token-1@https://example.onrender.com',
+        );
+      },
+    );
+
+    test('sends nothing when BASE_URL is missing', () async {
+      dotenv.loadFromString(envString: 'OTHER=1');
+
+      await buildService().sendTokenIfChanged('token-1');
+
+      expect(requests, isEmpty);
+    });
+
+    test('sends nothing when assets/app.env never loaded', () async {
+      dotenv.clean();
+
+      await buildService().sendTokenIfChanged('token-1');
+
+      expect(requests, isEmpty);
+    });
+
+    test('sends nothing to a non-https BASE_URL in release mode', () async {
+      setBaseUrl('http://10.0.2.2:8080/tokens');
+
+      await buildService(isRelease: true).sendTokenIfChanged('token-1');
+
+      expect(requests, isEmpty);
     });
   });
 }
