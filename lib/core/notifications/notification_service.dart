@@ -82,7 +82,7 @@ class NotificationService {
     try {
       _plugin = FlutterLocalNotificationsPlugin();
       await _plugin!.initialize(
-        const InitializationSettings(
+        settings: const InitializationSettings(
           android: AndroidInitializationSettings('@mipmap/ic_launcher'),
           // Permissions are requested explicitly in requestPermission(), not
           // as a side effect of initialisation.
@@ -152,6 +152,7 @@ class NotificationService {
         debugPrint('Notification permission granted.');
         break;
       case AuthorizationStatus.denied:
+      case AuthorizationStatus.deniedPermanently:
         debugPrint('Notification permission denied.');
         break;
       case AuthorizationStatus.notDetermined:

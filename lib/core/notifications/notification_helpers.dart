@@ -75,10 +75,10 @@ class NotificationHelpers {
     FlutterLocalNotificationsPlugin plugin,
   ) async {
     await plugin.show(
-      generateId(message),
-      getTitle(message),
-      getBody(message),
-      buildDetails(),
+      id: generateId(message),
+      title: getTitle(message),
+      body: getBody(message),
+      notificationDetails: buildDetails(),
       payload: encodePayload(message.data),
     );
   }
