@@ -80,14 +80,14 @@ class NotificationService {
   Map<String, dynamic>? _pendingTapData;
   late final StreamController<Map<String, dynamic>> _tapController =
       StreamController<Map<String, dynamic>>.broadcast(
-    onListen: () {
-      final pending = _pendingTapData;
-      if (pending != null) {
-        _pendingTapData = null;
-        _tapController.add(pending);
-      }
-    },
-  );
+        onListen: () {
+          final pending = _pendingTapData;
+          if (pending != null) {
+            _pendingTapData = null;
+            _tapController.add(pending);
+          }
+        },
+      );
   Stream<Map<String, dynamic>> get onTap => _tapController.stream;
 
   /// Adds [data] if a listener is already attached; otherwise buffers it for
@@ -149,7 +149,8 @@ class NotificationService {
     final channel = NotificationHelpers.createChannel();
     await _plugin!
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(channel);
   }
 
@@ -340,11 +341,7 @@ class NotificationService {
   /// unit-testable against an injected [http.Client] independent of BASE_URL
   /// resolution.
   @visibleForTesting
-  Future<bool> postToken(
-    Uri uri,
-    String token, {
-    int maxRetries = 3,
-  }) async {
+  Future<bool> postToken(Uri uri, String token, {int maxRetries = 3}) async {
     for (var attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         final response = await _httpClient

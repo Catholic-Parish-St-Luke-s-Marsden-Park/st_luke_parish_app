@@ -18,10 +18,7 @@ void main() {
 
     test('returns null for a malformed URL', () {
       expect(
-        NotificationService.resolveBackendUri(
-          'not a url',
-          isRelease: false,
-        ),
+        NotificationService.resolveBackendUri('not a url', isRelease: false),
         isNull,
       );
     });
@@ -95,11 +92,7 @@ void main() {
         isRelease: false,
       );
 
-      final result = await service.postToken(
-        uri,
-        'a-token',
-        maxRetries: 2,
-      );
+      final result = await service.postToken(uri, 'a-token', maxRetries: 2);
 
       expect(result, isFalse);
       expect(callCount, 2);
@@ -116,11 +109,7 @@ void main() {
         isRelease: false,
       );
 
-      final result = await service.postToken(
-        uri,
-        'a-token',
-        maxRetries: 2,
-      );
+      final result = await service.postToken(uri, 'a-token', maxRetries: 2);
 
       expect(result, isFalse);
       expect(callCount, 2);
@@ -139,11 +128,7 @@ void main() {
         isRelease: false,
       );
 
-      final result = await service.postToken(
-        uri,
-        'a-token',
-        maxRetries: 2,
-      );
+      final result = await service.postToken(uri, 'a-token', maxRetries: 2);
 
       expect(result, isTrue);
       expect(callCount, 2);

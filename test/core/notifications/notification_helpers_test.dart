@@ -18,7 +18,9 @@ void main() {
         'expects, not just .abs()', () {
       // A hash outside the 32-bit range would previously throw a
       // ClassCastException on the native side; & 0x7fffffff always fits.
-      const message = RemoteMessage(messageId: 'a-message-id-with-a-large-hash');
+      const message = RemoteMessage(
+        messageId: 'a-message-id-with-a-large-hash',
+      );
 
       final id = NotificationHelpers.generateId(message);
 

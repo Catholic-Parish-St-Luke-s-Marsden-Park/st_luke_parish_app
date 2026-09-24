@@ -18,6 +18,7 @@ class NotificationHelpers {
     }
     return (DateTime.now().millisecondsSinceEpoch ~/ 1000) & 0x7fffffff;
   }
+
   /// Serialises the message data into the notification's payload so it can be
   /// recovered when the user taps it. Returns null if there is nothing to
   /// encode or the data isn't JSON-encodable.
@@ -29,6 +30,7 @@ class NotificationHelpers {
       return null;
     }
   }
+
   /// Platform-specific presentation settings. The Android channel ID and sound
   /// must match the channel created in [createChannel]; on Android 8+ the
   /// channel, not these details, controls sound and importance.
@@ -50,6 +52,7 @@ class NotificationHelpers {
     );
     return const NotificationDetails(android: android, iOS: iOS);
   }
+
   // Title and body prefer the FCM notification block, then fall back to the
   // data payload (data-only messages), then to a default so the notification
   // is never blank.
@@ -59,12 +62,14 @@ class NotificationHelpers {
         ? NotificationConstants.defaultTitle
         : title.trim();
   }
+
   static String getBody(RemoteMessage message) {
     final body = message.notification?.body ?? message.data['body'];
     return (body == null || body.isEmpty)
         ? NotificationConstants.defaultBody
         : body.trim();
   }
+
   static Future<void> showNotification(
     RemoteMessage message,
     FlutterLocalNotificationsPlugin plugin,
@@ -77,6 +82,7 @@ class NotificationHelpers {
       payload: encodePayload(message.data),
     );
   }
+
   /// Android 8+ requires a channel before any notification can be shown.
   /// Must be created once at startup (see NotificationService.initialize).
   static AndroidNotificationChannel createChannel() {
@@ -88,5 +94,6 @@ class NotificationHelpers {
       playSound: true,
     );
   }
+
   NotificationHelpers._();
 }
