@@ -75,6 +75,33 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
 - **Owner:** Deployer (or a targeted Coder follow-up, at the user's discretion)
 - **Status:** open
 
+- **Risk ID:** RISK-009
+- **Title:** Push delivery is not verified on a device after the PR #22 review fixes. iOS has never been verified.
+- **Feature:** 07-push-notifications
+- **Impact:** High. If the APNs alert payload, the Release `aps-environment` or the upgraded plugins (flutter_local_notifications 17 → 22, firebase_messaging 15 → 16) misbehave, pushes fail silently. Android was validated by the author against a real backend before the upgrades. iOS has only been built unsigned (2026-09-24), and no push has been received on it.
+- **Likelihood:** Medium for iOS: this is the first real test of the path. Low for Android.
+- **Mitigation:** Before merge, run `/send` to a physical Android device in foreground, background and terminated states, and expect exactly one notification each time. Once the Apple developer account and APNs key exist, repeat on iOS, including a TestFlight (production APNs) build.
+- **Owner:** PR author / Deployer
+- **Status:** open
+
+- **Risk ID:** RISK-010
+- **Title:** `/tokens` is unauthenticated, and the server's dependency tree carries moderate `uuid` advisories
+- **Feature:** 07-push-notifications
+- **Impact:** Low-medium. Anyone can register syntactically valid fake tokens, which bloats Firestore and wastes broadcast quota. It is limited to 20 writes per 15 minutes per IP, and fake tokens get pruned on the first broadcast. `npm audit` reports GHSA-w5hq-g745-h8pq (`uuid` < 11.1.1) through firebase-admin 14.5.0's transitive `gaxios`, which `npm audit fix` can't resolve.
+- **Likelihood:** Low for a parish app.
+- **Mitigation:** Consider Firebase App Check on `/tokens` if abuse appears. Re-run `npm audit` when firebase-admin updates.
+- **Owner:** Backend maintainer
+- **Status:** open
+
+- **Risk ID:** RISK-011
+- **Title:** The notification backend and state management deviate from the CLAUDE.md guidance
+- **Feature:** 07-push-notifications
+- **Impact:** Medium, for maintainability. CLAUDE.md anticipated Supabase for Phase 2 notifications, but this feature uses Firebase/Firestore plus a Node server on its own host. `NotificationService` is a global singleton outside Riverpod, and it doesn't reuse `core/network/http_client_provider.dart`.
+- **Likelihood:** Certain (it's the current state).
+- **Mitigation:** Record the backend choice in an ADR under `.claude/decisions/`. As a follow-up, move `NotificationService` behind a Riverpod provider that uses the shared HTTP client.
+- **Owner:** Architecture / next notifications feature
+- **Status:** open
+
 ## Resolved Risks
 
 - **Risk ID:** RISK-002
