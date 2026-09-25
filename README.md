@@ -91,6 +91,158 @@ govern those layers (no network calls in widgets, repositories as the sole
 access point for external content, parsers returning typed models) are in
 **`CLAUDE.md`** — read it before adding a feature.
 
+## Push notifications
+
+Push notifications use Firebase Cloud Messaging (FCM) with a small Node.js
+server in `server/`. The app registers its FCM token with the server
+(`POST /tokens`), the server stores it in Firestore, and an admin sends pushes
+through `POST /send` (one device) or `POST /broadcast` (all devices).
+
+| Route | Auth | Purpose |
+|---|---|---|
+| `POST /tokens` | none (rate limited) | App registers its FCM token |
+| `POST /send` | `x-api-key` | Send to one token |
+| `POST /broadcast` | `x-api-key` | Send to every stored token |
+| `GET /health` | none | Liveness check |
+
+### Prerequisites
+
+- Node.js 22 or later (required by `firebase-admin` 14) and npm.
+- A Firebase project with a **Firestore database in Native mode**. The server
+  targets a *named* database, so note its database ID.
+- A Firebase service-account key: Firebase Console → Project Settings →
+  Service accounts → Generate new private key. Save it as
+  `server/service-account.json` (git-ignored).
+- iOS only: an APNs Auth Key (.p8) uploaded under Firebase Console → Project
+  Settings → Cloud Messaging, Push Notifications and Background Modes (Remote
+  notifications) enabled in Xcode, and a **real device** (simulators are
+  unreliable for push).
+
+### Run the server
+
+```bash
+cd server
+npm install
+cp .env.example .env     # then fill in the values below
+node index.js            # prints "Listening on port 8080"
+```
+
+Run the server's route tests (in-memory fakes, no Firebase project needed):
+
+```bash
+cd server
+npm test
+```
+
+Messages are sent data-only to Android (high priority), and the app posts the
+notification itself, so each push appears exactly once. iOS gets a visible
+APNs alert through the `apns` override, because iOS drops or throttles
+data-only pushes.
+
+| Variable | Description |
+|---|---|
+| `API_KEY` | Secret required in the `x-api-key` header for `/send` and `/broadcast`. Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+| `FIRESTORE_DATABASE_ID` | ID of the named Firestore database |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to the service-account key (local dev). On a host without a key file, set `FIREBASE_SERVICE_ACCOUNT` to the whole JSON key as a string instead |
+| `PORT` | Optional, defaults to `8080` |
+
+`server/.env` and `server/service-account.json` must never be committed.
+
+### Point the app at the server
+
+Set `BASE_URL` in `assets/app.env` to the token endpoint (include `/tokens`):
+
+| Where the app runs | `BASE_URL` |
+|---|---|
+| Android emulator | `http://10.0.2.2:8080/tokens` |
+| Physical device on Wi-Fi | `http://<your-PC-LAN-IP>:8080/tokens` (allow port 8080 through the firewall) |
+| Android device over USB | `http://localhost:8080/tokens` after `adb reverse tcp:8080 tcp:8080` |
+| iOS simulator | `http://localhost:8080/tokens` |
+| Release builds | an `https://` URL (plain `http` is rejected) |
+
+`assets/app.env` is bundled into the app, so **never put secrets in it**. Do a
+full restart (not hot reload) after changing it.
+
+`assets/app.env` is committed with the emulator URL as the default, for local
+development. **Before building for release**, change `BASE_URL` to the
+production backend, then confirm it with:
+
+```bash
+RELEASE_CHECK=true flutter test test/release_readiness_test.dart
+```
+
+This check is skipped during normal `flutter test` runs, since the emulator
+URL is the correct value day-to-day — it only runs on request, as a release
+gate. It fails if `BASE_URL` is still the emulator loopback address or isn't
+`https`. If it's silently left as the emulator URL in a release build,
+`NotificationService` no-ops token registration with no visible error
+(`debugPrint` is a no-op in release builds), so no device ever registers and
+no push ever arrives.
+
+### Test a notification
+
+1. Start the server, then run the app and accept the notification permission.
+2. Confirm registration: a document appears in Firestore under `deviceTokens`
+   (the document ID is the device's FCM token).
+3. Send a push. In Postman use **POST**, Body → raw → JSON, and a header
+   `x-api-key: <your API_KEY>`.
+
+   `POST http://localhost:8080/broadcast` (all devices):
+
+   ```json
+   {
+     "title": "Test notification",
+     "body": "Hello from St Luke's",
+     "data": { "screen": "news" }
+   }
+   ```
+
+   `POST http://localhost:8080/send` (one device; copy the token from Firestore):
+
+   ```json
+   {
+     "token": "DEVICE_FCM_TOKEN",
+     "title": "Test notification",
+     "body": "Hello from St Luke's"
+   }
+   ```
+
+   Or with curl (on Windows PowerShell use `curl.exe`):
+
+   ```bash
+   curl -X POST http://localhost:8080/broadcast \
+     -H "Content-Type: application/json" \
+     -H "x-api-key: YOUR_API_KEY" \
+     -d '{"title":"Test","body":"Hello"}'
+   ```
+
+   `title` and `body` are required; `data` is optional. A successful broadcast
+   returns `{"sent":1,"failed":0,"pruned":0}`.
+4. Test all three app states, since they take different code paths:
+   **foreground**, **background** (press Home first) and **terminated**
+   (swipe the app away). Each push should appear exactly once. Tapping a
+   notification only opens the app for now, with no deep-link routing yet.
+
+### Troubleshooting
+
+| Symptom | Likely cause and fix |
+|---|---|
+| `Connection refused` on registration | `localhost` on the device points at the device itself. Use `10.0.2.2` (emulator), `adb reverse`, or the PC's LAN IP; make sure the server is running |
+| `Cleartext HTTP traffic not permitted` | Android blocks plain `http` to non-localhost hosts. Use `adb reverse` or an `https` URL |
+| Server error `5 NOT_FOUND` | The Firestore database doesn't exist, or `FIRESTORE_DATABASE_ID` doesn't match it |
+| `401 Invalid or missing API key` | `x-api-key` header missing or different from `API_KEY` in `server/.env` |
+| `400` from `/send` or `/broadcast` | `title` or `body` missing or empty, or `data` is not a JSON object |
+| `404 Token is no longer registered` | Stale token (app reinstalled). The server already deleted it; restart the app to register a new one |
+| iOS: no token / `APNs token unavailable` | APNs key not uploaded to Firebase, Push Notifications capability missing, or running on a simulator |
+| Emulator crash `SIGILL` in `libwebviewchromium.so` | Emulator WebView bug, unrelated to notifications. Update WebView, cold boot the emulator, or test on a real device |
+
+### Deployment notes
+
+On the host (e.g. Render) set `API_KEY`, `FIRESTORE_DATABASE_ID` and
+`FIREBASE_SERVICE_ACCOUNT` as secret environment variables; no key file is
+needed. Use `GET /health` for the health check, and use a least-privilege
+service account (Firebase Cloud Messaging API Admin and Cloud Datastore User).
+
 ## Testing
 
 `test/` mirrors `lib/`. The suite currently covers the themed shell,

@@ -2,6 +2,8 @@
     <!-- Required for release builds to make network requests, e.g. the
          Donate tab's WebView and the News tab's live bulletins RSS fetch. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Permission for Notifications -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="st_luke_parish_app"
         android:name="${applicationName}"
@@ -33,6 +35,13 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Default settings for Firebase Cloud Messaging (FCM) push notifications -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="app_channel" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

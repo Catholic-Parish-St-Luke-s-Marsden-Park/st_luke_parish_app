@@ -43,7 +43,14 @@ dependencies:
   webview_flutter: ^4.14.1
   http: ^1.2.2
   xml: ^6.5.0
-  shared_preferences: ^2.3.3
+
+  shared_preferences: ^2.5.5
+
+  # Push notifications. flutter_dotenv loads assets/app.env (BASE_URL).
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
+  flutter_local_notifications: ^22.3.1
+  flutter_dotenv: ^6.0.1
 
 dev_dependencies:
   flutter_test:
@@ -85,6 +92,8 @@ flutter:
   assets:
     - assets/images/branding/
     - assets/images/leadership/
+    # App-side config only. Never bundle server/.env: it holds the API key.
+    - assets/app.env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
