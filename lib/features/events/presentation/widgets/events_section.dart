@@ -86,6 +86,7 @@ class EventsSection extends ConsumerWidget {
                                   showEventDetailsSheet(context, thisWeek[i]),
                               onAddToCalendar: () => addEventToDeviceCalendar(
                                 context,
+                                ref,
                                 thisWeek[i],
                               ),
                             ),

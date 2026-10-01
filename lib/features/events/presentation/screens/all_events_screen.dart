@@ -71,7 +71,8 @@ class _AllEventsScreenState extends ConsumerState<AllEventsScreen> {
                 event: event,
                 isLast: index == visible.length - 1 && !hasMore,
                 onDetails: () => showEventDetailsSheet(context, event),
-                onAddToCalendar: () => addEventToDeviceCalendar(context, event),
+                onAddToCalendar: () =>
+                    addEventToDeviceCalendar(context, ref, event),
               );
             },
           );

@@ -102,6 +102,15 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
 - **Owner:** Architecture / next notifications feature
 - **Status:** open
 
+- **Risk ID:** RISK-012
+- **Title:** An in-progress event (started but not yet ended) is excluded from the upcoming-events list, a narrower filter than REQ-F08-005 specifies
+- **Feature:** 08-events-calendar
+- **Impact:** Low. REQ-F08-005 says to filter by an event's *end* (falling back to *start* only when no end is known), so an event that started a few minutes ago but hasn't finished (e.g. a Mass checked mid-service) should still appear. `parseIcsEvents` in `lib/features/events/data/parsers/ics_event_parser.dart` instead filters every code path (the plain single-occurrence branch, the RRULE-expansion branch via the `rrule` package's own `after:` parameter, and the unparseable-RRULE fallback branch) on `start` alone, so such an event disappears from both the inline 7-day section and the All Events screen for its own duration, then reappears (as its *next* recurrence) once it ends. Found during the Tester phase by reading the filtering logic directly against the literal REQ-F08-005 wording, not from an observed live failure.
+- **Likelihood:** Narrow window per event (only while a user opens the News tab during that event's own run time, typically 30-75 minutes for a Mass), but happens on every occurrence of every recurring event, not a one-off edge case.
+- **Mitigation:** Not fixed this phase — the correct fix touches recurrence-expansion timing logic (computing each candidate occurrence's effective end, including threading a widened `after:` bound through the `rrule` package's `getInstances()` call so an in-progress recurring instance isn’t excluded by the package itself before the app's own filter runs) that this session cannot verify by executing `flutter test` directly against a real clock-dependent scenario, so it is recorded here for a small, deliberate Coder follow-up rather than risked as a blind patch. Recommended approach: compute `effectiveEnd = duration != null ? candidateStart.add(duration) : candidateStart` per candidate and filter on that instead of `candidateStart` alone, in all three branches of `parseIcsEvents`; for the RRULE path, widen `after:` to `now.subtract(maxKnownDuration)` (or just `now.subtract(const Duration(hours: 4))` as a simple bound covering any realistic parish event) so a currently-running instance isn't dropped by the package before the app's own effective-end filter runs.
+- **Owner:** Coder (next small follow-up on this feature, or the next Events-related feature)
+- **Status:** open
+
 ## Resolved Risks
 
 - **Risk ID:** RISK-002

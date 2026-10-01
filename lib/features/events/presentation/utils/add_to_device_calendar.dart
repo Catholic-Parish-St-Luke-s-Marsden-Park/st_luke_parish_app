@@ -1,16 +1,19 @@
 import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/parish_event.dart';
+import '../services/calendar_export_service.dart';
 
-/// Exports [event] to the user's device calendar via `add_2_calendar`
-/// (REQ-F08-007, REQ-F08-024) — opens the native Calendar app pre-filled
-/// with the event for the user to confirm; no calendar read/write
-/// permission needed for this default flow. Shows an explicit,
-/// user-friendly message on failure rather than silently no-opping
-/// (REQ-F08-025).
+/// Exports [event] to the user's device calendar via the injectable
+/// [CalendarExportService] (REQ-F08-007, REQ-F08-024) — opens the native
+/// Calendar app pre-filled with the event for the user to confirm; no
+/// calendar read/write permission needed for this default flow. Shows an
+/// explicit, user-friendly message on failure rather than silently
+/// no-opping (REQ-F08-025).
 Future<void> addEventToDeviceCalendar(
   BuildContext context,
+  WidgetRef ref,
   ParishEvent event,
 ) async {
   final calendarEvent = Event(
@@ -24,12 +27,9 @@ Future<void> addEventToDeviceCalendar(
     endDate: event.end ?? event.start.add(const Duration(hours: 1)),
   );
 
-  var success = false;
-  try {
-    success = await Add2Calendar.addEvent2Cal(calendarEvent);
-  } catch (_) {
-    success = false;
-  }
+  final success = await ref
+      .read(calendarExportServiceProvider)
+      .addEvent(calendarEvent);
 
   if (!context.mounted) return;
   if (!success) {
