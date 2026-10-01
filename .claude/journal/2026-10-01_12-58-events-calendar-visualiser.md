@@ -59,3 +59,26 @@
 ### Next Handoff (round 2)
 - Asking the user to re-run `flutter analyze` / `dart format . --set-exit-if-changed` / `flutter test` locally and report back pass/fail before this round is committed.
 - Once validation is clean: commit, update `feature-index.md` and `memory.md` again, then get one more live look from the user to confirm the plain-text "Add to my calendar" link and the new weekly Next/Back paging look and behave as expected before moving to Verifier.
+
+## Round 3 Addendum (same phase, reference-image feedback)
+
+### Files Changed (round 3)
+- Modified: `lib/features/events/presentation/widgets/event_row.dart` ("Add to my calendar" restyled to an outlined pill with a calendar icon; "Details" unchanged; action column widened 170px -> 200px).
+- Modified: `test/features/events/presentation/widgets/events_section_test.dart` (REQ-F08-032 group and header doc comment updated for the confirmed icon exception).
+- Modified: `.claude/plans/visualiser/2026-10-01_12-58-events-calendar.md` (Round 3 feedback, fix, and requirement-amendment sections appended).
+
+### Results (round 3)
+- User shared a reference screenshot of a rail-journey app's outlined "Add to Calendar" button (calendar icon + text) and asked whether "Add to my calendar" could look like it.
+- This conflicted directly with REQ-F08-032's no-Icon-widget convention, enforced by automated tests since 01-bootstrap-app -- surfaced explicitly via two options (text-only outlined pill matching the shape but not the icon, vs. breaking the convention) before writing any code. The user chose to add the icon.
+- This is the first `Icon` widget in this app's codebase. Implemented as `_AddToCalendarButton`: outlined pill (white fill, navy 1px border), `Icons.calendar_month` + label, matching the reference's shape.
+- Caught and fixed an overflow risk during implementation itself (before asking the user to validate): a bare `Text` as a direct child of a `Row` gets unbounded main-axis width in Flutter's Flex layout and will not wrap, unlike the previous design where `Text` was a direct child of a width-bounded `Container`. Wrapped the button's `Text` in `Flexible` to restore REQ-F08-037's overflow-free behaviour at large text scales.
+- Updated the REQ-F08-032 test group to assert exactly one `Icons.calendar_month` icon per event row instead of asserting none. Verified via a full grep sweep that no other test file's "no Icon" assertions are affected (`news_screen_test.dart`'s own sweep always renders `EventsSection` with zero events, so it never exercises a populated row).
+- Noticed `lib/features/masses/data/config/static_mass_schedule_config.dart` also shows as locally modified (an added weekday Mass entry) -- unrelated to this feature, left untouched and out of this round's commit.
+
+### Risks / Follow-up (round 3)
+- Same as rounds 1-2: **not yet validated** -- no `flutter analyze`/`dart format`/`flutter test` run against this round's changes.
+- REQ-F08-032 is now a precedent exception (first-ever Icon in the app) -- documented explicitly in the plan rather than left implicit, since a future feature's BA/Coder phase reading the old "no Icon anywhere" wording verbatim would be factually wrong without this note.
+
+### Next Handoff (round 3)
+- Asking the user to re-run `flutter analyze` / `dart format . --set-exit-if-changed` / `flutter test` locally and report back pass/fail before this round is committed.
+- Once validation is clean: commit, update `feature-index.md` and `memory.md`, then get one more live look to confirm the new "Add to my calendar" button renders as expected before moving to Verifier.

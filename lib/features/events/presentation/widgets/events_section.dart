@@ -167,7 +167,8 @@ class _WeekPaginationBar extends StatelessWidget {
         children: [
           if (hasPrevious)
             _WeekPaginationButton(label: '< Back', onTap: onPrevious),
-          if (hasNext) _WeekPaginationButton(label: 'Next >', onTap: onNext),
+          if (hasNext)
+            _WeekPaginationButton(label: 'More events >', onTap: onNext),
         ],
       ),
     );

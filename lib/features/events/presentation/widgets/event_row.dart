@@ -9,19 +9,30 @@ import '../../domain/entities/parish_event.dart';
 /// compactly in the top-right corner (REQ-F08-022) -- a visualiser-phase
 /// layout revision (2026-10-01) requested after a live Android run showed
 /// the original `Wrap`-stacked actions making each row far taller than
-/// necessary. Both actions use the same plain-text-link treatment: an
-/// earlier round of this same revision tried a filled "Add to my calendar"
-/// button, but a second live run showed the filled pill reading as too
-/// large/heavy, and the user asked for a plain text link like "Details"
-/// instead. Both tap targets remain at least 48x48 logical pixels
-/// (REQ-F08-035), and the action column is width-bounded so the longer
-/// "Add to my calendar" label wraps onto a second line at large text
-/// scales instead of growing unboundedly and squeezing the title/location
-/// column into a `RenderFlex` overflow (REQ-F08-037). Shared by
-/// `EventsSection` (the inline News-tab list, now the only place events are
-/// listed -- the separate "All Events" screen was retired in this same
-/// revision in favour of inline weekly pagination). No `Icon`/emoji
-/// anywhere (REQ-F08-032).
+/// necessary.
+///
+/// "Details" stays a plain text link ([_ActionLink]). "Add to my calendar"
+/// went through three rounds of live feedback: a filled pill button (too
+/// heavy/large), then a plain text link matching "Details" (the user's
+/// fallback at the time), and finally -- after the user shared a reference
+/// screenshot of a rail-journey app's outlined "Add to Calendar" button --
+/// an outlined pill button with a calendar icon ([_AddToCalendarButton]).
+/// That icon is a deliberate, explicit exception to this app's otherwise
+/// strict no-Icon-widget convention (REQ-F08-032), confirmed with the user
+/// before implementing since it breaks a rule enforced by automated tests
+/// since 01-bootstrap-app; it is the only `Icon` anywhere in the app. No
+/// emoji glyph appears anywhere, which REQ-F08-032 still fully requires.
+///
+/// Both tap targets remain at least 48x48 logical pixels (REQ-F08-035),
+/// and the action column is width-bounded so "Add to my calendar" wraps
+/// onto a second line at large text scales instead of growing unboundedly
+/// and squeezing the title/location column into a `RenderFlex` overflow
+/// (REQ-F08-037) -- the button's inner `Text` is wrapped in `Flexible` for
+/// the same reason, since a bare `Text` inside a `Row` is otherwise given
+/// unbounded width and will not wrap. Shared by `EventsSection` (the
+/// inline News-tab list, now the only place events are listed -- the
+/// separate "All Events" screen was retired in an earlier round of this
+/// same revision in favour of inline weekly pagination).
 class EventRow extends StatelessWidget {
   const EventRow({
     super.key,
@@ -57,8 +68,8 @@ class EventRow extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
+                    horizontal: 10,
+                    vertical: 5,
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryNavy,
@@ -66,7 +77,10 @@ class EventRow extends StatelessWidget {
                   ),
                   child: Text(
                     event.displayTime,
-                    style: textTheme.labelSmall?.copyWith(color: Colors.white),
+                    // Slightly larger than the old labelSmall (9sp) per
+                    // visualiser feedback (2026-10-01) that the date/time
+                    // pill was too small to read comfortably.
+                    style: textTheme.labelMedium?.copyWith(color: Colors.white),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -95,17 +109,14 @@ class EventRow extends StatelessWidget {
             // a second line at large text scales instead of growing
             // unboundedly and squeezing the title/location column into a
             // RenderFlex overflow (REQ-F08-037).
-            width: 170,
+            width: 200,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: [
                 _ActionLink(label: 'Details', onTap: onDetails),
-                const SizedBox(height: 2),
-                _ActionLink(
-                  label: 'Add to my calendar',
-                  onTap: onAddToCalendar,
-                ),
+                const SizedBox(height: 4),
+                _AddToCalendarButton(onTap: onAddToCalendar),
               ],
             ),
           ),
@@ -115,10 +126,7 @@ class EventRow extends StatelessWidget {
   }
 }
 
-/// Shared plain-text-link treatment for both "Details" and "Add to my
-/// calendar" -- unified onto one style after live feedback found a filled
-/// button for "Add to my calendar" too visually heavy for a compact row
-/// (visualiser feedback, 2026-10-01). Still a plain `Text` label, no
+/// Plain-text-link treatment for "Details". Still a plain `Text` label, no
 /// `Icon` (REQ-F08-032).
 class _ActionLink extends StatelessWidget {
   const _ActionLink({required this.label, required this.onTap});
@@ -146,6 +154,65 @@ class _ActionLink extends StatelessWidget {
               color: AppColors.primaryNavy,
               fontWeight: FontWeight.w700,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Outlined pill button with a calendar glyph for "Add to my calendar" --
+/// a deliberate, explicit exception to this app's otherwise strict
+/// no-Icon-widget convention (REQ-F08-032), requested by the user
+/// (2026-10-01) to match a reference rail-journey-app "Add to Calendar"
+/// button design. This is the only `Icon` anywhere in the app; every other
+/// tap target/action remains plain `Text`, and no emoji glyph appears
+/// anywhere, which REQ-F08-032 still fully requires. The inner `Text` is
+/// wrapped in `Flexible` rather than left bare: a bare `Text` child of a
+/// `Row` is given unbounded main-axis width and will not wrap, which would
+/// reopen the `RenderFlex` overflow risk REQ-F08-037's width bound exists
+/// to prevent.
+class _AddToCalendarButton extends StatelessWidget {
+  const _AddToCalendarButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: Colors.white,
+      borderRadius: AppShapes.pillBorderRadius,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppShapes.pillBorderRadius,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.primaryNavy),
+            borderRadius: AppShapes.pillBorderRadius,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.calendar_month,
+                size: 16,
+                color: AppColors.primaryNavy,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  'Add to my calendar',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.primaryNavy,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

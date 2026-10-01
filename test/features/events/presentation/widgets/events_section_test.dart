@@ -17,15 +17,27 @@ import 'package:st_luke_parish_app/features/events/presentation/widgets/events_s
 /// Covers the inline "Upcoming Events" section's own acceptance criteria:
 /// REQ-F08-014..020 (loading/success/empty states/fallback link),
 /// REQ-F08-022..025 (per-row Details/Add-to-calendar actions),
-/// REQ-F08-032 (no Icon/emoji), and REQ-F08-037 (text-scale/screen-size
-/// overflow), exercised through `EventsSection`'s own widget tree with a
-/// fake `EventsRepository` override (never the real network datasource).
+/// REQ-F08-032 (amended, see below), and REQ-F08-037 (text-scale/
+/// screen-size overflow), exercised through `EventsSection`'s own widget
+/// tree with a fake `EventsRepository` override (never the real network
+/// datasource).
 ///
 /// Also covers the inline weekly-pagination behaviour that replaced the
 /// former "View all upcoming events" link / `AllEventsScreen` (the former
 /// REQ-F08-021 and REQ-F08-027..030, retired in a visualiser-phase redesign
 /// on 2026-10-01 after live feedback asked for paging within this section
 /// instead of a separate screen) -- see the "Weekly pagination" group.
+///
+/// REQ-F08-032 ("no Icon/emoji") is amended as of 2026-10-01: the user
+/// shared a reference rail-journey app's "Add to Calendar" button and
+/// explicitly asked for its calendar icon, breaking this app's no-Icon
+/// convention for the first time -- confirmed with the user before
+/// implementing, since it overrides a rule the app has enforced since
+/// 01-bootstrap-app. The "no Icon widget" REQ-F08-032 group below is
+/// updated accordingly: the calendar glyph on "Add to my calendar" is now
+/// the one explicit, confirmed exception; no emoji glyph anywhere still
+/// holds in full, and every other tap target/action in this app remains
+/// plain `Text`.
 class _FakeUrlLauncherService implements UrlLauncherService {
   final List<String> launchedUrls = [];
 
@@ -221,7 +233,7 @@ void main() {
         fakeRepository: _FakeEventsRepository.returning(const []),
       );
 
-      expect(find.text('Next >'), findsNothing);
+      expect(find.text('More events >'), findsNothing);
       expect(find.text('< Back'), findsNothing);
     });
   });
@@ -238,7 +250,7 @@ void main() {
       );
 
       expect(find.text('No events this week.'), findsOneWidget);
-      expect(find.text('Next >'), findsOneWidget);
+      expect(find.text('More events >'), findsOneWidget);
       expect(find.text('< Back'), findsNothing);
       expect(
         find.text('View upcoming events on the parish website ↗'),
@@ -298,7 +310,7 @@ void main() {
 
       expect(find.text('This week'), findsOneWidget);
       expect(find.text('Next week'), findsNothing);
-      expect(find.text('Next >'), findsOneWidget);
+      expect(find.text('More events >'), findsOneWidget);
       expect(find.text('< Back'), findsNothing);
     });
 
@@ -314,14 +326,14 @@ void main() {
         ]),
       );
 
-      await tester.tap(find.text('Next >'));
+      await tester.tap(find.text('More events >'));
       await tester.pumpAndSettle();
 
       expect(find.text('This week'), findsNothing);
       expect(find.text('Next week'), findsOneWidget);
       expect(find.text('< Back'), findsOneWidget);
       // Nothing further out, so no "Next" control on the last week.
-      expect(find.text('Next >'), findsNothing);
+      expect(find.text('More events >'), findsNothing);
     });
 
     testWidgets('tapping "Back" returns to the first week', (tester) async {
@@ -334,7 +346,7 @@ void main() {
         ]),
       );
 
-      await tester.tap(find.text('Next >'));
+      await tester.tap(find.text('More events >'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('< Back'));
       await tester.pumpAndSettle();
@@ -342,7 +354,7 @@ void main() {
       expect(find.text('This week'), findsOneWidget);
       expect(find.text('Next week'), findsNothing);
       expect(find.text('< Back'), findsNothing);
-      expect(find.text('Next >'), findsOneWidget);
+      expect(find.text('More events >'), findsOneWidget);
     });
 
     testWidgets(
@@ -356,7 +368,7 @@ void main() {
           ]),
         );
 
-        expect(find.text('Next >'), findsNothing);
+        expect(find.text('More events >'), findsNothing);
         expect(find.text('< Back'), findsNothing);
       },
     );
@@ -374,15 +386,15 @@ void main() {
           ]),
         );
 
-        await tester.tap(find.text('Next >'));
+        await tester.tap(find.text('More events >'));
         await tester.pumpAndSettle();
 
         expect(find.text('No events this week.'), findsOneWidget);
         // Still able to page forward to reach the week-3 event.
-        expect(find.text('Next >'), findsOneWidget);
+        expect(find.text('More events >'), findsOneWidget);
         expect(find.text('< Back'), findsOneWidget);
 
-        await tester.tap(find.text('Next >'));
+        await tester.tap(find.text('More events >'));
         await tester.pumpAndSettle();
 
         expect(find.text('Week three'), findsOneWidget);
@@ -531,25 +543,33 @@ void main() {
     });
   });
 
-  group('REQ-F08-032: no Icon widget and no emoji glyph anywhere', () {
-    testWidgets('no Icon widget is rendered with real event content', (
-      tester,
-    ) async {
-      final now = sydneyNowAsFakeUtc();
-      await pumpEventsSection(
-        tester,
-        fakeRepository: _FakeEventsRepository.returning([
-          _event(
-            'Vigil Mass 5.30pm',
-            start: now.add(const Duration(days: 1)),
-            location: "St Luke's Catholic Church",
-          ),
-          _event('Sunday Mass', start: now.add(const Duration(days: 2))),
-        ]),
-      );
+  group('REQ-F08-032 (amended): no emoji anywhere; the sole Icon exception is '
+      'the "Add to my calendar" calendar glyph', () {
+    testWidgets(
+      'the only Icon rendered with real event content is the calendar '
+      'glyph, once per row',
+      (tester) async {
+        final now = sydneyNowAsFakeUtc();
+        await pumpEventsSection(
+          tester,
+          fakeRepository: _FakeEventsRepository.returning([
+            _event(
+              'Vigil Mass 5.30pm',
+              start: now.add(const Duration(days: 1)),
+              location: "St Luke's Catholic Church",
+            ),
+            _event('Sunday Mass', start: now.add(const Duration(days: 2))),
+          ]),
+        );
 
-      expect(find.byType(Icon), findsNothing);
-    });
+        // Exactly one calendar icon per row (the "Add to my calendar"
+        // button), confirmed with the user as the app's sole, deliberate
+        // exception to its otherwise strict no-Icon convention -- and
+        // confirmed it is specifically that icon, not some other one.
+        expect(find.byIcon(Icons.calendar_month), findsNWidgets(2));
+        expect(find.byType(Icon), findsNWidgets(2));
+      },
+    );
 
     testWidgets('no rendered Text contains an emoji glyph', (tester) async {
       final now = sydneyNowAsFakeUtc();

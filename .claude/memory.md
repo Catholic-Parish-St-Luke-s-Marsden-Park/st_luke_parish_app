@@ -3,9 +3,9 @@
 ## Active State
 - **Current Feature:** 08-events-calendar
 - **Current Branch:** feature/08-events-calendar
-- **Current Phase:** visualiser (in progress -- round 2 of fixes, after further live feedback)
+- **Current Phase:** visualiser (in progress -- round 3 of fixes, after further live feedback)
 - **Active Agent:** VISUALISER_AGENT
-- **Awaiting User Approval:** no (round 1 committed: corner-grouped row actions + forward/back pagination. User re-ran live, reported the filled "Add to my calendar" button still too big and asked to remove the separate "View all upcoming events" screen in favour of inline weekly Next/Back paging. Both confirmed and implemented: "Add to my calendar" is now a plain text link like "Details" (no filled button); AllEventsScreen deleted; EventsSection itself pages through events a week at a time. This retires REQ-F08-021/027..030 from the original BA plan (documented in the visualiser plan). Not yet validated -- awaiting the user to run `flutter analyze` / `dart format . --set-exit-if-changed` / `flutter test` locally and report back before this round is committed)
+- **Awaiting User Approval:** no (rounds 1-2 committed: corner-grouped row actions, forward/back pagination folded inline by week, AllEventsScreen retired. Round 3: user shared a reference screenshot and asked for "Add to my calendar" to look like an outlined button with a calendar icon -- confirmed this breaks REQ-F08-032's no-Icon convention (first Icon in the app) before implementing; user chose to add the icon anyway. Also bumped the date/time pill size and renamed "Next >" to "More events >" (round 2.5, folded into this same pass). Not yet validated -- awaiting the user to run `flutter analyze` / `dart format . --set-exit-if-changed` / `flutter test` locally and report back before this round is committed)
 
 ## Workflow Model
 - Claude Code-specific SDLC
