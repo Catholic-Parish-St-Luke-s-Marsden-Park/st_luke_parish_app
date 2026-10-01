@@ -11,16 +11,21 @@ import 'package:st_luke_parish_app/features/events/domain/entities/parish_event.
 import 'package:st_luke_parish_app/features/events/domain/failures/events_failure.dart';
 import 'package:st_luke_parish_app/features/events/domain/repositories/events_repository.dart';
 import 'package:st_luke_parish_app/features/events/presentation/providers/events_provider.dart';
-import 'package:st_luke_parish_app/features/events/presentation/screens/all_events_screen.dart';
 import 'package:st_luke_parish_app/features/events/presentation/services/calendar_export_service.dart';
 import 'package:st_luke_parish_app/features/events/presentation/widgets/events_section.dart';
 
 /// Covers the inline "Upcoming Events" section's own acceptance criteria:
-/// REQ-F08-014..021 (loading/success/empty states/fallback link/"View all"
-/// link), REQ-F08-022..025 (per-row Details/Add-to-calendar actions),
+/// REQ-F08-014..020 (loading/success/empty states/fallback link),
+/// REQ-F08-022..025 (per-row Details/Add-to-calendar actions),
 /// REQ-F08-032 (no Icon/emoji), and REQ-F08-037 (text-scale/screen-size
 /// overflow), exercised through `EventsSection`'s own widget tree with a
 /// fake `EventsRepository` override (never the real network datasource).
+///
+/// Also covers the inline weekly-pagination behaviour that replaced the
+/// former "View all upcoming events" link / `AllEventsScreen` (the former
+/// REQ-F08-021 and REQ-F08-027..030, retired in a visualiser-phase redesign
+/// on 2026-10-01 after live feedback asked for paging within this section
+/// instead of a separate screen) -- see the "Weekly pagination" group.
 class _FakeUrlLauncherService implements UrlLauncherService {
   final List<String> launchedUrls = [];
 
@@ -171,7 +176,7 @@ void main() {
     });
 
     testWidgets('an event further than 7 days out is excluded from the '
-        'inline list', (tester) async {
+        'first week', (tester) async {
       final now = sydneyNowAsFakeUtc();
       await pumpEventsSection(
         tester,
@@ -210,21 +215,20 @@ void main() {
       ]);
     });
 
-    testWidgets('does not show the "View all upcoming events" link', (
-      tester,
-    ) async {
+    testWidgets('does not show pagination controls', (tester) async {
       await pumpEventsSection(
         tester,
         fakeRepository: _FakeEventsRepository.returning(const []),
       );
 
-      expect(find.text('View all upcoming events'), findsNothing);
+      expect(find.text('Next >'), findsNothing);
+      expect(find.text('< Back'), findsNothing);
     });
   });
 
   group('REQ-F08-017: empty-this-week state', () {
-    testWidgets('shows a distinct message and the "View all upcoming '
-        'events" link, not the website fallback link', (tester) async {
+    testWidgets('shows a distinct message and a "Next" control, not the '
+        'website fallback link', (tester) async {
       final now = sydneyNowAsFakeUtc();
       await pumpEventsSection(
         tester,
@@ -233,8 +237,9 @@ void main() {
         ]),
       );
 
-      expect(find.text('No events in the next 7 days.'), findsOneWidget);
-      expect(find.text('View all upcoming events'), findsOneWidget);
+      expect(find.text('No events this week.'), findsOneWidget);
+      expect(find.text('Next >'), findsOneWidget);
+      expect(find.text('< Back'), findsNothing);
       expect(
         find.text('View upcoming events on the parish website ↗'),
         findsNothing,
@@ -278,23 +283,111 @@ void main() {
     });
   });
 
-  group('REQ-F08-021: "View all upcoming events" navigates to '
-      'AllEventsScreen', () {
-    testWidgets('tapping the link pushes AllEventsScreen', (tester) async {
+  group('Weekly pagination (replaces the retired "View all upcoming events" '
+      'screen)', () {
+    testWidgets('shows only this week\'s events, with "Next" but no "Back" on '
+        'the first week', (tester) async {
       final now = sydneyNowAsFakeUtc();
       await pumpEventsSection(
         tester,
         fakeRepository: _FakeEventsRepository.returning([
-          _event('Sunday Mass', start: now.add(const Duration(days: 1))),
+          _event('This week', start: now.add(const Duration(days: 2))),
+          _event('Next week', start: now.add(const Duration(days: 9))),
         ]),
       );
 
-      await tester.tap(find.text('View all upcoming events'));
+      expect(find.text('This week'), findsOneWidget);
+      expect(find.text('Next week'), findsNothing);
+      expect(find.text('Next >'), findsOneWidget);
+      expect(find.text('< Back'), findsNothing);
+    });
+
+    testWidgets('tapping "Next" shows next week\'s events and reveals "Back"', (
+      tester,
+    ) async {
+      final now = sydneyNowAsFakeUtc();
+      await pumpEventsSection(
+        tester,
+        fakeRepository: _FakeEventsRepository.returning([
+          _event('This week', start: now.add(const Duration(days: 2))),
+          _event('Next week', start: now.add(const Duration(days: 9))),
+        ]),
+      );
+
+      await tester.tap(find.text('Next >'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(AllEventsScreen), findsOneWidget);
-      expect(find.text('Upcoming Events'), findsWidgets);
+      expect(find.text('This week'), findsNothing);
+      expect(find.text('Next week'), findsOneWidget);
+      expect(find.text('< Back'), findsOneWidget);
+      // Nothing further out, so no "Next" control on the last week.
+      expect(find.text('Next >'), findsNothing);
     });
+
+    testWidgets('tapping "Back" returns to the first week', (tester) async {
+      final now = sydneyNowAsFakeUtc();
+      await pumpEventsSection(
+        tester,
+        fakeRepository: _FakeEventsRepository.returning([
+          _event('This week', start: now.add(const Duration(days: 2))),
+          _event('Next week', start: now.add(const Duration(days: 9))),
+        ]),
+      );
+
+      await tester.tap(find.text('Next >'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('< Back'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('This week'), findsOneWidget);
+      expect(find.text('Next week'), findsNothing);
+      expect(find.text('< Back'), findsNothing);
+      expect(find.text('Next >'), findsOneWidget);
+    });
+
+    testWidgets(
+      'no pagination controls when every event fits in the first week',
+      (tester) async {
+        final now = sydneyNowAsFakeUtc();
+        await pumpEventsSection(
+          tester,
+          fakeRepository: _FakeEventsRepository.returning([
+            _event('Sunday Mass', start: now.add(const Duration(days: 1))),
+          ]),
+        );
+
+        expect(find.text('Next >'), findsNothing);
+        expect(find.text('< Back'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'an empty week in the middle still allows paging further forward',
+      (tester) async {
+        final now = sydneyNowAsFakeUtc();
+        await pumpEventsSection(
+          tester,
+          fakeRepository: _FakeEventsRepository.returning([
+            _event('This week', start: now.add(const Duration(days: 2))),
+            // Nothing in week 2 (days 7-14); the next event is in week 3.
+            _event('Week three', start: now.add(const Duration(days: 16))),
+          ]),
+        );
+
+        await tester.tap(find.text('Next >'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('No events this week.'), findsOneWidget);
+        // Still able to page forward to reach the week-3 event.
+        expect(find.text('Next >'), findsOneWidget);
+        expect(find.text('< Back'), findsOneWidget);
+
+        await tester.tap(find.text('Next >'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Week three'), findsOneWidget);
+      },
+    );
   });
 
   group('REQ-F08-022/023: "Details" opens an in-app sheet', () {

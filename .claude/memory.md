@@ -3,9 +3,9 @@
 ## Active State
 - **Current Feature:** 08-events-calendar
 - **Current Branch:** feature/08-events-calendar
-- **Current Phase:** visualiser (in progress -- fixing confirmed defects)
+- **Current Phase:** visualiser (in progress -- round 2 of fixes, after further live feedback)
 - **Active Agent:** VISUALISER_AGENT
-- **Awaiting User Approval:** no (live Android run complete; user reported two layout/pagination defects, confirmed them, and explicitly said "ok fix the issues" -- overriding this phase's default no-rework-loop rule. Both fixes are implemented (event_row.dart corner layout + styled button; all_events_screen.dart forward/back pagination; pagination tests rewritten) but not yet validated -- awaiting the user to run `flutter analyze` / `dart format . --set-exit-if-changed` / `flutter test` locally and report back, same as every prior phase this session, before this phase is committed)
+- **Awaiting User Approval:** no (round 1 committed: corner-grouped row actions + forward/back pagination. User re-ran live, reported the filled "Add to my calendar" button still too big and asked to remove the separate "View all upcoming events" screen in favour of inline weekly Next/Back paging. Both confirmed and implemented: "Add to my calendar" is now a plain text link like "Details" (no filled button); AllEventsScreen deleted; EventsSection itself pages through events a week at a time. This retires REQ-F08-021/027..030 from the original BA plan (documented in the visualiser plan). Not yet validated -- awaiting the user to run `flutter analyze` / `dart format . --set-exit-if-changed` / `flutter test` locally and report back before this round is committed)
 
 ## Workflow Model
 - Claude Code-specific SDLC

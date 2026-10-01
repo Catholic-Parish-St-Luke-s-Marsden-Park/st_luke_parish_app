@@ -33,3 +33,29 @@
 ## Next Handoff
 - Asking the user to re-run `flutter analyze` / `dart format . --set-exit-if-changed` / `flutter test` locally on these changes and report back pass/fail, before this phase is committed -- same two-step (write -> validate -> commit) pattern used for every prior phase this feature.
 - Once validation is clean: commit, update `feature-index.md` and `memory.md`'s Active State header, then determine next handoff (presumably further live confirmation of the fixes from the user, then on to Verifier).
+
+## Round 2 Addendum (same phase, further live feedback)
+
+### Files Changed (round 2)
+- Modified: `lib/features/events/presentation/widgets/event_row.dart` (filled "Add to my calendar" button replaced with a shared plain-text `_ActionLink`, matching "Details"; corner column widened 120px -> 170px).
+- Modified: `lib/features/events/presentation/widgets/events_section.dart` (converted to `ConsumerStatefulWidget`; inline weekly pagination with `_WeekPaginationBar` replaces the old "View all upcoming events" link).
+- Modified: `lib/features/events/presentation/providers/events_provider.dart` (doc comment no longer references `AllEventsScreen`).
+- Modified: `test/features/events/presentation/widgets/events_section_test.dart` (new "Weekly pagination" group; REQ-F08-016/017 assertions updated for the new controls/messages).
+- Deleted: `lib/features/events/presentation/screens/all_events_screen.dart`.
+- Deleted: `test/features/events/presentation/screens/all_events_screen_test.dart`.
+- Modified: `.claude/plans/visualiser/2026-10-01_12-58-events-calendar.md` (Round 2 feedback, fixes, and requirement-change sections appended).
+
+### Results (round 2)
+- User re-ran the app live after round 1's commit and reported the filled "Add to my calendar" button still looked too large (wrapping to two lines at normal text scale), and asked whether the separate "View all upcoming events" screen was needed at all, proposing inline Next/Back weekly paging within the News tab section instead.
+- Both items parsed and confirmed via explicit questions before any code was touched (see plan's "Round 2" section for the exact options and the user's answers): "plain text link would do" for the button (not a smaller filled button -- drop the filled treatment entirely), and "Yes, remove it and page inline by week" for pagination.
+- `all_events_screen.dart` and its test file are fully deleted, not just unlinked, per the user's explicit choice. A full grep sweep across `lib/` and `test/` confirmed no remaining code references outside historical doc comments (one of which is in the generated `events_provider.g.dart`, a known cosmetic doc-comment-drift case from this session's existing `.g.dart` precedent, not a functional issue).
+- This retires the original BA plan's `REQ-F08-021` and `REQ-F08-027..030` (the separate-screen requirements) -- documented explicitly in the plan's "Requirement Changes" section for the Verifier phase's traceability pass, since the BA plan document itself is left as the unedited historical record.
+- All three edited files and the two deletions re-checked (balanced braces/parens/brackets on the edited files; a full grep sweep confirming no dangling references) after writing; none has been compiled or executed yet.
+
+### Risks / Follow-up (round 2)
+- Same as round 1: **not yet validated** -- no `flutter analyze`/`dart format`/`flutter test` run against this round's changes. Asking the user to re-run the three commands and report back before committing.
+- The generated `events_provider.g.dart` still carries a stale doc-comment mention of `AllEventsScreen` (comment-only, no functional impact) until the user's next `dart run build_runner build` -- consistent with this session's existing cosmetic `.g.dart` drift pattern, not treated as a new risk entry.
+
+### Next Handoff (round 2)
+- Asking the user to re-run `flutter analyze` / `dart format . --set-exit-if-changed` / `flutter test` locally and report back pass/fail before this round is committed.
+- Once validation is clean: commit, update `feature-index.md` and `memory.md` again, then get one more live look from the user to confirm the plain-text "Add to my calendar" link and the new weekly Next/Back paging look and behave as expected before moving to Verifier.
