@@ -70,5 +70,9 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<!-- add_2_calendar (08-events-calendar): required for the "Add to my
+	     calendar" export action to present the native Calendar app. -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>Allows adding a parish event to your calendar when you tap "Add to my calendar".</string>
 </dict>
 </plist>
