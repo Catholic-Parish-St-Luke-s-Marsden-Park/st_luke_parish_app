@@ -92,8 +92,85 @@ void main() {
   });
 
   group('REQ-F08-029: pagination', () {
-    testWidgets('shows a bounded first page with a "Load more" button, '
-        'revealing the rest on tap', (tester) async {
+    testWidgets(
+      'shows a bounded first page with a "Next" control and no "Back" '
+      'control on the first page',
+      (tester) async {
+        final now = sydneyNowAsFakeUtc();
+        final events = [
+          for (var i = 0; i < 25; i++)
+            _event('Event $i', start: now.add(Duration(days: i + 1))),
+        ];
+        await pumpAllEventsScreen(
+          tester,
+          fakeRepository: _FakeEventsRepository.returning(events),
+        );
+
+        // ListView.builder only builds items near the viewport, so the
+        // first page's rows beyond what's visible aren't in the tree yet
+        // -- what matters for REQ-F08-029 is that the list doesn't render
+        // everything at once: the second page's events aren't built at
+        // all (not merely off-screen), and scrolling reaches a "Next"
+        // control, never a "Back" control, on this first page.
+        expect(find.text('Event 0'), findsOneWidget);
+        expect(find.text('Event 20'), findsNothing);
+
+        await tester.scrollUntilVisible(
+          find.text('Next >'),
+          300,
+          scrollable: find.byType(Scrollable),
+        );
+        expect(find.text('Next >'), findsOneWidget);
+        expect(find.text('< Back'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'tapping "Next" reveals the next page, with a "Back" control and '
+      'none of the first page\'s events',
+      (tester) async {
+        final now = sydneyNowAsFakeUtc();
+        final events = [
+          for (var i = 0; i < 25; i++)
+            _event('Event $i', start: now.add(Duration(days: i + 1))),
+        ];
+        await pumpAllEventsScreen(
+          tester,
+          fakeRepository: _FakeEventsRepository.returning(events),
+        );
+
+        await tester.scrollUntilVisible(
+          find.text('Next >'),
+          300,
+          scrollable: find.byType(Scrollable),
+        );
+        await tester.tap(find.text('Next >'));
+        await tester.pumpAndSettle();
+
+        // The first page's events are gone entirely -- this is a new
+        // page, not more items appended to the same list.
+        expect(find.text('Event 0'), findsNothing);
+
+        await tester.scrollUntilVisible(
+          find.text('Event 20'),
+          -300,
+          scrollable: find.byType(Scrollable),
+        );
+        expect(find.text('Event 20'), findsOneWidget);
+
+        await tester.scrollUntilVisible(
+          find.text('Event 24'),
+          300,
+          scrollable: find.byType(Scrollable),
+        );
+        expect(find.text('Event 24'), findsOneWidget);
+        // Last page: no further "Next" control, but "Back" is available.
+        expect(find.text('Next >'), findsNothing);
+        expect(find.text('< Back'), findsOneWidget);
+      },
+    );
+
+    testWidgets('tapping "Back" returns to the previous page', (tester) async {
       final now = sydneyNowAsFakeUtc();
       final events = [
         for (var i = 0; i < 25; i++)
@@ -104,39 +181,34 @@ void main() {
         fakeRepository: _FakeEventsRepository.returning(events),
       );
 
-      // ListView.builder only builds items near the viewport, so the
-      // first page's rows beyond what's visible aren't in the tree yet
-      // (findable count depends on viewport size, not itemCount) -- what
-      // matters for REQ-F08-029 is that the list doesn't render
-      // everything at once: the last item (added only after "Load more")
-      // isn't built, and scrolling reaches a "Load more" control before
-      // reaching it.
-      expect(find.text('Event 0'), findsOneWidget);
-      expect(find.text('Event 24'), findsNothing);
-
       await tester.scrollUntilVisible(
-        find.text('Load more'),
+        find.text('Next >'),
         300,
         scrollable: find.byType(Scrollable),
       );
-      expect(find.text('Load more'), findsOneWidget);
-      expect(find.text('Event 20'), findsNothing);
-
-      await tester.tap(find.text('Load more'));
+      await tester.tap(find.text('Next >'));
       await tester.pumpAndSettle();
 
-      // After loading more, scrolling the rest of the way reaches the
-      // final event with no "Load more" button left.
       await tester.scrollUntilVisible(
-        find.text('Event 24'),
+        find.text('< Back'),
         300,
         scrollable: find.byType(Scrollable),
       );
-      expect(find.text('Event 24'), findsOneWidget);
-      expect(find.text('Load more'), findsNothing);
+      await tester.tap(find.text('< Back'));
+      await tester.pumpAndSettle();
+
+      // Back on the first page: the original events are showing again,
+      // and the "Back" control is gone.
+      await tester.scrollUntilVisible(
+        find.text('Event 0'),
+        -300,
+        scrollable: find.byType(Scrollable),
+      );
+      expect(find.text('Event 0'), findsOneWidget);
+      expect(find.text('< Back'), findsNothing);
     });
 
-    testWidgets('no "Load more" button when everything fits on one page', (
+    testWidgets('no pagination controls when everything fits on one page', (
       tester,
     ) async {
       final now = sydneyNowAsFakeUtc();
@@ -147,7 +219,8 @@ void main() {
         ]),
       );
 
-      expect(find.text('Load more'), findsNothing);
+      expect(find.text('Next >'), findsNothing);
+      expect(find.text('< Back'), findsNothing);
     });
   });
 

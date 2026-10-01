@@ -3,9 +3,9 @@
 ## Active State
 - **Current Feature:** 08-events-calendar
 - **Current Branch:** feature/08-events-calendar
-- **Current Phase:** tester (closed, committed)
-- **Active Agent:** TESTER_AGENT (handoff to VISUALISER_AGENT pending user direction)
-- **Awaiting User Approval:** yes (review the committed tester phase and confirm VISUALISER_AGENT should proceed next)
+- **Current Phase:** visualiser (in progress -- fixing confirmed defects)
+- **Active Agent:** VISUALISER_AGENT
+- **Awaiting User Approval:** no (live Android run complete; user reported two layout/pagination defects, confirmed them, and explicitly said "ok fix the issues" -- overriding this phase's default no-rework-loop rule. Both fixes are implemented (event_row.dart corner layout + styled button; all_events_screen.dart forward/back pagination; pagination tests rewritten) but not yet validated -- awaiting the user to run `flutter analyze` / `dart format . --set-exit-if-changed` / `flutter test` locally and report back, same as every prior phase this session, before this phase is committed)
 
 ## Workflow Model
 - Claude Code-specific SDLC
