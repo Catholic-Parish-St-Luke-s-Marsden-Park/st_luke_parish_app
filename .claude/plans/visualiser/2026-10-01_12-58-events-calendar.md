@@ -106,3 +106,11 @@ This is the first `Icon` widget anywhere in this app's codebase. It is treated a
 
 Verified for balanced braces/parens/brackets and re-read in full after writing; not yet compiled/run -- pending the user's own `flutter analyze` / `dart format` / `flutter test` validation.
 
+
+## Visualiser Phase Closed
+
+The user reviewed the final committed state -- outlined calendar-icon "Add to my calendar" button, "More events >" inline weekly pagination, plain-text "Details" link, and the compact corner-grouped row layout -- via two confirmation screenshots of the live running app, and replied **"yes"** to the explicit question of whether to close out this phase and hand off to Verifier.
+
+What is being approved: three full rounds (plus one small round-2.5 tweak pass) of live-feedback-driven fixes applied directly within this phase, per the user's ongoing "ok fix the issues" authorization -- a deliberate, each-time-documented deviation from the visualiser-agent's default no-rework-loop/file-as-issue procedure (see "Deviation From Default No-Rework-Loop Procedure" above). Every round was committed only after the user pasted clean, locally-run `flutter analyze` / `dart format . --set-exit-if-changed` / `flutter test` evidence. No outstanding visualiser-phase defects remain open against this feature.
+
+Phase-closed. Handing off to VERIFIER_AGENT next.

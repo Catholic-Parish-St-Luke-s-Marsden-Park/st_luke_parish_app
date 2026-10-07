@@ -82,3 +82,21 @@
 ### Next Handoff (round 3)
 - Asking the user to re-run `flutter analyze` / `dart format . --set-exit-if-changed` / `flutter test` locally and report back pass/fail before this round is committed.
 - Once validation is clean: commit, update `feature-index.md` and `memory.md`, then get one more live look to confirm the new "Add to my calendar" button renders as expected before moving to Verifier.
+
+## Visualiser Phase Closed (final)
+
+User confirmed via two screenshots of the fully working live app (compact corner row, plain-text "Details" link, outlined calendar-icon "Add to my calendar" button, "More events >" inline weekly pagination) and replied "yes" to closing out this phase and handing off to Verifier.
+
+### Files Changed (across all rounds this phase)
+- `lib/features/events/presentation/widgets/event_row.dart`
+- `lib/features/events/presentation/widgets/events_section.dart`
+- Deleted: `lib/features/events/presentation/screens/all_events_screen.dart` and `test/features/events/presentation/screens/all_events_screen_test.dart`
+- `lib/features/events/presentation/providers/events_provider.dart` (doc comment only)
+- `test/features/events/presentation/widgets/events_section_test.dart`
+
+### Results (final)
+- All rounds validated clean by the user locally (`flutter analyze` / `dart format . --set-exit-if-changed` / `flutter test`) before each commit; final full validation reported clean with no failures.
+- No outstanding visualiser-phase risks beyond those already logged in `.claude/risks/active-risks.md` (RISK-012, pre-existing from the Tester phase, unaffected by this phase's UI-only changes).
+
+### Next Handoff (final)
+- Visualiser phase closed. Next: VERIFIER_AGENT -- independently re-verify REQ-F08-001..039 (as amended: REQ-F08-021/027..030 retired, REQ-F08-032 amended) against the actual implementation, assess the deviations from the default no-rework-loop procedure recorded in the visualiser plan, and produce a verification report.
