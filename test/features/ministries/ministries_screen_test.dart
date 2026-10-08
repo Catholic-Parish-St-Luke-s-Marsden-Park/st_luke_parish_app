@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:st_luke_parish_app/features/ministries/data/config/static_ministries_config.dart';
+import 'package:st_luke_parish_app/app/provider_retry.dart';
+import 'package:st_luke_parish_app/features/ministries/presentation/providers/ministries_providers.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/screens/ministries_screen.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/screens/ministry_detail_screen.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/widgets/ministry_card.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/widgets/ministry_category_header.dart';
 
-/// Covers the Ministries tab acceptance criteria: REQ-F03-001..010.
+import '../../helpers/fake_ministries_repository.dart';
+
+/// Covers the Ministries tab with data loaded: REQ-F03-001..004, now driven
+/// by a fake repository serving the bundled fallback asset (REQ-F08-021).
+/// Loading/error/empty/refresh states are in
+/// `ministries_screen_states_test.dart`.
 void main() {
+  final fallback = loadFallbackMinistries();
+
   Future<void> pumpMinistriesScreen(WidgetTester tester) async {
     // MinistriesScreen renders 16 cards across 4 category sections, well
     // taller than the default 800x600 test surface — use a tall surface so
@@ -19,7 +28,15 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: MinistriesScreen())),
+      ProviderScope(
+        retry: noAutomaticRetry,
+        overrides: [
+          ministriesRepositoryProvider.overrideWith(
+            (ref) async => FakeMinistriesRepository(),
+          ),
+        ],
+        child: const MaterialApp(home: Scaffold(body: MinistriesScreen())),
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -37,92 +54,46 @@ void main() {
     });
   });
 
-  group('REQ-F03-002: static config has exactly 16 ministries under exactly '
-      '4 categories', () {
-    test('exactly 16 ministries', () {
-      expect(staticMinistries.length, 16);
-    });
+  group('REQ-F03-002 / REQ-F08-004: categories and cards render in API '
+      'order', () {
+    testWidgets('a category header renders for each category, in order', (
+      tester,
+    ) async {
+      await pumpMinistriesScreen(tester);
 
-    test('exactly 4 categories, in order', () {
-      expect(ministryCategories, [
-        'Liturgy & Worship',
-        'Children & Youth',
-        'Community & Outreach',
-        'Operations & Governance',
-      ]);
-    });
-
-    test('every ministry belongs to one of the 4 categories', () {
-      for (final ministry in staticMinistries) {
-        expect(ministryCategories, contains(ministry.category));
+      final headers = tester
+          .widgetList<MinistryCategoryHeader>(
+            find.byType(MinistryCategoryHeader),
+          )
+          .map((header) => header.category)
+          .toList();
+      expect(headers, fallback.map((category) => category.name).toList());
+      for (final category in fallback) {
+        expect(find.text(category.name.toUpperCase()), findsOneWidget);
       }
     });
 
-    test('exact id/name pairs grouped under the exact expected category', () {
-      const expected = {
-        'Liturgy & Worship': {
-          'music': 'Music Ministry',
-          'liturgical': 'Liturgical Ministry',
-          'altar': 'Ministers of the Altar',
-          'emohc': 'Extraordinary Ministers of Holy Communion',
-        },
-        'Children & Youth': {
-          'youth': 'Luke-18',
-          'childrens': "Children's Liturgy",
-          'sacramental': 'Sacramental Process',
-          'sre': 'SRE Ministry',
-        },
-        'Community & Outreach': {
-          'welcome': 'Welcome Ministry',
-          'hospitality': 'Hospitality Team',
-          'fundraising': 'Fundraising Team',
-          'scripture': 'Walking with Christ',
-        },
-        'Operations & Governance': {
-          'finance': 'Finance Committee',
-          'ict': 'ICT Committee',
-          'logistics': 'Logistics Team',
-          'maintenance': 'Maintenance Ministry',
-        },
-      };
+    testWidgets('all 16 ministry cards are reachable, in order', (
+      tester,
+    ) async {
+      await pumpMinistriesScreen(tester);
 
-      for (final category in expected.keys) {
-        final actualPairs = {
-          for (final m in staticMinistries.where((m) => m.category == category))
-            m.id: m.name,
-        };
-        expect(actualPairs, expected[category]);
-      }
-
-      // No unexpected ministries beyond the 16 enumerated above.
+      final cardIds = tester
+          .widgetList<MinistryCard>(find.byType(MinistryCard))
+          .map((card) => card.ministry.id)
+          .toList();
+      expect(cardIds, hasLength(16));
       expect(
-        staticMinistries.map((m) => m.id).toSet(),
-        expected.values.expand((m) => m.keys).toSet(),
+        cardIds,
+        fallback
+            .expand((category) => category.ministries)
+            .map((ministry) => ministry.id)
+            .toList(),
       );
-    });
-
-    testWidgets('a category header renders for each of the 4 categories', (
-      tester,
-    ) async {
-      await pumpMinistriesScreen(tester);
-
-      expect(find.byType(MinistryCategoryHeader), findsNWidgets(4));
-      for (final category in ministryCategories) {
-        expect(find.text(category.toUpperCase()), findsOneWidget);
-      }
-    });
-
-    testWidgets('all 16 ministry cards are reachable in the grid', (
-      tester,
-    ) async {
-      await pumpMinistriesScreen(tester);
-
-      expect(find.byType(MinistryCard), findsNWidgets(16));
     });
   });
 
-  group('REQ-F03-003: ministry card renders name/membersLine/dayLine, never '
-      'the emoji', () {
+  group('REQ-F03-003: ministry card renders name/membersLine/dayLine', () {
     testWidgets('a card shows its ministry name, membersLine, and dayLine', (
       tester,
     ) async {
@@ -131,7 +102,7 @@ void main() {
       // Scoped to the Music Ministry card specifically: several ministries
       // share the same dayLine text (e.g. "Weekend Masses"), so asserting
       // findsOneWidget on the raw text alone would be ambiguous.
-      final music = staticMinistries.firstWhere((m) => m.id == 'music');
+      final music = fallbackMinistry('music');
       final cardFinder = find.ancestor(
         of: find.text(music.name),
         matching: find.byType(MinistryCard),
@@ -145,36 +116,6 @@ void main() {
         find.descendant(of: cardFinder, matching: find.text(music.dayLine)),
         findsOneWidget,
       );
-    });
-
-    testWidgets('no Text widget anywhere on the Ministries grid renders any '
-        "ministry's emoji value", (tester) async {
-      await pumpMinistriesScreen(tester);
-
-      final renderedTexts = tester
-          .widgetList<Text>(find.byType(Text))
-          .map((t) => t.data)
-          .whereType<String>()
-          .toSet();
-
-      for (final ministry in staticMinistries) {
-        expect(
-          renderedTexts,
-          isNot(contains(ministry.emoji)),
-          reason:
-              '${ministry.id} emoji "${ministry.emoji}" must not be '
-              'rendered by any Text widget on the Ministries grid',
-        );
-        for (final text in renderedTexts) {
-          expect(
-            text.contains(ministry.emoji),
-            isFalse,
-            reason:
-                '${ministry.id} emoji "${ministry.emoji}" must not '
-                'appear as a substring of any rendered Text',
-          );
-        }
-      }
     });
   });
 

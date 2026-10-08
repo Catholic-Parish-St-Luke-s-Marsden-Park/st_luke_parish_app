@@ -5,8 +5,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../domain/entities/ministry.dart';
 
 /// Grid card for a single [Ministry]: `name`, `membersLine`, `dayLine`, and
-/// a "Tap to learn more" affordance. Does NOT render [Ministry.emoji] —
-/// an explicit, user-confirmed decision (see the approved BA plan).
+/// a "Tap to learn more" affordance.
 class MinistryCard extends StatelessWidget {
   const MinistryCard({super.key, required this.ministry, required this.onTap});
 

@@ -6,30 +6,51 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_shapes.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/cta_pill_button.dart';
-import '../../data/config/static_ministries_config.dart';
 import '../../domain/entities/ministry.dart';
+import '../../domain/failures/ministries_failure.dart';
+import '../providers/ministries_providers.dart';
+import '../widgets/ministries_status_view.dart';
 
 /// Full detail screen for a single ministry, reached by tapping a
-/// [MinistryCard]. Does NOT render [Ministry.emoji] anywhere, including the
-/// hero — an explicit, user-confirmed decision (see the approved BA plan).
-class MinistryDetailScreen extends StatelessWidget {
+/// [MinistryCard]. Looks the ministry up by id in the loaded list, falling
+/// back to `GET /v1/ministries/{id}` when it isn't there.
+class MinistryDetailScreen extends ConsumerWidget {
   const MinistryDetailScreen({super.key, required this.ministryId});
 
   final String ministryId;
 
   @override
-  Widget build(BuildContext context) {
-    final ministry = staticMinistries
-        .where((m) => m.id == ministryId)
-        .firstOrNull;
-
-    if (ministry == null) {
-      return Scaffold(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return switch (ref.watch(ministryByIdProvider(ministryId))) {
+      AsyncValue(:final value?) => _MinistryDetailView(ministry: value),
+      AsyncValue(error: MinistryNotFoundFailure()) => Scaffold(
         appBar: AppBar(),
         body: const Center(child: Text('Ministry not found.')),
-      );
-    }
+      ),
+      AsyncValue(hasError: true) => Scaffold(
+        appBar: AppBar(),
+        body: MinistriesMessageView(
+          message:
+              "Couldn't load this ministry. Check your connection and try "
+              'again.',
+          onRetry: () => ref.invalidate(ministryByIdProvider(ministryId)),
+        ),
+      ),
+      _ => Scaffold(
+        appBar: AppBar(),
+        body: const MinistriesLoadingView(caption: 'Loading ministry…'),
+      ),
+    };
+  }
+}
 
+class _MinistryDetailView extends StatelessWidget {
+  const _MinistryDetailView({required this.ministry});
+
+  final Ministry ministry;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -180,7 +201,7 @@ class MinistryDetailScreen extends StatelessWidget {
   }
 }
 
-/// "Join Us" CTA that launches `mailto:{ministry.ctaEmail}` via the shared
+/// "Join Us" CTA that launches [Ministry.contactMailtoUri] via the shared
 /// [UrlLauncherService] (same injectable/testable pattern used in
 /// 02-parish-tab), not a bare inline `url_launcher` call.
 class _JoinUsButton extends ConsumerWidget {
@@ -195,7 +216,7 @@ class _JoinUsButton extends ConsumerWidget {
       icon: Icons.mail_outline_rounded,
       onPressed: () => ref
           .read(urlLauncherServiceProvider)
-          .launchExternal('mailto:${ministry.ctaEmail}'),
+          .launchExternal(ministry.contactMailtoUri.toString()),
     );
   }
 }
