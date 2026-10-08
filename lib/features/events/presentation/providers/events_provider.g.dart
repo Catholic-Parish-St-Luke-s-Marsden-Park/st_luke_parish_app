@@ -70,10 +70,11 @@ String _$eventsRepositoryHash() => r'e8c5d32772eb4f62521e810957314f62bd6d1cea';
 
 /// Exposes the full upcoming-events list (no 7-day limit, already expanded
 /// across the recurrence lookahead window — REQ-F08-012) as
-/// `AsyncValue<List<ParishEvent>>`. Both `EventsSection` (the inline News-tab
-/// section, which itself slices this to the next 7 days) and
-/// `AllEventsScreen` (which paginates over the rest) read from this single
-/// provider — neither fetches independently. `@riverpod` generates an
+/// `AsyncValue<List<ParishEvent>>`. `EventsSection` (the inline News-tab
+/// section, the only place events are listed since a visualiser-phase
+/// redesign retired the separate "All Events" screen -- see
+/// `events_section.dart`'s own doc comment) slices this into weekly windows
+/// for its inline pagination. `@riverpod` generates an
 /// `AutoDispose...` provider by default — no caching across screen entries,
 /// matching the News feature's `bulletinsProvider` precedent and CLAUDE.md's
 /// "no local persistence until there's a clear requirement" rule.
@@ -83,10 +84,11 @@ final upcomingEventsProvider = UpcomingEventsProvider._();
 
 /// Exposes the full upcoming-events list (no 7-day limit, already expanded
 /// across the recurrence lookahead window — REQ-F08-012) as
-/// `AsyncValue<List<ParishEvent>>`. Both `EventsSection` (the inline News-tab
-/// section, which itself slices this to the next 7 days) and
-/// `AllEventsScreen` (which paginates over the rest) read from this single
-/// provider — neither fetches independently. `@riverpod` generates an
+/// `AsyncValue<List<ParishEvent>>`. `EventsSection` (the inline News-tab
+/// section, the only place events are listed since a visualiser-phase
+/// redesign retired the separate "All Events" screen -- see
+/// `events_section.dart`'s own doc comment) slices this into weekly windows
+/// for its inline pagination. `@riverpod` generates an
 /// `AutoDispose...` provider by default — no caching across screen entries,
 /// matching the News feature's `bulletinsProvider` precedent and CLAUDE.md's
 /// "no local persistence until there's a clear requirement" rule.
@@ -103,10 +105,11 @@ final class UpcomingEventsProvider
         $FutureProvider<List<ParishEvent>> {
   /// Exposes the full upcoming-events list (no 7-day limit, already expanded
   /// across the recurrence lookahead window — REQ-F08-012) as
-  /// `AsyncValue<List<ParishEvent>>`. Both `EventsSection` (the inline News-tab
-  /// section, which itself slices this to the next 7 days) and
-  /// `AllEventsScreen` (which paginates over the rest) read from this single
-  /// provider — neither fetches independently. `@riverpod` generates an
+  /// `AsyncValue<List<ParishEvent>>`. `EventsSection` (the inline News-tab
+  /// section, the only place events are listed since a visualiser-phase
+  /// redesign retired the separate "All Events" screen -- see
+  /// `events_section.dart`'s own doc comment) slices this into weekly windows
+  /// for its inline pagination. `@riverpod` generates an
   /// `AutoDispose...` provider by default — no caching across screen entries,
   /// matching the News feature's `bulletinsProvider` precedent and CLAUDE.md's
   /// "no local persistence until there's a clear requirement" rule.

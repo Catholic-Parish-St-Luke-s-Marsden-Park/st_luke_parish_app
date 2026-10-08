@@ -1,4 +1,4 @@
-- **Decision ID:** ADR-0006
+- **Decision ID:** ADR-0007
 - **Title:** Hand-rolled, field-scoped iCalendar parsing + the `rrule`/`timezone` packages for recurrence and Sydney-local time, fetched from the AI1EC export URL despite a crawler-scoped robots.txt disallow
 - **Feature:** 08-events-calendar
 - **Date:** 2026-10-01

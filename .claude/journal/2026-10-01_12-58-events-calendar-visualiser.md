@@ -96,7 +96,7 @@ User confirmed via two screenshots of the fully working live app (compact corner
 
 ### Results (final)
 - All rounds validated clean by the user locally (`flutter analyze` / `dart format . --set-exit-if-changed` / `flutter test`) before each commit; final full validation reported clean with no failures.
-- No outstanding visualiser-phase risks beyond those already logged in `.claude/risks/active-risks.md` (RISK-012, pre-existing from the Tester phase, unaffected by this phase's UI-only changes).
+- No outstanding visualiser-phase risks beyond those already logged in `.claude/risks/active-risks.md` (RISK-014, pre-existing from the Tester phase, unaffected by this phase's UI-only changes).
 
 ### Next Handoff (final)
 - Visualiser phase closed. Next: VERIFIER_AGENT -- independently re-verify REQ-F08-001..039 (as amended: REQ-F08-021/027..030 retired, REQ-F08-032 amended) against the actual implementation, assess the deviations from the default no-rework-loop procedure recorded in the visualiser plan, and produce a verification report.

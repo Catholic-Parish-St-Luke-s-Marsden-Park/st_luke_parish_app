@@ -27,7 +27,7 @@ abstract final class ExternalLinks {
   /// Confirmed working in production by this same parish's other app
   /// (`stlukes-marsden-park-app`'s `netlify/functions/events.mjs`) before
   /// this feature's own BA phase closed. See
-  /// `.claude/decisions/0006-events-ics-rrule-and-robots-scope.md` for the
+  /// `.claude/decisions/0007-events-ics-rrule-and-robots-scope.md` for the
   /// robots.txt disallow-scope reasoning this feature proceeds on.
   static const String eventsFeed =
       '$parishSite/?plugin=all-in-one-event-calendar&controller=ai1ec_exporter_controller&action=export_events&no_html=true';

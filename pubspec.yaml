@@ -102,6 +102,8 @@ flutter:
     - assets/images/leadership/
     # App-side config only. Never bundle server/.env: it holds the API key.
     - assets/app.env
+    # GET /v1/ministries snapshot, shown offline before anything is cached.
+    - assets/ministries_fallback.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

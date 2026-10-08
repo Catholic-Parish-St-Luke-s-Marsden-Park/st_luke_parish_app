@@ -103,6 +103,32 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
 - **Status:** open
 
 - **Risk ID:** RISK-012
+- **Title:** The bundled ministries snapshot drifts from the parish API
+- **Feature:** 08-ministries-api
+- **Impact:** Low. `assets/ministries_fallback.json` is only shown on a first launch with no network and nothing cached. If it isn't refreshed at release time, those users see ministries as they were when the app was built, until the first successful fetch.
+- **Likelihood:** Medium. Staff now edit ministries in `/admin` without an app release.
+- **Mitigation:** README > Parish API has the refresh command. `ministries_fallback_asset_test.dart` pins the snapshot, so a refresh appears as a test diff for review. Add the refresh to the deployer/release checklist.
+- **Owner:** Deployer / release process
+- **Status:** open
+
+- **Risk ID:** RISK-013
+- **Title:** Ministries layouts overflow at larger text sizes, and the detail hero overflows even at 1.0x for long names
+- **Feature:** 03-multi-pages (pre-existing). Found during the 08-ministries-api tester phase.
+- **Impact:** Medium, for accessibility, given the audience skews older (CLAUDE.md > Accessibility).
+  - The grid cards use a fixed `childAspectRatio: 0.95` and overflow at 1.5x and 2.0x text scale on a 390x844 phone.
+  - On the same phone, the detail `SliverAppBar` hero (fixed `expandedHeight: 180`) overflows at 1.0x for "Extraordinary Ministers of Holy Communion", and the stat-chip rows overflow at larger scales. `_StatChip` also hardcodes a 9pt label, below the 12pt minimum.
+  - A probe confirmed the same overflows on `main` (`aa91b85`), so feature 08 did not introduce them; the layout code is unchanged. Feature 08's new loading, error and empty states are swept at 1.5x and 2.0x and pass.
+- **Likelihood:** Certain (reproduced in widget tests).
+- **Mitigation:** A follow-up fix:
+  - let the grid cards size to their content (e.g. a `Wrap` or a non-fixed aspect ratio);
+  - let the hero grow, or allow a 2-line title with ellipsis;
+  - raise the chip label to a `TextTheme` style;
+  - add the CLAUDE.md text-scale sweep for the list and detail data states.
+- **Update 2026-10-08:** the **list** half is fixed in PR #25, following the user's hands-on review. The grid cards became content-sized rows, and a sweep at 360x690 and 390x844 × 1.0x, 1.5x and 2.0x passes for the data state. Still open: the detail header and stat chips, the 9pt `_StatChip` label, and the 11pt category header.
+- **Owner:** Next Ministries/UI feature. Tracked as GitHub issue [#26](https://github.com/Catholic-Parish-St-Luke-s-Marsden-Park/st_luke_parish_app/issues/26).
+- **Status:** open (list fixed; detail screen remaining)
+
+- **Risk ID:** RISK-014
 - **Title:** An in-progress event (started but not yet ended) is excluded from the upcoming-events list, a narrower filter than REQ-F08-005 specifies
 - **Feature:** 08-events-calendar
 - **Impact:** Low. REQ-F08-005 says to filter by an event's *end* (falling back to *start* only when no end is known), so an event that started a few minutes ago but hasn't finished (e.g. a Mass checked mid-service) should still appear. `parseIcsEvents` in `lib/features/events/data/parsers/ics_event_parser.dart` instead filters every code path (the plain single-occurrence branch, the RRULE-expansion branch via the `rrule` package's own `after:` parameter, and the unparseable-RRULE fallback branch) on `start` alone, so such an event disappears from both the inline 7-day section and the All Events screen for its own duration, then reappears (as its *next* recurrence) once it ends. Found during the Tester phase by reading the filtering logic directly against the literal REQ-F08-005 wording, not from an observed live failure.
@@ -131,7 +157,7 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
 - **Owner:** Orchestrator/process owner
 - **Status:** resolved (user-directed fix, 2026-08-23)
 
-- **Risk ID:** RISK-013
+- **Risk ID:** RISK-015
 - **Title:** "Add to my calendar" fails on a real Android emulator — missing AndroidManifest `<queries>` entry for the calendar app's `ACTION_INSERT` intent
 - **Feature:** 08-events-calendar
 - **Impact:** High — confirmed, not hypothetical. User reproduced live on the same Android emulator used for the visualiser phase: tapping "Add to my calendar" shows the app's own failure SnackBar, "Couldn't open your calendar app to add this event. Please try again." (`lib/features/events/presentation/utils/add_to_device_calendar.dart:36-41`), meaning `CalendarExportServiceImpl.addEvent` (`lib/features/events/presentation/services/calendar_export_service.dart:21-28`) received `false` from the plugin.
@@ -147,15 +173,16 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
   ```
   Then re-run on the same emulator and confirm the native calendar app now opens pre-filled. If it still fails after this change, check whether the emulator image actually has a calendar app installed (switch to a "Google Play" system image if not) before investigating further. For iOS, `add_2_calendar` uses `EventKitUI`'s native "add event" sheet, which has not yet been live-tested for this feature either — recommend the same live tap-through on an iOS simulator/device once Android is confirmed fixed, checking whether `Info.plist` needs `NSCalendarsUsageDescription`/`NSCalendarsFullAccessUsageDescription`.
 - **Owner:** User decision pending — manifest-only fix, low risk, can be applied immediately or deferred to Deployer alongside RISK-003/004's broader `<queries>` remediation
-- **Status:** resolved (2026-10-08) — user rebuilt and re-tapped "Add to my calendar" on the same Android emulator: the native calendar app now opens correctly (the `<queries>` fix worked). A separate defect surfaced during that same live re-test — the pre-filled date/time was wrong, not a continuation of this risk's own failure-to-open symptom — tracked as new **RISK-014** below.
+- **Status:** resolved (2026-10-08) — user rebuilt and re-tapped "Add to my calendar" on the same Android emulator: the native calendar app now opens correctly (the `<queries>` fix worked). A separate defect surfaced during that same live re-test — the pre-filled date/time was wrong, not a continuation of this risk's own failure-to-open symptom — tracked as new **RISK-016** below.
 
-- **Risk ID:** RISK-014
+- **Risk ID:** RISK-016
 - **Title:** "Add to my calendar" exported the wrong date/time — the app's internal "fake UTC" representation was passed straight to `add_2_calendar`, which treats `DateTime` as a real instant
 - **Feature:** 08-events-calendar
-- **Impact:** High — confirmed, not hypothetical. Immediately after RISK-013's manifest fix made the native calendar app open successfully, the user reported (and screenshotted) that a "Thu 8 Oct 7:00 pm" event was added to Google Calendar as **"Fri, Oct 9, 2026, 6:00 AM – 7:00 AM, Australian Eastern Daylight Time"** — an 11-hour-forward, next-day error.
+- **Impact:** High — confirmed, not hypothetical. Immediately after RISK-015's manifest fix made the native calendar app open successfully, the user reported (and screenshotted) that a "Thu 8 Oct 7:00 pm" event was added to Google Calendar as **"Fri, Oct 9, 2026, 6:00 AM – 7:00 AM, Australian Eastern Daylight Time"** — an 11-hour-forward, next-day error.
   - **Root cause (confirmed against `add_2_calendar` v3.1.1's actual source, `lib/src/model/event.dart` and the Android `Add2CalendarPlugin.kt`):** `Event.toJson()` calls `.millisecondsSinceEpoch` directly on whatever `DateTime` it's given, with no timezone handling of its own; the Android side puts that raw value straight into `CalendarContract.EXTRA_EVENT_BEGIN_TIME`/`EXTRA_EVENT_END_TIME`, which Android defines as true UTC epoch millis. This app's `ParishEvent.start`/`end` (and every `DateTime` derived from them) are in the "fake UTC" representation documented in `ics_event_parser.dart`'s class doc: a `DateTime` tagged UTC whose digits are actually the intended `Australia/Sydney` wall-clock numbers, not a real UTC instant — correct for this app's own display code (which only ever reads the digits directly) and for internal recurrence arithmetic, but wrong the instant it crosses into an API that treats the value as a real instant. `lib/features/events/presentation/utils/add_to_device_calendar.dart` passed `event.start`/`event.end` straight through with no conversion. Since the event was also given `timeZone: "Australia/Sydney"` for display, the calendar app re-localized the (already wrong) instant back to Sydney time, compounding into an ~11-hour forward error (the exact AEDT offset) landing on the next day — precisely what was observed.
-  - This is a genuinely new class of gap, not a restatement of RISK-012 (which is about the *past-event filter* comparing `start` alone) or RISK-013 (which was about the calendar app failing to *open* at all) — this is about the exported event's *content* being wrong once export succeeds.
+  - This is a genuinely new class of gap, not a restatement of RISK-014 (which is about the *past-event filter* comparing `start` alone) or RISK-015 (which was about the calendar app failing to *open* at all) — this is about the exported event's *content* being wrong once export succeeds.
 - **Likelihood:** Certain — already reproduced live (screenshot evidence); would affect every single "Add to my calendar" export, for every event, with no exception (the error is deterministic, driven by Sydney's UTC offset, not conditional on any particular event's data).
 - **Mitigation:** Added `sydneyFakeUtcToRealUtc(DateTime fakeUtc)` to `lib/features/events/data/parsers/ics_event_parser.dart` (converts a fake-UTC value to the true UTC instant via a real `tz.TZDateTime('Australia/Sydney', ...).toUtc()` round-trip, correctly handling the AEST/AEDT transition). Updated `add_to_device_calendar.dart` to convert both `startDate`/`endDate` through it before constructing the `add_2_calendar` `Event`. Added fixed-date unit tests in `ics_event_parser_test.dart` (`sydneyFakeUtcToRealUtc` group, covering both AEDT and AEST) pinning the exact conversion math independently of the function under test, and updated the REQ-F08-024/025 widget tests in `events_section_test.dart` to assert the exported event's `startDate`/`endDate` equal the converted value, not the raw fake-UTC value (the previous test's assertion `expect(added.startDate, start)` would have passed even with this bug present, which is why it wasn't caught until a live device tap). **Fix applied 2026-10-08, confirmed 2026-10-08** -- user rebuilt and re-tapped "Add to my calendar" on the same Android emulator: the native calendar app now shows the correct date/time.
 - **Owner:** Resolved
 - **Status:** resolved (2026-10-08) -- user confirmed live on the same Android emulator that "Add to my calendar" now opens the native calendar app with the correct date/time.
+

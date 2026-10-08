@@ -1,16 +1,11 @@
 /// A single parish ministry/group shown on the Ministries tab.
 ///
-/// Typed config per root `CLAUDE.md`'s "typed config over dynamic maps"
-/// rule — never a raw/dynamic map.
-///
-/// [emoji] is retained on the entity for potential future use, but is not
-/// rendered by any widget under `lib/features/ministries/presentation/` —
-/// an explicit, user-confirmed decision (see the approved BA plan).
+/// Loaded from the parish API (`GET /v1/ministries`), or from the cached or
+/// bundled copy of that response when offline.
 class Ministry {
   const Ministry({
     required this.id,
     required this.category,
-    required this.emoji,
     required this.name,
     required this.membersLine,
     required this.dayLine,
@@ -24,17 +19,16 @@ class Ministry {
     required this.leaderInitials,
     required this.joinInfo,
     required this.ctaLabel,
-    required this.ctaEmail,
+    required this.contactEmail,
+    required this.emailSubject,
   });
 
-  /// Stable internal id, e.g. `music`, `sacramental`.
+  /// Stable slug, e.g. `music`, `sacramental`. Never changes, so it is safe
+  /// as a key and in deep links.
   final String id;
 
-  /// One of the 4 ministry categories (see `ministryCategories`).
+  /// Name of the category this ministry is listed under.
   final String category;
-
-  /// Not rendered anywhere in the UI — retained for potential future use.
-  final String emoji;
 
   final String name;
 
@@ -55,7 +49,21 @@ class Ministry {
   final String joinInfo;
   final String ctaLabel;
 
-  /// Target for the detail screen's `mailto:` "Join Us" CTA, e.g.
-  /// `marsdenpark@parracatholic.org?subject=Music Ministry Interest`.
-  final String ctaEmail;
+  /// Address the "Join" CTA emails, e.g. `marsdenpark@parracatholic.org`.
+  final String contactEmail;
+
+  /// Subject line for the "Join" email. May be empty.
+  final String emailSubject;
+
+  /// `mailto:` link for the "Join" CTA.
+  ///
+  /// The subject is encoded by hand rather than through `queryParameters`,
+  /// which encodes spaces as `+` that some mail apps show literally.
+  Uri get contactMailtoUri => Uri(
+    scheme: 'mailto',
+    path: contactEmail,
+    query: emailSubject.isEmpty
+        ? null
+        : 'subject=${Uri.encodeComponent(emailSubject)}',
+  );
 }

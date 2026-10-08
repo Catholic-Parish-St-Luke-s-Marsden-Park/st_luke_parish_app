@@ -8,7 +8,7 @@
 ## Summary
 - Scope: Adds a live "Upcoming Events" section to the News tab (`lib/features/events/`), sourced from the parish website's AI1EC ICS calendar feed (RRULE-expanded recurring events, `Australia/Sydney`-aware parsing), with inline weekly pagination, a per-event "Add to my calendar" device-calendar export, and an in-app Details bottom sheet.
 - User value: parishioners can see what's coming up without leaving the app, and add any event straight to their phone's calendar.
-- Risks: 2 risks found and fixed in a post-verifier live-device round (RISK-013, RISK-014), 1 open by explicit user decision (RISK-012), 2 confirmed-already-covered-or-extended (RISK-003/004/005). Full detail in the release readiness note.
+- Risks: 2 risks found and fixed in a post-verifier live-device round (RISK-015, RISK-016), 1 open by explicit user decision (RISK-014), 2 confirmed-already-covered-or-extended (RISK-003/004/005). Full detail in the release readiness note.
 
 ## Artifacts
 - BA Plan: `.claude/plans/ba/2026-10-01_11-15-09-events-calendar.md`

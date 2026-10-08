@@ -60,7 +60,7 @@
              Intent(ACTION_INSERT) against CalendarContract.Events.CONTENT_URI
              and checks resolveActivity() before launching; without this entry
              that check silently returns null even when a calendar app is
-             installed, and the export call fails with no exception (RISK-013,
+             installed, and the export call fails with no exception (RISK-015,
              confirmed live on an Android emulator 2026-10-07; root cause
              diagnosed against the plugin's own source and its GitHub issue
              #83, "Android not opening calendar"). See:
