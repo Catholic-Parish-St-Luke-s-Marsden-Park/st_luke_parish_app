@@ -124,7 +124,7 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
   - let the hero grow, or allow a 2-line title with ellipsis;
   - raise the chip label to a `TextTheme` style;
   - add the CLAUDE.md text-scale sweep for the list and detail data states.
-- **Owner:** Next Ministries/UI feature
+- **Owner:** Next Ministries/UI feature. Tracked as GitHub issue [#26](https://github.com/Catholic-Parish-St-Luke-s-Marsden-Park/st_luke_parish_app/issues/26).
 - **Status:** open
 
 ## Resolved Risks

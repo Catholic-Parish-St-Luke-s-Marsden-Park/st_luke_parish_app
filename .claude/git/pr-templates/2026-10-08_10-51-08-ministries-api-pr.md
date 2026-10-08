@@ -39,7 +39,7 @@ Closes #24
 ## Risks
 - **RISK-013 (pre-existing, not introduced here; please read):** the Ministries grid overflows at 1.5x/2x system text size. The detail hero also overflows at 1.0x on a 390pt-wide phone for "Extraordinary Ministers of Holy Communion".
   - I reproduced all of these on `main` with the same probe. This PR doesn't change those layouts.
-  - It's an accessibility defect for our audience, so it deserves its own follow-up.
+  - It's an accessibility defect for our audience, so it's tracked separately as #26.
   - The new loading, error and empty states are swept at 1.5x and 2x and pass.
 - **RISK-012:** the bundled snapshot goes stale unless it's refreshed before each release (README > Parish API). `ministries_fallback_asset_test.dart` pins its contents, so a refresh shows up as a test diff to review.
 - **Behaviour change:** content now comes from the parish API. If the API is down, users see the saved or bundled copy, not an error. The server's `Cache-Control: max-age=300` isn't honoured on the device, and ETag is out of scope per the issue.
