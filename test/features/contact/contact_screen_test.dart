@@ -6,6 +6,8 @@ import 'package:st_luke_parish_app/features/contact/data/config/static_contact_c
 import 'package:st_luke_parish_app/features/contact/domain/entities/contact_item.dart';
 import 'package:st_luke_parish_app/features/contact/presentation/screens/contact_screen.dart';
 import 'package:st_luke_parish_app/features/contact/presentation/widgets/contact_tile.dart';
+import 'package:st_luke_parish_app/shared/webview/simple_webview_screen.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 /// Covers the Contact tab acceptance criteria: REQ-F03-011..018.
 class _FakeUrlLauncherService implements UrlLauncherService {
@@ -42,15 +44,26 @@ void main() {
         child: const MaterialApp(home: Scaffold(body: ContactScreen())),
       ),
     );
-    await tester.pumpAndSettle();
+    // The embedded map preview's SimpleWebViewScreen shows an
+    // indeterminate CircularProgressIndicator while "loading" -- the fake
+    // WebView platform (test/helpers/fake_webview_platform.dart) never
+    // fires onPageFinished on its own, so that spinner's animation never
+    // settles and pumpAndSettle() would hang forever. A bounded pump is
+    // sufficient to build the screen, same workaround already used for the
+    // Donate tab's WebView in app_bar_chrome_test.dart.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
   }
 
   /// Taps a widget rendering [text]. `pumpContactScreen` uses a tall test
   /// surface so every contact tile is already built and on-screen; this
-  /// helper still funnels every tap through one place for consistency.
+  /// helper still funnels every tap through one place for consistency. Uses
+  /// a bounded pump rather than pumpAndSettle for the same reason as
+  /// `pumpContactScreen` above (the map preview's never-settling spinner).
   Future<void> tapText(WidgetTester tester, String text) async {
     await tester.tap(find.text(text));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
   }
 
   group(
@@ -269,10 +282,65 @@ void main() {
     });
   });
 
-  group('REQ-F03-015/016: map-preview card and "Open in Google Maps" pill '
-      'both launch the external Google Maps URL', () {
+  group('REQ-F03-015/016: embedded map preview and "Open in Google Maps" '
+      'pill both launch/load the parish location', () {
     const expectedMapsUrl =
         'https://maps.google.com/?q=55a+Frontier+Avenue,+Marsden+Park+NSW+2765';
+    // The embed URL must be nested inside a real <iframe> in a locally
+    // loaded wrapper document (SimpleWebViewScreen's `html`), not loaded
+    // directly as the WebView's own page -- Google's `output=embed`
+    // endpoint refuses direct top-level loads. See `_mapEmbedHtml`'s doc
+    // comment in contact_screen.dart.
+    const expectedEmbedSrc =
+        'https://maps.google.com/maps?q=55a+Frontier+Avenue,+Marsden+Park+NSW+2765&output=embed';
+
+    testWidgets('renders a live embedded map (in-app WebView), not a '
+        'static placeholder', (tester) async {
+      await pumpContactScreen(tester, fakeLauncher: _FakeUrlLauncherService());
+
+      expect(find.byType(SimpleWebViewScreen), findsOneWidget);
+      expect(find.byType(WebViewWidget), findsOneWidget);
+
+      final webView = tester.widget<SimpleWebViewScreen>(
+        find.byType(SimpleWebViewScreen),
+      );
+      expect(
+        webView.url,
+        isNull,
+        reason:
+            'the embed URL must be nested in an <iframe>, not loaded '
+            'directly as the WebView\'s own page',
+      );
+      expect(webView.html, isNotNull);
+      expect(webView.html, contains('<iframe'));
+      expect(webView.html, contains(expectedEmbedSrc));
+    });
+
+    testWidgets('the embedded map preview does not intercept touches -- it '
+        'is wrapped in IgnorePointer, like the PWA\'s own non-interactive '
+        '.map-wrap', (tester) async {
+      await pumpContactScreen(tester, fakeLauncher: _FakeUrlLauncherService());
+
+      // Flutter's own MaterialApp/Scaffold/Navigator plumbing adds
+      // IgnorePointer ancestors of its own (unrelated to ours), so there
+      // can legitimately be more than one match here -- assert that at
+      // least one of them is the active `ignoring: true` one we added,
+      // rather than assuming there's exactly one ancestor (which is what
+      // `tester.widget<T>()` -- a `.single` lookup -- would require).
+      final ignorePointers = tester.widgetList<IgnorePointer>(
+        find.ancestor(
+          of: find.byType(SimpleWebViewScreen),
+          matching: find.byType(IgnorePointer),
+        ),
+      );
+      expect(
+        ignorePointers.any((widget) => widget.ignoring),
+        isTrue,
+        reason:
+            'expected an IgnorePointer(ignoring: true) ancestor of the map '
+            'preview\'s SimpleWebViewScreen',
+      );
+    });
 
     testWidgets('tapping the map-preview card launches the Google Maps URL', (
       tester,
@@ -280,7 +348,9 @@ void main() {
       final fakeLauncher = _FakeUrlLauncherService();
       await pumpContactScreen(tester, fakeLauncher: fakeLauncher);
 
-      await tapText(tester, 'Tap to view on the map');
+      await tester.tap(find.byKey(const Key('contactMapPreviewCard')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(fakeLauncher.launchedUrls, [expectedMapsUrl]);
     });
@@ -294,16 +364,6 @@ void main() {
       await tapText(tester, 'Open in Google Maps');
 
       expect(fakeLauncher.launchedUrls, [expectedMapsUrl]);
-    });
-
-    testWidgets('no interactive map SDK widget (e.g. GoogleMap) is present', (
-      tester,
-    ) async {
-      await pumpContactScreen(tester, fakeLauncher: _FakeUrlLauncherService());
-
-      // A static preview only: assert the static pin icon renders instead
-      // of any live map widget.
-      expect(find.byIcon(Icons.location_on_rounded), findsOneWidget);
     });
   });
 

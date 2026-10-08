@@ -53,5 +53,25 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Required on Android 11+ (API 30+) package-visibility rules so
+             url_launcher's canLaunchUrl/launchUrl can actually see a
+             handler for the tel:/mailto:/https: URIs this app launches
+             externally (Contact tab's call/email/map-maps-site tiles and
+             "Open in Google Maps" button; see UrlLauncherServiceImpl).
+             Without this, canLaunchUrl silently returns false even when a
+             phone/mail/browser app is installed, and the tap does nothing.
+             https://developer.android.com/training/package-visibility -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="tel"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="mailto"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
     </queries>
 </manifest>
