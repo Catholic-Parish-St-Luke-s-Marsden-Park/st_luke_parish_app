@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
 import 'package:st_luke_parish_app/features/events/data/parsers/ics_event_parser.dart'
-    show sydneyNowAsFakeUtc;
+    show sydneyFakeUtcToRealUtc, sydneyNowAsFakeUtc;
 import 'package:st_luke_parish_app/features/events/domain/entities/parish_event.dart';
 import 'package:st_luke_parish_app/features/events/domain/failures/events_failure.dart';
 import 'package:st_luke_parish_app/features/events/domain/repositories/events_repository.dart';
@@ -466,7 +466,9 @@ void main() {
 
   group('REQ-F08-024/025: "Add to my calendar" exports the event', () {
     testWidgets('triggers export with the event\'s title/location/'
-        'description/start/end', (tester) async {
+        'description/start/end, converted to a real UTC instant', (
+      tester,
+    ) async {
       final now = sydneyNowAsFakeUtc();
       final start = now.add(const Duration(days: 1));
       final end = start.add(const Duration(minutes: 45));
@@ -495,12 +497,21 @@ void main() {
       expect(added.title, 'Vigil Mass 5.30pm');
       expect(added.location, "St Luke's Catholic Church");
       expect(added.description, 'Weekly vigil Mass.');
-      expect(added.startDate, start);
-      expect(added.endDate, end);
+      // REQ-F08-024 bugfix (2026-10-08): `start`/`end` are "fake UTC" --
+      // the exported event must be the real UTC instant Sydney wall-clock
+      // time corresponds to, not the raw fake-UTC value unchanged, or the
+      // native calendar app shows the event 10-11 hours off (confirmed
+      // live: a 7:00pm event was added as 6:00am the next day). The exact
+      // conversion math itself is independently pinned against fixed
+      // dates in `ics_event_parser_test.dart`'s `sydneyFakeUtcToRealUtc`
+      // group; this assertion exists to catch a regression back to
+      // passing the raw fake-UTC value straight through.
+      expect(added.startDate, sydneyFakeUtcToRealUtc(start));
+      expect(added.endDate, sydneyFakeUtcToRealUtc(end));
     });
 
     testWidgets('defaults to a 1-hour duration when the feed had no end '
-        'time', (tester) async {
+        'time, still converted to a real UTC instant', (tester) async {
       final now = sydneyNowAsFakeUtc();
       final start = now.add(const Duration(days: 1));
       final exportService = _FakeCalendarExportService();
@@ -516,7 +527,11 @@ void main() {
       await tester.pumpAndSettle();
 
       final added = exportService.addedEvents.single;
-      expect(added.endDate, start.add(const Duration(hours: 1)));
+      expect(added.startDate, sydneyFakeUtcToRealUtc(start));
+      expect(
+        added.endDate,
+        sydneyFakeUtcToRealUtc(start.add(const Duration(hours: 1))),
+      );
     });
 
     testWidgets('a failed export shows an explicit, user-friendly message', (

@@ -222,4 +222,44 @@ END:VEVENT
       expect(events, hasLength(1));
     });
   });
+
+  group('sydneyFakeUtcToRealUtc', () {
+    // REQ-F08-024 bugfix (2026-10-08): confirmed live that exporting a
+    // "fake UTC" DateTime straight to `add_2_calendar` lands the event
+    // 10-11 hours off in the native calendar app (a 7:00pm Sydney event
+    // showed as 6:00am the next day) -- these fixed-date tests pin the
+    // exact conversion math independently of the function under test,
+    // across both Sydney DST states, rather than relying on a value this
+    // same function also produced.
+    test('converts a fake-UTC Sydney wall-clock DateTime to the true UTC '
+        'instant during AEDT (+11)', () {
+      // 7:00pm Sydney on 8 Oct 2026 is AEDT (DST starts the first Sunday
+      // of October -- 4 Oct 2026), so the true UTC instant is 11 hours
+      // earlier, same day.
+      final fakeUtc = DateTime.utc(2026, 10, 8, 19, 0, 0);
+
+      final realUtc = sydneyFakeUtcToRealUtc(fakeUtc);
+
+      expect(realUtc, DateTime.utc(2026, 10, 8, 8, 0, 0));
+    });
+
+    test('converts a fake-UTC Sydney wall-clock DateTime to the true UTC '
+        'instant during AEST (+10)', () {
+      // 9:00am Sydney on 15 July 2026 is AEST (winter, standard time),
+      // so the true UTC instant is 10 hours earlier, the previous day.
+      final fakeUtc = DateTime.utc(2026, 7, 15, 9, 0, 0);
+
+      final realUtc = sydneyFakeUtcToRealUtc(fakeUtc);
+
+      expect(realUtc, DateTime.utc(2026, 7, 14, 23, 0, 0));
+    });
+
+    test('the result is a real UTC DateTime (isUtc is true)', () {
+      final realUtc = sydneyFakeUtcToRealUtc(
+        DateTime.utc(2026, 10, 8, 19, 0, 0),
+      );
+
+      expect(realUtc.isUtc, isTrue);
+    });
+  });
 }

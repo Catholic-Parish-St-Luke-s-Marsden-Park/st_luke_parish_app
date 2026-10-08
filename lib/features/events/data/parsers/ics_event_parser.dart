@@ -70,6 +70,43 @@ DateTime sydneyNowAsFakeUtc() {
   );
 }
 
+/// Converts a "fake UTC" [DateTime] (see [IcsEventOccurrence]'s class doc
+/// above -- a `DateTime` tagged UTC whose digits are actually the intended
+/// `Australia/Sydney` wall-clock numbers, not a real UTC instant) into the
+/// true UTC instant it represents.
+///
+/// This app reads a fake-UTC value's wall-clock digits directly everywhere
+/// it displays a date/time (the date/time pill, the Details sheet, the
+/// pre-formatted `displayTime` string) and never converts it via
+/// `millisecondsSinceEpoch`, so the "fake" representation is invisible
+/// there. It stops being invisible the moment a fake-UTC value crosses an
+/// API boundary that *does* treat `DateTime` as a real instant -- which is
+/// exactly what `add_2_calendar` does when exporting to the device calendar
+/// (REQ-F08-024): it calls `.millisecondsSinceEpoch` on whatever `DateTime`
+/// it's given, with no timezone handling of its own. Passing a fake-UTC
+/// value there silently mis-converts by Sydney's own UTC offset (10 or 11
+/// hours, AEST/AEDT) -- confirmed live (2026-10-08): a 7:00pm Sydney event
+/// was added to the native calendar as 6:00am the *next* day, exactly an
+/// 11-hour (AEDT) error. Call this to get the correct real-UTC instant
+/// before handing a fake-UTC value to any such boundary.
+DateTime sydneyFakeUtcToRealUtc(DateTime fakeUtc) {
+  if (!_tzInitialized) {
+    tz_data.initializeTimeZones();
+    _tzInitialized = true;
+  }
+  final sydney = tz.getLocation('Australia/Sydney');
+  final sydneyLocal = tz.TZDateTime(
+    sydney,
+    fakeUtc.year,
+    fakeUtc.month,
+    fakeUtc.day,
+    fakeUtc.hour,
+    fakeUtc.minute,
+    fakeUtc.second,
+  );
+  return sydneyLocal.toUtc();
+}
+
 String _unfoldIcs(String text) {
   return text
       .replaceAll(RegExp(r'\r\n[ \t]'), '')
