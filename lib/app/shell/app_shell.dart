@@ -12,6 +12,7 @@ import 'nav_index_provider.dart';
 import 'side_drawer.dart';
 import 'widgets/app_bar_logo.dart';
 import 'widgets/ask_luke_pill.dart';
+import 'widgets/pulsing_nav_icon.dart';
 import 'widgets/saint_of_the_day_pill.dart';
 
 /// Hosts the bottom-nav + side-drawer chrome and swaps between the 6
@@ -100,7 +101,9 @@ class _AppShellBodyState extends State<_AppShellBody> {
         destinations: [
           for (final destination in bottomNavDestinations)
             NavigationDestination(
-              icon: Icon(destination.icon),
+              icon: destination.pulse
+                  ? PulsingNavIcon(icon: destination.icon)
+                  : Icon(destination.icon),
               label: destination.label,
             ),
         ],

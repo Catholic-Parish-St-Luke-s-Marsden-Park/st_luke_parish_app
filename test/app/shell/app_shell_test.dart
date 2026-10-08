@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:st_luke_parish_app/app/shell/app_shell.dart';
 import 'package:st_luke_parish_app/app/shell/bottom_nav.dart';
 import 'package:st_luke_parish_app/app/shell/nav_index_provider.dart';
+import 'package:st_luke_parish_app/app/shell/widgets/pulsing_nav_icon.dart';
 import 'package:st_luke_parish_app/core/theme/app_theme.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_screen.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/screens/ministries_screen.dart';
@@ -65,6 +66,40 @@ void main() {
       for (var i = 0; i < expectedIcons.length; i++) {
         expect(bottomNavDestinations[i].icon, expectedIcons[i]);
       }
+    });
+
+    testWidgets('only the Donate destination pulses; every other icon is '
+        'static', (tester) async {
+      await _pumpShell(tester);
+
+      // Data-level: exactly one destination (Donate, the last of the 6)
+      // opts into the pulse, matching the parish PWA's own Donate-only
+      // heartbeat animation.
+      for (final destination in bottomNavDestinations) {
+        expect(
+          destination.pulse,
+          destination.label == 'Donate',
+          reason:
+              '${destination.label} pulse flag should be '
+              '${destination.label == 'Donate'}',
+        );
+      }
+
+      // Rendered: the Donate destination's icon is a PulsingNavIcon, and
+      // no other destination renders one.
+      final navigationBarFinder = find.byType(NavigationBar);
+      expect(
+        find.descendant(
+          of: navigationBarFinder,
+          matching: find.byType(PulsingNavIcon),
+        ),
+        findsOneWidget,
+      );
+
+      final pulsingIcon = tester.widget<PulsingNavIcon>(
+        find.byType(PulsingNavIcon),
+      );
+      expect(pulsingIcon.icon, Icons.favorite_rounded);
     });
 
     testWidgets('tapping a destination updates the selected nav index '
