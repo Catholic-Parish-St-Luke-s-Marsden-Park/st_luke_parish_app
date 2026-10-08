@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
+import 'package:st_luke_parish_app/features/events/domain/entities/parish_event.dart';
+import 'package:st_luke_parish_app/features/events/domain/repositories/events_repository.dart';
+import 'package:st_luke_parish_app/features/events/presentation/providers/events_provider.dart';
 import 'package:st_luke_parish_app/features/news/data/config/static_announcements_config.dart';
 import 'package:st_luke_parish_app/features/news/domain/entities/bulletin.dart';
 import 'package:st_luke_parish_app/features/news/domain/failures/bulletins_failure.dart';
@@ -68,6 +71,9 @@ void main() {
       ProviderScope(
         overrides: [
           bulletinsRepositoryProvider.overrideWithValue(fakeRepository),
+          eventsRepositoryProvider.overrideWithValue(
+            _FakeEventsRepository.returning(const []),
+          ),
           urlLauncherServiceProvider.overrideWithValue(fakeLauncher),
         ],
         child: const MaterialApp(home: Scaffold(body: NewsScreen())),
@@ -111,11 +117,13 @@ void main() {
     ) async {
       // Use a never-completing future to observe the loading state.
       final pendingRepo = _PendingBulletinsRepository();
+      final pendingEventsRepo = _PendingEventsRepository();
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             bulletinsRepositoryProvider.overrideWithValue(pendingRepo),
+            eventsRepositoryProvider.overrideWithValue(pendingEventsRepo),
             urlLauncherServiceProvider.overrideWithValue(
               _FakeUrlLauncherService(),
             ),
@@ -125,7 +133,9 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      // Both sections' own spinners are expected while both providers are
+      // still loading (REQ-F05-016, REQ-F08-014).
+      expect(find.byType(CircularProgressIndicator), findsNWidgets(2));
       expect(find.text('Loading the latest bulletins…'), findsOneWidget);
     });
   });
@@ -410,6 +420,9 @@ void main() {
                 _bulletin('23rd August 2026'),
               ]),
             ),
+            eventsRepositoryProvider.overrideWithValue(
+              _FakeEventsRepository.returning(const []),
+            ),
             urlLauncherServiceProvider.overrideWithValue(
               _FakeUrlLauncherService(),
             ),
@@ -467,6 +480,9 @@ void main() {
             bulletinsRepositoryProvider.overrideWithValue(
               _FakeBulletinsRepository.returning([]),
             ),
+            eventsRepositoryProvider.overrideWithValue(
+              _FakeEventsRepository.returning(const []),
+            ),
             urlLauncherServiceProvider.overrideWithValue(
               _FakeUrlLauncherService(),
             ),
@@ -497,4 +513,30 @@ void main() {
 class _PendingBulletinsRepository implements BulletinsRepository {
   @override
   Future<List<Bulletin>> getBulletins() => Completer<List<Bulletin>>().future;
+}
+
+/// News-screen widget tests never make a real network call for Events
+/// either (same rule as bulletins, see this file's top doc comment) — this
+/// feature's own tests live under test/features/events/; these two fakes
+/// exist only so NewsScreen's widget tree has something deterministic to
+/// read from the Events section while these pre-existing News tests focus
+/// on bulletins.
+class _FakeEventsRepository implements EventsRepository {
+  _FakeEventsRepository.returning(this._result);
+
+  final List<ParishEvent> _result;
+
+  @override
+  Future<List<ParishEvent>> getUpcomingEvents() async => _result;
+}
+
+/// An [EventsRepository] whose future never resolves, for observing the
+/// News screen's loading state in isolation (same precedent as
+/// [_PendingBulletinsRepository]) — only used with tester.pump(), never
+/// tester.pumpAndSettle(), which would hang against a future that never
+/// completes.
+class _PendingEventsRepository implements EventsRepository {
+  @override
+  Future<List<ParishEvent>> getUpcomingEvents() =>
+      Completer<List<ParishEvent>>().future;
 }

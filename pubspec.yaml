@@ -52,6 +52,14 @@ dependencies:
   flutter_local_notifications: ^22.3.1
   flutter_dotenv: ^6.0.1
 
+  # Events feature (08-events-calendar): RRULE expansion for recurring
+  # events, Australia/Sydney-aware "now" (timezone was already a transitive
+  # dependency via flutter_local_notifications; now also used directly), and
+  # the per-event "Add to my calendar" device-calendar export.
+  rrule: ^0.2.18
+  timezone: ^0.11.1
+  add_2_calendar: ^3.1.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
