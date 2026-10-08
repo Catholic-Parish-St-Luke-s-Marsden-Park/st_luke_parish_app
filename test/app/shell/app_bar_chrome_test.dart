@@ -191,7 +191,7 @@ void main() {
           'News',
           'Ministries',
           'Contact',
-          'Donate',
+          '❤️ Donate',
         ];
 
         for (final label in tabLabels) {

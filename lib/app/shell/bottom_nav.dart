@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_colors.dart';
+
 /// Static configuration for the 6 bottom-navigation destinations.
 class BottomNavDestination {
   const BottomNavDestination({
     required this.icon,
     required this.label,
     this.pulse = false,
+    this.color,
   });
 
   final IconData icon;
@@ -16,6 +19,22 @@ class BottomNavDestination {
   /// `heartbeat` animation already on the parish PWA's own Donate nav icon
   /// (see [PulsingNavIcon]'s doc comment for the source of truth).
   final bool pulse;
+
+  /// A fixed icon color that overrides the nav bar's normal
+  /// selected/unselected theming -- currently only the Donate tab, set to
+  /// [AppColors.gold] to match the parish PWA's Donate icon, which is
+  /// always gold regardless of which tab is active (`.nav-btn.donate-btn`
+  /// in `stlukes-marsden-park-app/index.html`). `null` (every other
+  /// destination) means "use the shared nav bar theme as normal".
+  ///
+  /// The PWA also forces its Donate *label* text gold at all times, not
+  /// just the icon -- `NavigationBar`'s theme only exposes one shared
+  /// selected/unselected color rule for every destination's label, with
+  /// no per-destination override, so this app's Donate label intentionally
+  /// still follows the normal rule (gold when selected, muted otherwise)
+  /// rather than forcing a bigger nav-bar rework for an always-gold label
+  /// too.
+  final Color? color;
 }
 
 const List<BottomNavDestination> bottomNavDestinations = [
@@ -25,8 +44,15 @@ const List<BottomNavDestination> bottomNavDestinations = [
   BottomNavDestination(icon: Icons.groups_rounded, label: 'Ministries'),
   BottomNavDestination(icon: Icons.location_on_rounded, label: 'Contact'),
   BottomNavDestination(
+    // The PWA's Donate label is literally "❤️ Donate" -- a red heart
+    // emoji baked into the text, ahead of the gold SVG icon above it. Emoji
+    // glyphs render in their own native color regardless of surrounding
+    // text color, so this heart stays red even though "Donate" itself
+    // follows the shared nav-bar label color rule (see [color]'s doc
+    // comment).
     icon: Icons.favorite_rounded,
-    label: 'Donate',
+    label: '❤️ Donate',
     pulse: true,
+    color: AppColors.gold,
   ),
 ];

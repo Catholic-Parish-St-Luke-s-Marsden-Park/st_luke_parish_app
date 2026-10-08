@@ -11,9 +11,13 @@ import 'package:flutter/material.dart';
 /// not carried over. Every other bottom-nav icon stays static, matching
 /// the PWA, where only the Donate icon animates.
 class PulsingNavIcon extends StatefulWidget {
-  const PulsingNavIcon({required this.icon, super.key});
+  const PulsingNavIcon({required this.icon, this.color, super.key});
 
   final IconData icon;
+
+  /// Optional fixed icon color, overriding whatever ambient [IconTheme]
+  /// (e.g. a nav bar's selected/unselected theming) would otherwise apply.
+  final Color? color;
 
   /// Set to `true` by the widget-test suite's global setup (see
   /// `test/flutter_test_config.dart`) so this icon renders statically
@@ -60,8 +64,11 @@ class _PulsingNavIconState extends State<PulsingNavIcon>
     // doc comment.
     if (PulsingNavIcon.disableForTesting ||
         MediaQuery.of(context).disableAnimations) {
-      return Icon(widget.icon);
+      return Icon(widget.icon, color: widget.color);
     }
-    return ScaleTransition(scale: _scale, child: Icon(widget.icon));
+    return ScaleTransition(
+      scale: _scale,
+      child: Icon(widget.icon, color: widget.color),
+    );
   }
 }

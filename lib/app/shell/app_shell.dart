@@ -102,8 +102,11 @@ class _AppShellBodyState extends State<_AppShellBody> {
           for (final destination in bottomNavDestinations)
             NavigationDestination(
               icon: destination.pulse
-                  ? PulsingNavIcon(icon: destination.icon)
-                  : Icon(destination.icon),
+                  ? PulsingNavIcon(
+                      icon: destination.icon,
+                      color: destination.color,
+                    )
+                  : Icon(destination.icon, color: destination.color),
               label: destination.label,
             ),
         ],

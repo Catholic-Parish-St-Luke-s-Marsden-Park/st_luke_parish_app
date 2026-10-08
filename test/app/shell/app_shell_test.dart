@@ -5,6 +5,7 @@ import 'package:st_luke_parish_app/app/shell/app_shell.dart';
 import 'package:st_luke_parish_app/app/shell/bottom_nav.dart';
 import 'package:st_luke_parish_app/app/shell/nav_index_provider.dart';
 import 'package:st_luke_parish_app/app/shell/widgets/pulsing_nav_icon.dart';
+import 'package:st_luke_parish_app/core/theme/app_colors.dart';
 import 'package:st_luke_parish_app/core/theme/app_theme.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_screen.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/screens/ministries_screen.dart';
@@ -45,7 +46,7 @@ void main() {
         'News',
         'Ministries',
         'Contact',
-        'Donate',
+        '❤️ Donate',
       ];
       for (final label in expectedLabels) {
         expect(
@@ -78,10 +79,10 @@ void main() {
       for (final destination in bottomNavDestinations) {
         expect(
           destination.pulse,
-          destination.label == 'Donate',
+          destination.label == '❤️ Donate',
           reason:
               '${destination.label} pulse flag should be '
-              '${destination.label == 'Donate'}',
+              "${destination.label == '❤️ Donate'}",
         );
       }
 
@@ -101,6 +102,42 @@ void main() {
       );
       expect(pulsingIcon.icon, Icons.favorite_rounded);
     });
+
+    testWidgets(
+      "Donate's icon is always AppColors.gold, matching the parish PWA, "
+      'regardless of which tab is selected (every other destination '
+      "follows the nav bar's normal selected/unselected theming instead)",
+      (tester) async {
+        await _pumpShell(tester);
+
+        PulsingNavIcon donateIcon() =>
+            tester.widget<PulsingNavIcon>(find.byType(PulsingNavIcon));
+
+        // Not selected (Parish, index 0, is the initial tab).
+        expect(donateIcon().color, AppColors.gold);
+
+        // Still gold once Donate itself is selected. Donate's WebView
+        // loading state uses an indefinitely-animating
+        // CircularProgressIndicator, which would make pumpAndSettle hang
+        // forever -- a bounded pump is sufficient here, same pattern as
+        // app_bar_chrome_test.dart's REQ-F02-019 test.
+        await tester.tap(find.text('❤️ Donate'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(donateIcon().color, AppColors.gold);
+
+        // Every other destination has no fixed color override -- they
+        // follow the shared nav bar theme instead.
+        for (final destination in bottomNavDestinations) {
+          if (destination.label == '❤️ Donate') continue;
+          expect(
+            destination.color,
+            isNull,
+            reason: '${destination.label} should not override its color',
+          );
+        }
+      },
+    );
 
     testWidgets('tapping a destination updates the selected nav index '
         'provider and switches the visible tab', (tester) async {
