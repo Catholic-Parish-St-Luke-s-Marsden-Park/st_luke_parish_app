@@ -3,15 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../domain/entities/ministry.dart';
 import '../../domain/entities/ministry_category.dart';
 import '../providers/ministries_providers.dart';
 import '../widgets/ministries_status_view.dart';
-import '../widgets/ministry_card.dart';
 import '../widgets/ministry_category_header.dart';
+import '../widgets/ministry_group_card.dart';
 import 'ministry_detail_screen.dart';
 
-/// Ministries destination: a header, then a grid of ministry cards under each
+/// Ministries destination: a header, then a card of ministry rows under each
 /// category, in the order the parish API returns them. Pull down to refresh.
 class MinistriesScreen extends ConsumerWidget {
   const MinistriesScreen({super.key});
@@ -31,7 +30,7 @@ class MinistriesScreen extends ConsumerWidget {
           const _MinistriesHero(),
           // Previous data stays on screen while reloading.
           ...switch (ministries) {
-            AsyncValue(:final value?) => _content(value),
+            AsyncValue(:final value?) => _content(context, value),
             AsyncValue(hasError: true) => [
               MinistriesMessageView(
                 message:
@@ -47,7 +46,10 @@ class MinistriesScreen extends ConsumerWidget {
     );
   }
 
-  List<Widget> _content(List<MinistryCategory> categories) {
+  List<Widget> _content(
+    BuildContext context,
+    List<MinistryCategory> categories,
+  ) {
     if (categories.isEmpty) {
       return const [
         MinistriesMessageView(message: 'No ministries are listed right now.'),
@@ -56,7 +58,14 @@ class MinistriesScreen extends ConsumerWidget {
     return [
       for (final category in categories) ...[
         MinistryCategoryHeader(category.name),
-        _MinistryGrid(ministries: category.ministries),
+        MinistryGroupCard(
+          ministries: category.ministries,
+          onTap: (ministry) => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => MinistryDetailScreen(ministryId: ministry.id),
+            ),
+          ),
+        ),
       ],
     ];
   }
@@ -106,41 +115,6 @@ class _MinistriesHero extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _MinistryGrid extends StatelessWidget {
-  const _MinistryGrid({required this.ministries});
-
-  final List<Ministry> ministries;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: ministries.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
-          childAspectRatio: 0.95,
-        ),
-        itemBuilder: (context, index) {
-          final ministry = ministries[index];
-          return MinistryCard(
-            ministry: ministry,
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => MinistryDetailScreen(ministryId: ministry.id),
-              ),
-            ),
-          );
-        },
       ),
     );
   }

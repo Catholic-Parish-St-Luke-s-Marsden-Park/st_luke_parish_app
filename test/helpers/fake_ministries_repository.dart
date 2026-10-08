@@ -79,14 +79,16 @@ class FakeMinistriesRepository implements MinistriesRepository {
 Ministry testMinistry(
   String id, {
   String category = 'Test Category',
+  String? membersLine,
+  String? dayLine,
   String contactEmail = 'office@example.org',
   String emailSubject = 'Interest',
 }) => Ministry(
   id: id,
   category: category,
   name: 'Name $id',
-  membersLine: 'Members $id',
-  dayLine: 'Day $id',
+  membersLine: membersLine ?? 'Members $id',
+  dayLine: dayLine ?? 'Day $id',
   tagline: 'Tagline $id',
   time: 'Time $id',
   location: 'Location $id',

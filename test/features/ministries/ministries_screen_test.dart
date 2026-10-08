@@ -5,7 +5,7 @@ import 'package:st_luke_parish_app/app/provider_retry.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/providers/ministries_providers.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/screens/ministries_screen.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/screens/ministry_detail_screen.dart';
-import 'package:st_luke_parish_app/features/ministries/presentation/widgets/ministry_card.dart';
+import 'package:st_luke_parish_app/features/ministries/presentation/widgets/ministry_row.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/widgets/ministry_category_header.dart';
 
 import '../../helpers/fake_ministries_repository.dart';
@@ -18,9 +18,9 @@ void main() {
   final fallback = loadFallbackMinistries();
 
   Future<void> pumpMinistriesScreen(WidgetTester tester) async {
-    // MinistriesScreen renders 16 cards across 4 category sections, well
+    // MinistriesScreen renders 16 rows across 4 category sections, well
     // taller than the default 800x600 test surface — use a tall surface so
-    // every card/category header is built and findable without needing to
+    // every row/category header is built and findable without needing to
     // scroll mid-test.
     tester.view.physicalSize = const Size(800, 6000);
     tester.view.devicePixelRatio = 1.0;
@@ -54,7 +54,7 @@ void main() {
     });
   });
 
-  group('REQ-F03-002 / REQ-F08-004: categories and cards render in API '
+  group('REQ-F03-002 / REQ-F08-004: categories and rows render in API '
       'order', () {
     testWidgets('a category header renders for each category, in order', (
       tester,
@@ -73,18 +73,16 @@ void main() {
       }
     });
 
-    testWidgets('all 16 ministry cards are reachable, in order', (
-      tester,
-    ) async {
+    testWidgets('all 16 ministry rows are reachable, in order', (tester) async {
       await pumpMinistriesScreen(tester);
 
-      final cardIds = tester
-          .widgetList<MinistryCard>(find.byType(MinistryCard))
-          .map((card) => card.ministry.id)
+      final rowIds = tester
+          .widgetList<MinistryRow>(find.byType(MinistryRow))
+          .map((row) => row.ministry.id)
           .toList();
-      expect(cardIds, hasLength(16));
+      expect(rowIds, hasLength(16));
       expect(
-        cardIds,
+        rowIds,
         fallback
             .expand((category) => category.ministries)
             .map((ministry) => ministry.id)
@@ -93,35 +91,31 @@ void main() {
     });
   });
 
-  group('REQ-F03-003: ministry card renders name/membersLine/dayLine', () {
-    testWidgets('a card shows its ministry name, membersLine, and dayLine', (
+  group('REQ-F03-003: ministry row renders name and "members · day"', () {
+    testWidgets('a row shows its ministry name and members · day line', (
       tester,
     ) async {
       await pumpMinistriesScreen(tester);
 
-      // Scoped to the Music Ministry card specifically: several ministries
-      // share the same dayLine text (e.g. "Weekend Masses"), so asserting
-      // findsOneWidget on the raw text alone would be ambiguous.
       final music = fallbackMinistry('music');
-      final cardFinder = find.ancestor(
+      final rowFinder = find.ancestor(
         of: find.text(music.name),
-        matching: find.byType(MinistryCard),
+        matching: find.byType(MinistryRow),
       );
-      expect(cardFinder, findsOneWidget);
+      expect(rowFinder, findsOneWidget);
       expect(
-        find.descendant(of: cardFinder, matching: find.text(music.membersLine)),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: cardFinder, matching: find.text(music.dayLine)),
+        find.descendant(
+          of: rowFinder,
+          matching: find.text('${music.membersLine} · ${music.dayLine}'),
+        ),
         findsOneWidget,
       );
     });
   });
 
-  group('REQ-F03-004: tapping a ministry card navigates to its detail '
+  group('REQ-F03-004: tapping a ministry row navigates to its detail '
       'screen', () {
-    testWidgets('tapping the Music Ministry card opens its detail screen', (
+    testWidgets('tapping the Music Ministry row opens its detail screen', (
       tester,
     ) async {
       await pumpMinistriesScreen(tester);

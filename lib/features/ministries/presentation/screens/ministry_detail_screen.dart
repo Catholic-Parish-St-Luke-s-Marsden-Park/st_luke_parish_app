@@ -12,7 +12,7 @@ import '../providers/ministries_providers.dart';
 import '../widgets/ministries_status_view.dart';
 
 /// Full detail screen for a single ministry, reached by tapping a
-/// [MinistryCard]. Looks the ministry up by id in the loaded list, falling
+/// `MinistryRow` on the Ministries tab. Looks the ministry up by id in the loaded list, falling
 /// back to `GET /v1/ministries/{id}` when it isn't there.
 class MinistryDetailScreen extends ConsumerWidget {
   const MinistryDetailScreen({super.key, required this.ministryId});

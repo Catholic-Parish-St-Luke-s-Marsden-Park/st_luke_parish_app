@@ -124,8 +124,9 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
   - let the hero grow, or allow a 2-line title with ellipsis;
   - raise the chip label to a `TextTheme` style;
   - add the CLAUDE.md text-scale sweep for the list and detail data states.
+- **Update 2026-10-08:** the **list** half is fixed in PR #25, following the user's hands-on review. The grid cards became content-sized rows, and a sweep at 360x690 and 390x844 × 1.0x, 1.5x and 2.0x passes for the data state. Still open: the detail header and stat chips, the 9pt `_StatChip` label, and the 11pt category header.
 - **Owner:** Next Ministries/UI feature. Tracked as GitHub issue [#26](https://github.com/Catholic-Parish-St-Luke-s-Marsden-Park/st_luke_parish_app/issues/26).
-- **Status:** open
+- **Status:** open (list fixed; detail screen remaining)
 
 ## Resolved Risks
 

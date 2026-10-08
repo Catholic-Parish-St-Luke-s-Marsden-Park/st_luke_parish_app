@@ -34,13 +34,16 @@ Closes #24
   - `API_BASE_URL` (origin only) in `assets/app.env`, set to `https://parish-app-service.fly.dev`. When it's unset, the origin of `BASE_URL` is used.
   - It's validated with the same rules as `BASE_URL`: that logic moved from `NotificationService.resolveBackendUri` into `lib/core/config/backend_uri.dart`, which both now use.
   - A set but invalid `API_BASE_URL` doesn't silently fall back.
+- **Ministry list layout (from hands-on review):** the 2-column grid of fixed-aspect cards was replaced with grouped list rows. Each category is one card with a row per ministry: name, a "members · day" line and a chevron.
+  - Rows are about 64–80pt tall, down from about 210pt cards on a Pro Max.
+  - Text uses `TextTheme` styles of 13pt and up, with AA contrast. Each row is one screen-reader button with a target of at least 48pt.
+  - This fixes the **list** half of #26. `MinistryCard` is replaced by `MinistryRow` and `MinistryGroupCard`.
 - **Docs:** CLAUDE.md now allows the parish API's public, read-only `GET /v1/*` (plus the existing `POST /tokens`) and forbids `/admin`. README has a "Parish API (Ministries)" section, including the command to refresh the snapshot at release time. ADR-0006 records the design.
 
 ## Risks
-- **RISK-013 (pre-existing, not introduced here; please read):** the Ministries grid overflows at 1.5x/2x system text size. The detail hero also overflows at 1.0x on a 390pt-wide phone for "Extraordinary Ministers of Holy Communion".
-  - I reproduced all of these on `main` with the same probe. This PR doesn't change those layouts.
-  - It's an accessibility defect for our audience, so it's tracked separately as #26.
-  - The new loading, error and empty states are swept at 1.5x and 2x and pass.
+- **RISK-013 / #26 (pre-existing, found while testing):** on `main`, the Ministries grid overflows at 1.5x/2x system text size, and the detail header overflows at 1.0x for "Extraordinary Ministers of Holy Communion".
+  - **List:** fixed in this PR by the compact rows. Every list state (loading, error, empty, data) now passes a 1.0x/1.5x/2.0x sweep.
+  - **Detail screen:** header and stat chips are not changed here and remain open in #26.
 - **RISK-012:** the bundled snapshot goes stale unless it's refreshed before each release (README > Parish API). `ministries_fallback_asset_test.dart` pins its contents, so a refresh shows up as a test diff to review.
 - **Behaviour change:** content now comes from the parish API. If the API is down, users see the saved or bundled copy, not an error. The server's `Cache-Control: max-age=300` isn't honoured on the device, and ETag is out of scope per the issue.
 - **Unchanged:** `BASE_URL` still holds the emulator URL. The existing opt-in release check still fails on it (feature 07). The new `API_BASE_URL` check passes.
@@ -57,7 +60,9 @@ Closes #24
   - Fallback asset: the 16/4 checks, now on the asset.
   - List and detail state widget tests, including pull-to-refresh and a text-scale sweep of the new states.
 - **Updated:** `ministries_screen_test` and `ministry_detail_screen_test` are driven by a fake repository loaded from the fallback JSON. The emoji tests are removed, and the mailto expectations are now encoded, e.g. `mailto:marsdenpark@parracatholic.org?subject=Music%20Ministry%20Interest` and `mailto:sacraments@stlukesmarsdenpark.org.au?subject=Sacramental%20Programme%202026`.
+- **Rows:** `ministry_row_test.dart` covers content, the dot left out when a part is empty, compact height, tap, merged button semantics and 2x wrapping. The list text-scale sweep now includes the data state.
 - **Shell:** the six-tab chrome test overrides the ministries repository, so it stays offline.
+- **Hands-on (user):** Ministries tab works on an iPhone 17 Pro Max simulator. The oversized cards it showed led to the compact rows above.
 - **On device:** a scripted smoke run on an iOS iPhone 17 simulator against the live API (not committed) passed. It covered fetch and save, detail, pull-to-refresh, offline with cache plus the SnackBar, and offline with no cache plus the bundled fallback. It wasn't a hands-on review, and Android wasn't run because this machine has no Android SDK.
 
 ## Artifacts
@@ -79,7 +84,7 @@ Closes #24
 - Merge conflicts resolved: n/a
 - dart format: pass (`lib/` and `test/`, 0 changed)
 - flutter analyze: pass (no issues)
-- flutter test: pass (405 passed, 2 skipped; the skips are the opt-in `RELEASE_CHECK` tests)
+- flutter test: pass (423 passed, 2 skipped; the skips are the opt-in `RELEASE_CHECK` tests)
 - build validation: pass for iOS (`flutter build ios --no-codesign`, `Runner.app` 22.2MB). Android not built (no SDK on this machine).
 
 ## Approval

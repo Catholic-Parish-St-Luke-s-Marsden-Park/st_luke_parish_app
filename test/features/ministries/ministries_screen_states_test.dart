@@ -8,7 +8,7 @@ import 'package:st_luke_parish_app/features/ministries/domain/entities/ministry_
 import 'package:st_luke_parish_app/features/ministries/domain/failures/ministries_failure.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/providers/ministries_providers.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/screens/ministries_screen.dart';
-import 'package:st_luke_parish_app/features/ministries/presentation/widgets/ministry_card.dart';
+import 'package:st_luke_parish_app/features/ministries/presentation/widgets/ministry_row.dart';
 
 import '../../helpers/fake_ministries_repository.dart';
 
@@ -90,7 +90,7 @@ void main() {
       expect(find.text('Ministries & Groups'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(find.text(loadingCaption), findsOneWidget);
-      expect(find.byType(MinistryCard), findsNothing);
+      expect(find.byType(MinistryRow), findsNothing);
     });
 
     testWidgets('error shows a friendly message and no exception text', (
@@ -102,7 +102,7 @@ void main() {
       expect(find.text(errorMessage), findsOneWidget);
       expect(find.text('Try again'), findsOneWidget);
       expect(find.textContaining('secret detail'), findsNothing);
-      expect(find.byType(MinistryCard), findsNothing);
+      expect(find.byType(MinistryRow), findsNothing);
     });
 
     testWidgets('"Try again" has at least a 48x48 target', (tester) async {
@@ -133,15 +133,15 @@ void main() {
 
       expect(repository.watchCalls, 2);
       expect(find.text(errorMessage), findsNothing);
-      expect(find.byType(MinistryCard), findsNWidgets(16));
+      expect(find.byType(MinistryRow), findsNWidgets(16));
     });
 
-    testWidgets('empty shows a message and no cards', (tester) async {
+    testWidgets('empty shows a message and no rows', (tester) async {
       await pumpScreen(tester, FakeMinistriesRepository(categories: const []));
 
       expect(find.text(emptyMessage), findsOneWidget);
       expect(find.text('Try again'), findsNothing);
-      expect(find.byType(MinistryCard), findsNothing);
+      expect(find.byType(MinistryRow), findsNothing);
     });
   });
 
@@ -160,12 +160,12 @@ void main() {
       controller.add(cached);
       await tester.pumpAndSettle();
       expect(find.text('CACHED'), findsOneWidget);
-      expect(find.byType(MinistryCard), findsOneWidget);
+      expect(find.byType(MinistryRow), findsOneWidget);
 
       controller.add(loadFallbackMinistries());
       await tester.pumpAndSettle();
       expect(find.text('CACHED'), findsNothing);
-      expect(find.byType(MinistryCard), findsNWidgets(16));
+      expect(find.byType(MinistryRow), findsNWidgets(16));
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
   });
@@ -224,13 +224,20 @@ void main() {
     });
   });
 
-  group('REQ-F08-013: status states reflow at increased text scale', () {
+  group('REQ-F08-013: every state reflows at increased text scale', () {
     const sizes = [Size(360, 690), Size(390, 844)];
-    const scalers = [TextScaler.linear(1.5), TextScaler.linear(2.0)];
+    const scalers = [
+      TextScaler.noScaling,
+      TextScaler.linear(1.5),
+      TextScaler.linear(2.0),
+    ];
     final states = <String, (FakeMinistriesRepository Function(), bool)>{
       'loading': (pending, false),
       'error': (failing, true),
       'empty': (() => FakeMinistriesRepository(categories: const []), true),
+      // All 16 ministries from the fallback asset, including the longest
+      // name ("Extraordinary Ministers of Holy Communion").
+      'data': (FakeMinistriesRepository.new, true),
     };
 
     for (final MapEntry(key: state, value: (repository, settle))

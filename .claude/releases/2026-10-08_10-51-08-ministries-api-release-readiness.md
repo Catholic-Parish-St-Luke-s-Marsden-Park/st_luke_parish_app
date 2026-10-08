@@ -33,7 +33,7 @@
 
 ## Risks
 - **RISK-012 (open):** the bundled snapshot drifts if it isn't refreshed at release time. Low impact, since it's only used on a first launch with no network.
-- **RISK-013 (open, pre-existing):** the Ministries grid overflows at 1.5x/2x text size, and the detail hero overflows at 1.0x for "Extraordinary Ministers of Holy Communion". This was reproduced on `main`; feature 08 doesn't change those layouts. The follow-up fix is tracked as #26.
+- **RISK-013 (open, pre-existing):** the Ministries grid overflows at 1.5x/2x text size, and the detail hero overflows at 1.0x for "Extraordinary Ministers of Holy Communion". This was reproduced on `main`; The list half is now fixed in this PR (compact rows, after the user's review). The detail screen remains, tracked as #26.
 - **Behaviour change:** content now depends on the parish API's availability. When the API is down, users see the cached or bundled copy, not an error. Changes staff publish appear after the next successful fetch, which happens on the next tab open or pull-to-refresh.
 
 ## Rollback
