@@ -95,7 +95,7 @@ Ministry testMinistry(
   leaderName: 'Leader $id',
   leaderRole: 'Role $id',
   leaderInitials: 'LI',
-  joinInfo: 'Join $id',
+  joinInfo: 'How to join $id',
   ctaLabel: 'Join $id',
   contactEmail: contactEmail,
   emailSubject: emailSubject,
