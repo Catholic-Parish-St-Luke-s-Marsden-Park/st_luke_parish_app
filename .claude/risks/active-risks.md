@@ -102,6 +102,32 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
 - **Owner:** Architecture / next notifications feature
 - **Status:** open
 
+- **Risk ID:** RISK-012
+- **Title:** The bundled ministries snapshot drifts from the parish API
+- **Feature:** 08-ministries-api
+- **Impact:** Low. `assets/ministries_fallback.json` is only shown on a first launch with no network and nothing cached. If it isn't refreshed at release time, those users see ministries as they were when the app was built, until the first successful fetch.
+- **Likelihood:** Medium. Staff now edit ministries in `/admin` without an app release.
+- **Mitigation:** README > Parish API has the refresh command. `ministries_fallback_asset_test.dart` pins the snapshot, so a refresh appears as a test diff for review. Add the refresh to the deployer/release checklist.
+- **Owner:** Deployer / release process
+- **Status:** open
+
+- **Risk ID:** RISK-013
+- **Title:** Ministries layouts overflow at larger text sizes, and the detail hero overflows even at 1.0x for long names
+- **Feature:** 03-multi-pages (pre-existing). Found during the 08-ministries-api tester phase.
+- **Impact:** Medium, for accessibility, given the audience skews older (CLAUDE.md > Accessibility).
+  - The grid cards use a fixed `childAspectRatio: 0.95` and overflow at 1.5x and 2.0x text scale on a 390x844 phone.
+  - On the same phone, the detail `SliverAppBar` hero (fixed `expandedHeight: 180`) overflows at 1.0x for "Extraordinary Ministers of Holy Communion", and the stat-chip rows overflow at larger scales. `_StatChip` also hardcodes a 9pt label, below the 12pt minimum.
+  - A probe confirmed the same overflows on `main` (`aa91b85`), so feature 08 did not introduce them; the layout code is unchanged. Feature 08's new loading, error and empty states are swept at 1.5x and 2.0x and pass.
+- **Likelihood:** Certain (reproduced in widget tests).
+- **Mitigation:** A follow-up fix:
+  - let the grid cards size to their content (e.g. a `Wrap` or a non-fixed aspect ratio);
+  - let the hero grow, or allow a 2-line title with ellipsis;
+  - raise the chip label to a `TextTheme` style;
+  - add the CLAUDE.md text-scale sweep for the list and detail data states.
+- **Update 2026-10-08:** the **list** half is fixed in PR #25, following the user's hands-on review. The grid cards became content-sized rows, and a sweep at 360x690 and 390x844 × 1.0x, 1.5x and 2.0x passes for the data state. Still open: the detail header and stat chips, the 9pt `_StatChip` label, and the 11pt category header.
+- **Owner:** Next Ministries/UI feature. Tracked as GitHub issue [#26](https://github.com/Catholic-Parish-St-Luke-s-Marsden-Park/st_luke_parish_app/issues/26).
+- **Status:** open (list fixed; detail screen remaining)
+
 ## Resolved Risks
 
 - **Risk ID:** RISK-002

@@ -9,10 +9,13 @@ import 'package:st_luke_parish_app/app/shell/widgets/ask_luke_pill.dart';
 import 'package:st_luke_parish_app/app/shell/widgets/saint_of_the_day_pill.dart';
 import 'package:st_luke_parish_app/core/theme/app_theme.dart';
 import 'package:st_luke_parish_app/features/ask_luke/presentation/screens/ask_luke_screen.dart';
+import 'package:st_luke_parish_app/features/ministries/presentation/providers/ministries_providers.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/domain/entities/saint_of_the_day.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/presentation/providers/saint_of_the_day_provider.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/presentation/screens/saint_of_the_day_screen.dart';
 import 'package:st_luke_parish_app/shared/widgets/app_pill_button.dart';
+
+import '../../helpers/fake_ministries_repository.dart';
 
 /// Covers the shared AppBar chrome acceptance criteria: REQ-F02-014
 /// through REQ-F02-016a and REQ-F02-017 through REQ-F02-019.
@@ -183,7 +186,15 @@ void main() {
     testWidgets(
       'logo + both pills are present regardless of the selected tab',
       (tester) async {
-        await pumpShell(tester);
+        // Keeps the Ministries tab off the network and shared_preferences.
+        await pumpShell(
+          tester,
+          overrides: [
+            ministriesRepositoryProvider.overrideWith(
+              (ref) async => FakeMinistriesRepository(),
+            ),
+          ],
+        );
 
         const tabLabels = [
           'Parish',
