@@ -62,7 +62,7 @@ Closes #24
 - **Updated:** `ministries_screen_test` and `ministry_detail_screen_test` are driven by a fake repository loaded from the fallback JSON. The emoji tests are removed, and the mailto expectations are now encoded, e.g. `mailto:marsdenpark@parracatholic.org?subject=Music%20Ministry%20Interest` and `mailto:sacraments@stlukesmarsdenpark.org.au?subject=Sacramental%20Programme%202026`.
 - **Rows:** `ministry_row_test.dart` covers content, the dot left out when a part is empty, compact height, tap, merged button semantics and 2x wrapping. The list text-scale sweep now includes the data state.
 - **Shell:** the six-tab chrome test overrides the ministries repository, so it stays offline.
-- **Hands-on (user):** Ministries tab works on an iPhone 17 Pro Max simulator. The oversized cards it showed led to the compact rows above.
+- **Hands-on (user):** Ministries tab works on an iPhone 17 Pro Max simulator. The oversized cards it showed led to the compact rows above, and the user re-checked and approved the new rows.
 - **On device:** a scripted smoke run on an iOS iPhone 17 simulator against the live API (not committed) passed. It covered fetch and save, detail, pull-to-refresh, offline with cache plus the SnackBar, and offline with no cache plus the bundled fallback. It wasn't a hands-on review, and Android wasn't run because this machine has no Android SDK.
 
 ## Artifacts
