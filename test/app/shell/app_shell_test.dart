@@ -46,7 +46,7 @@ void main() {
         'News',
         'Ministries',
         'Contact',
-        '❤️ Donate',
+        'Donate',
       ];
       for (final label in expectedLabels) {
         expect(
@@ -79,10 +79,10 @@ void main() {
       for (final destination in bottomNavDestinations) {
         expect(
           destination.pulse,
-          destination.label == '❤️ Donate',
+          destination.label == 'Donate',
           reason:
               '${destination.label} pulse flag should be '
-              "${destination.label == '❤️ Donate'}",
+              "${destination.label == 'Donate'}",
         );
       }
 
@@ -121,7 +121,7 @@ void main() {
         // CircularProgressIndicator, which would make pumpAndSettle hang
         // forever -- a bounded pump is sufficient here, same pattern as
         // app_bar_chrome_test.dart's REQ-F02-019 test.
-        await tester.tap(find.text('❤️ Donate'));
+        await tester.tap(find.text('Donate'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
         expect(donateIcon().color, AppColors.gold);
@@ -129,7 +129,7 @@ void main() {
         // Every other destination has no fixed color override -- they
         // follow the shared nav bar theme instead.
         for (final destination in bottomNavDestinations) {
-          if (destination.label == '❤️ Donate') continue;
+          if (destination.label == 'Donate') continue;
           expect(
             destination.color,
             isNull,

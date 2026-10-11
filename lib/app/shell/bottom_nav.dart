@@ -44,14 +44,13 @@ const List<BottomNavDestination> bottomNavDestinations = [
   BottomNavDestination(icon: Icons.groups_rounded, label: 'Ministries'),
   BottomNavDestination(icon: Icons.location_on_rounded, label: 'Contact'),
   BottomNavDestination(
-    // The PWA's Donate label is literally "❤️ Donate" -- a red heart
-    // emoji baked into the text, ahead of the gold SVG icon above it. Emoji
-    // glyphs render in their own native color regardless of surrounding
-    // text color, so this heart stays red even though "Donate" itself
-    // follows the shared nav-bar label color rule (see [color]'s doc
-    // comment).
+    // The PWA's Donate label is literally "❤️ Donate" (a red heart emoji
+    // baked into the text), but the team asked to drop the emoji from the
+    // Flutter app's label specifically -- kept as plain "Donate" here,
+    // while still keeping the always-gold icon color and the pulse
+    // animation that also match the PWA (see [color]'s doc comment).
     icon: Icons.favorite_rounded,
-    label: '❤️ Donate',
+    label: 'Donate',
     pulse: true,
     color: AppColors.gold,
   ),
