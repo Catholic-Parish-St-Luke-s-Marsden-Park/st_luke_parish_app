@@ -24,6 +24,7 @@ const List<MassTime> saturdayVigilMasses = [
 
 const List<MassTime> weekdayMasses = [
   MassTime(time: 'Wed 7:30 AM', name: 'Weekday Mass'),
+  MassTime(time: 'Thu 9:00 AM', name: 'St.Luke Catholic College Mass'),
   MassTime(time: 'Fri 6:30 PM', name: 'Weekday Mass'),
   MassTime(time: 'Fri 11:00 AM', name: 'Marsden Park Care Community Mass'),
 ];

@@ -73,5 +73,21 @@
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="https"/>
         </intent>
+        <!-- Required for the Events feature's "Add to my calendar" action
+             (REQ-F08-024, lib/features/events/presentation/services/calendar_export_service.dart)
+             to resolve the device's calendar app on Android 11+ (API 30+)
+             package-visibility rules. The add_2_calendar plugin calls
+             Intent(ACTION_INSERT) against CalendarContract.Events.CONTENT_URI
+             and checks resolveActivity() before launching; without this entry
+             that check silently returns null even when a calendar app is
+             installed, and the export call fails with no exception (RISK-015,
+             confirmed live on an Android emulator 2026-10-07; root cause
+             diagnosed against the plugin's own source and its GitHub issue
+             #83, "Android not opening calendar"). See:
+             https://developer.android.com/training/package-visibility -->
+        <intent>
+            <action android:name="android.intent.action.INSERT"/>
+            <data android:mimeType="vnd.android.cursor.item/event"/>
+        </intent>
     </queries>
 </manifest>
