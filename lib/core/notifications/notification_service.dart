@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' show PlatformDispatcher;
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode, visibleForTesting;
@@ -45,7 +46,7 @@ class NotificationService {
   /// Backoff between registration attempts is `attempt * _retryDelayUnit`.
   final Duration _retryDelayUnit;
 
-  /// Token endpoint (including `/tokens`) from BASE_URL in assets/app.env.
+  /// Device registration endpoint (including `/v1/devices`) from BASE_URL in assets/app.env.
   /// Null, with the reason logged, if it is missing, malformed, or (in release
   /// builds) not https, so misconfiguration isn't retried as a network error.
   /// dotenv throws if assets/app.env never loaded (main.dart logs and carries
@@ -264,6 +265,27 @@ class NotificationService {
     }
   }
 
+  /// Body for `POST /v1/devices`. Topics are omitted so the server keeps any
+  /// it has stored. [platform] is injectable for tests.
+  @visibleForTesting
+  Map<String, Object> buildRegistrationBody(String token, {String? platform}) {
+    return {
+      'fcmToken': token,
+      'platform': platform ?? (Platform.isIOS ? 'ios' : 'android'),
+      'locale': PlatformDispatcher.instance.locale.toLanguageTag(),
+    };
+  }
+
+  String _describeProblem(String body) {
+    try {
+      final json = jsonDecode(body);
+      if (json is Map<String, dynamic>) {
+        return 'code=${json['code']} requestId=${json['requestId']}';
+      }
+    } catch (_) {}
+    return 'unparseable response body';
+  }
+
   /// Posts [token] to [uri], retrying with linear backoff on failure. Returns
   /// true if the server responded with a 2xx status. Takes [uri] explicitly,
   /// rather than resolving BASE_URL itself, so the retry/backoff behaviour is
@@ -277,18 +299,31 @@ class NotificationService {
             .post(
               uri,
               headers: {'Content-Type': 'application/json'},
-              body: jsonEncode({'fcm_token': token}),
+              body: jsonEncode(buildRegistrationBody(token)),
             )
             .timeout(const Duration(seconds: 10));
 
-        if (response.statusCode >= 200 && response.statusCode < 300) {
+        final status = response.statusCode;
+        if (status >= 200 && status < 300) {
           return true;
         }
 
+        // RFC 9457 problem body: log only the stable code and request id.
         debugPrint(
-          'Token registration failed (status ${response.statusCode}): '
-          '${response.body}',
+          'Token registration failed (status $status): '
+          '${_describeProblem(response.body)}',
         );
+
+        // A 4xx other than 429 (bad request, App Check) will not succeed on
+        // retry, so give up immediately.
+        if (status >= 400 && status < 500 && status != 429) {
+          return false;
+        }
+        // Rate limited (20 per 15 min per IP): back off much longer.
+        if (status == 429 && attempt < maxRetries) {
+          await Future.delayed(_retryDelayUnit * attempt * 5);
+          continue;
+        }
       } catch (e) {
         debugPrint('Token registration attempt $attempt failed: $e');
       }

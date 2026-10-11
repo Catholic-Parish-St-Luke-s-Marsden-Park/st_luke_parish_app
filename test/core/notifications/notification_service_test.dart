@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -81,6 +83,68 @@ void main() {
 
       expect(result, isTrue);
       expect(callCount, 1);
+    });
+
+    test('sends the /v1/devices body', () async {
+      Map<String, dynamic>? body;
+      final client = MockClient((request) async {
+        body = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response('', 204);
+      });
+      final service = NotificationService.forTesting(
+        httpClient: client,
+        isRelease: false,
+      );
+
+      await service.postToken(uri, 'a-token');
+
+      expect(body!['fcmToken'], 'a-token');
+      expect(body!['platform'], anyOf('android', 'ios'));
+      expect(body!['locale'], isA<String>());
+      expect(body!.containsKey('fcm_token'), isFalse);
+      expect(body!.containsKey('topics'), isFalse);
+    });
+
+    test('does not retry a 400 or 401', () async {
+      for (final status in [400, 401]) {
+        var callCount = 0;
+        final client = MockClient((request) async {
+          callCount++;
+          return http.Response(
+            '{"code":"bad_request","requestId":"r1"}',
+            status,
+            headers: {'content-type': 'application/problem+json'},
+          );
+        });
+        final service = NotificationService.forTesting(
+          httpClient: client,
+          isRelease: false,
+        );
+
+        final result = await service.postToken(uri, 'a-token');
+
+        expect(result, isFalse, reason: 'status $status');
+        expect(callCount, 1, reason: 'status $status');
+      }
+    });
+
+    test('retries a 429, then succeeds', () async {
+      var callCount = 0;
+      final client = MockClient((request) async {
+        callCount++;
+        return callCount == 1
+            ? http.Response('{"code":"rate_limited"}', 429)
+            : http.Response('', 204);
+      });
+      final service = NotificationService.forTesting(
+        httpClient: client,
+        isRelease: false,
+      );
+
+      final result = await service.postToken(uri, 'a-token', maxRetries: 2);
+
+      expect(result, isTrue);
+      expect(callCount, 2);
     });
 
     test('retries on non-2xx responses, then gives up', () async {
