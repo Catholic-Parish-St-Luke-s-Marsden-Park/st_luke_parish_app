@@ -144,18 +144,30 @@ secret/cert expires).
       Access under **login → My Certificates** as something like
       "Apple Distribution: Catholic Parish of St Luke's Marsden Park
       (F5QH8M7RG6)".
-   3. Export it as a `.p12`, either from Keychain Access (right-click the
-      certificate entry → **Export**), or entirely from the terminal:
+   3. Export it as a `.p12`. **Prefer Keychain Access** (right-click the
+      certificate entry → **Export**) — it produces a format macOS's own
+      Keychain Services can read back. If exporting from the terminal with
+      OpenSSL 3.x instead, you **must** pass `-legacy`:
       ```bash
       # Apple's .cer download is DER-encoded; convert to PEM first
       openssl x509 -inform DER -in distribution.cer -out distribution.pem
 
-      openssl pkcs12 -export \
+      openssl pkcs12 -export -legacy \
         -inkey ios_distribution.key \
         -in distribution.pem \
         -out distribution.p12 \
         -name "Apple Distribution: Catholic Parish of St Luke's Marsden Park"
       ```
+      **Why `-legacy` matters:** OpenSSL 3.x defaults to AES-256-CBC +
+      SHA-256 MAC for PKCS#12 files. macOS's `security import` (what the CI
+      workflow uses to load the certificate) only understands the older
+      RC2/3DES + SHA-1 format and fails with `MAC verification failed
+      during PKCS12 import (wrong password?)` on a modern-format file — even
+      though the password is completely correct. `-legacy` forces the old,
+      macOS-compatible format. (`openssl pkcs12 -info` on the resulting file
+      will itself then need `-legacy` to read it back; that's expected and
+      unrelated to whether `security import` can use it.)
+
       Either way, set an export password when prompted — that password
       becomes the `IOS_DIST_CERTIFICATE_PASSWORD` secret below.
 
@@ -255,11 +267,20 @@ add the three `ASC_*` ones) as soon as access is granted.
   `ios/Runner.xcodeproj/project.pbxproj` match the bundle ID already
   registered in App Store Connect — never the other way around once an app
   record exists.
-- **"No identity found" / certificate import fails** — usually means
-  `IOS_DIST_CERTIFICATE_P12` or `IOS_DIST_CERTIFICATE_PASSWORD` is stale,
-  wasn't base64-encoded correctly, or the certificate itself expired or was
-  revoked. Re-export per [Rotating secrets](#rotating-secrets) and update
-  both secrets together.
+- **"No identity found" / certificate import fails / `MAC verification
+  failed during PKCS12 import (wrong password?)`** — before assuming the
+  password or base64 is wrong, check whether the `.p12` was exported with
+  OpenSSL 3.x **without** `-legacy`. OpenSSL 3.x's default PKCS#12 format
+  (AES-256-CBC + SHA-256 MAC) isn't readable by macOS's `security import`,
+  which only understands the older RC2/3DES + SHA-1 format — it reports
+  this as a wrong-password error even when the password is correct. Verify
+  with `openssl pkcs12 -info -in distribution.p12 -noout -passin pass:...`
+  (if this succeeds but CI still fails with "MAC verification failed", it's
+  the legacy-format issue, not the password) and re-export with
+  `-legacy` per step 2 above. Otherwise, `IOS_DIST_CERTIFICATE_P12` or
+  `IOS_DIST_CERTIFICATE_PASSWORD` may genuinely be stale or the certificate
+  itself expired/revoked — re-export per [Rotating secrets](#rotating-secrets)
+  and update both secrets together.
 - **"Doesn't match any profile" / profile doesn't cover the app** — the
   `IOS_PROVISIONING_PROFILE` secret is stale, was generated for the old
   bundle ID, or doesn't match the certificate currently in
