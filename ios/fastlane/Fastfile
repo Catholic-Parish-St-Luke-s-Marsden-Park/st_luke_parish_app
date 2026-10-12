@@ -11,6 +11,17 @@ platform :ios do
     team_id = ENV.fetch("FASTLANE_TEAM_ID")
     bundle_id = "au.org.stlukesmarsdenpark.parishapp"
 
+    # Fastlane runs lanes with Dir.pwd == ios/fastlane/ (the directory
+    # containing this Fastfile) regardless of the shell's own
+    # working-directory when `fastlane` was invoked — confirmed directly
+    # from a CI stack trace (Errno::ENOENT against .../ios/fastlane/
+    # Runner.xcodeproj/...). Anchor every path to absolute locations
+    # computed once here, rather than chaining relative ".." lookups that
+    # depend on guessing Fastlane's cwd correctly at each point.
+    fastlane_dir = Dir.pwd
+    ios_dir = File.expand_path("..", fastlane_dir)
+    project_root = File.expand_path("..", ios_dir)
+
     keychain_name = "ios-testflight.keychain-db"
     keychain_password = SecureRandom.hex(16)
 
@@ -95,13 +106,7 @@ platform :ios do
     # placeholder, since the real profile name depends on whatever a human
     # most recently exported — patch the checked-out copy here; never commit
     # this back.
-    #
-    # Deliberately NOT using __dir__: inside a Fastfile, Fastlane evaluates
-    # the file through its own DSL loader, so __dir__ does not reliably
-    # resolve to ios/fastlane/ the way a normal Ruby script would. Fastlane
-    # runs with Dir.pwd == ios/ (set by the workflow's working-directory),
-    # so resolve paths relative to that instead.
-    pbxproj_path = File.expand_path("Runner.xcodeproj/project.pbxproj", Dir.pwd)
+    pbxproj_path = File.join(ios_dir, "Runner.xcodeproj", "project.pbxproj")
     pbxproj = File.read(pbxproj_path)
     patched = pbxproj.gsub(
       "PROVISIONING_PROFILE_SPECIFIER = \"CI_PLACEHOLDER_PROVISIONING_PROFILE\";",
@@ -112,7 +117,7 @@ platform :ios do
 
     # Written fresh each run (not committed) because the exact profile name
     # depends on whatever the human most recently exported.
-    export_options_path = File.expand_path("ExportOptions.plist", Dir.pwd)
+    export_options_path = File.join(ios_dir, "ExportOptions.plist")
     File.write(export_options_path, <<~PLIST)
       <?xml version="1.0" encoding="UTF-8"?>
       <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -137,7 +142,7 @@ platform :ios do
       </plist>
     PLIST
 
-    Dir.chdir("..") do
+    Dir.chdir(project_root) do
       sh(
         "flutter", "build", "ipa",
         "--release",
@@ -146,7 +151,7 @@ platform :ios do
       )
     end
 
-    ipa_path = Dir.glob("../build/ios/ipa/*.ipa").first
+    ipa_path = Dir.glob(File.join(project_root, "build/ios/ipa/*.ipa")).first
     UI.user_error!("No .ipa found under build/ios/ipa after `flutter build ipa`") unless ipa_path
 
     if using_api_key
