@@ -148,20 +148,28 @@ platform :ios do
     PLIST
 
     Dir.chdir(project_root) do
-      # ruby/setup-ruby + Bundler set GEM_HOME/BUNDLE_GEMFILE/etc. for the
-      # whole job so `bundle exec fastlane` can find its gems. Those env
-      # vars leak into the xcodebuild subprocess this spawns, which breaks
-      # Xcode's generated "[CP] Check Pods Manifest.lock" build-phase
-      # script — it tries to run `pod` against a mismatched Ruby/gem
-      # environment and fails with "CocoaPods is installed but broken",
-      # even though the explicit `pod install` step just before this
-      # worked fine (it isn't going through that build phase). Strip them
-      # for this one call so xcodebuild sees the same clean environment
-      # `pod install` saw.
+      # `flutter build ipa` re-verifies CocoaPods itself (runs its own
+      # `pod install` check before invoking xcodebuild). `/usr/local/bin/pod`
+      # has a `#!/usr/bin/env ruby` shebang — ruby/setup-ruby demotes
+      # Homebrew's system Ruby in PATH in favor of its own installed Ruby
+      # (same "3.3" minor version, but a separate gem directory that
+      # doesn't have the `cocoapods` gem CocoaPods was actually installed
+      # under), so `pod` ends up running under the wrong interpreter and
+      # RubyGems reports it as "cocoapods is not currently included in the
+      # bundle" — misleading, but really just the wrong Ruby finding an
+      # empty gem set. Strip Bundler/Gem env vars AND put Homebrew's Ruby
+      # bin dirs back ahead of PATH for this one call, restoring exactly
+      # what the standalone `pod install` step (which worked) saw.
+      homebrew_ruby_bin_dirs = Dir.glob("/opt/homebrew/lib/ruby/gems/*/bin") +
+                                Dir.glob("/opt/homebrew/opt/ruby@*/bin") +
+                                Dir.glob("/opt/homebrew/opt/ruby/bin")
+      restored_path = (homebrew_ruby_bin_dirs + [ENV.fetch("PATH")]).join(":")
+
       sh(
         "env", "-u", "GEM_HOME", "-u", "GEM_PATH", "-u", "GEM_ROOT",
         "-u", "BUNDLE_GEMFILE", "-u", "BUNDLE_PATH", "-u", "BUNDLE_BIN",
         "-u", "RUBYOPT", "-u", "RUBYLIB",
+        "PATH=#{restored_path}",
         "flutter", "build", "ipa",
         "--release",
         "--build-number=#{ENV.fetch('GITHUB_RUN_NUMBER', '1')}",
