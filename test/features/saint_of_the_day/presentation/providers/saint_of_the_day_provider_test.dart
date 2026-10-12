@@ -1,10 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:st_luke_parish_app/app/provider_retry.dart';
+import 'package:st_luke_parish_app/core/config/api_base_uri_provider.dart';
+import 'package:st_luke_parish_app/core/network/http_client_provider.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/domain/entities/saint_of_the_day.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/domain/failures/saint_of_the_day_failure.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/domain/repositories/saint_of_the_day_repository.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/presentation/providers/saint_of_the_day_provider.dart';
+
+import '../../data/saint_json_fixtures.dart';
 
 /// Covers REQ-F06-011's `AsyncValue` loading/success/failure states at the
 /// provider level, independent of any widget tree — mirrors
@@ -101,5 +108,64 @@ void main() {
       container.read(saintOfTheDayProvider.future),
       throwsA(isA<SaintOfTheDayNotConfiguredFailure>()),
     );
+  });
+
+  group('saintOfTheDayRepositoryProvider wiring (REQ-F09-017)', () {
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+
+    ProviderContainer containerWith({
+      required Uri? apiBase,
+      required MockClientHandler handler,
+    }) {
+      final container = ProviderContainer(
+        overrides: [
+          apiBaseUriProvider.overrideWithValue(apiBase),
+          httpClientProvider.overrideWithValue(MockClient(handler)),
+        ],
+        retry: noAutomaticRetry,
+      );
+      addTearDown(container.dispose);
+      container.listen(saintOfTheDayProvider, (_, _) {});
+      return container;
+    }
+
+    test(
+      'requests {apiBase}/v1/saints/{today} through the shared client',
+      () async {
+        final requested = <Uri>[];
+        final container = containerWith(
+          apiBase: Uri.parse('https://api.example.org'),
+          handler: (request) async {
+            requested.add(request.url);
+            final key = request.url.pathSegments.last;
+            return http.Response(saintJson(dateKey: key), 200);
+          },
+        );
+
+        final saint = await container.read(saintOfTheDayProvider.future);
+
+        expect(requested, hasLength(1));
+        expect(requested.single.host, 'api.example.org');
+        expect(requested.single.path, '/v1/saints/${saint.dateKey}');
+      },
+    );
+
+    test('with no API base, fails NotConfigured and sends nothing '
+        '(REQ-F09-003)', () async {
+      var requests = 0;
+      final container = containerWith(
+        apiBase: null,
+        handler: (request) async {
+          requests++;
+          return http.Response('{}', 200);
+        },
+      );
+
+      await expectLater(
+        container.read(saintOfTheDayProvider.future),
+        throwsA(isA<SaintOfTheDayNotConfiguredFailure>()),
+      );
+      expect(requests, 0);
+    });
   });
 }

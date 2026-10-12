@@ -1,0 +1,25 @@
+- **Decision ID:** ADR-0008
+- **Title:** Load Saint of the Day from the parish API's `GET /v1/saints/{date}` with a client-computed Sydney date; remove the direct OpenRouter call
+- **Feature:** 09-saint-of-the-day-api
+- **Date:** 2026-10-12
+- **Status:** accepted (supersedes ADR-0005)
+- **Context:**
+  - ADR-0005 (feature 06) had the app call OpenRouter directly with a `--dart-define=OPENROUTER_API_KEY`. That key ships inside the binary, each install paid for its own generation per day, the model's free text had to be regex-parsed, and every non-200 looked like "check your connection" (RISK-008). No CI/fastlane step passes the define, so store builds probably showed "not set up on this build".
+  - parish_app_service now generates each Sydney day's saint server-side and serves it as structured JSON at the public, read-only `GET /v1/saints/{date}` (only yesterday/today/tomorrow) and `GET /v1/saints/today`. Errors are RFC 9457 problem documents with a stable `code` (`saint_not_ready` 503, `saint_not_available` 404, `invalid_date` 400, `app_check_required` 401) and an optional `requestId`.
+- **Decision:**
+  - `SaintOfTheDayRemoteDatasource` calls `GET {API_BASE_URL}/v1/saints/{dateKey}`, mirroring `MinistriesRemoteDatasource`: origin from `apiBaseUriProvider` (null origin => `SaintOfTheDayNotConfiguredFailure`, no request), 10s timeout, `Accept: application/json` + app User-Agent, UTF-8 decoded from raw bytes, and an injectable extra-headers hook for a future `X-Firebase-AppCheck` token that sends nothing today.
+  - `dateKey = sydneyDateKey(sydneyNow())` is computed once per load in the repository and used for both the cache lookup and the request (user decision D-3, chosen over `/today`).
+  - Non-200 responses map by HTTP status plus problem `code` to one failure type per user-visible message: 503 `saint_not_ready` => NotReady; 404 `saint_not_available` => DateUnavailable ("check your phone's date and time"); any other 404 => Unavailable, so an unknown route or proxy page is never blamed on the clock (tightened at the user's request at coder handoff, 2026-10-12); 401, 400 and every other non-200 => Unavailable; only timeouts/transport errors => Network ("check your connection"). Diagnostics (dateKey, status, code, requestId) go to the log, never to the UI. This resolves RISK-008.
+  - The 200 body is shape-checked by `parseSaintJson` (ten required string fields, `dateKey` a real `YYYY-MM-DD`; unknown fields ignored). The repository then rejects an empty name or six empty content sections as a retryable parsing failure that is not cached. The server's `dateKey`/`displayDate` are used as-is and never compared with the requested key (D-7).
+  - The shared_preferences per-day cache, its commit-last write ordering and corrupt-entry-as-miss behaviour are kept unchanged (D-2); the entry is written under the server's `dateKey`, best-effort.
+  - The OpenRouter datasource, the free-text parser, the `OPENROUTER_API_KEY` define and `sydneyFullDateForPrompt`/`sydneyDisplayDate` are deleted outright, with no fallback (D-1).
+- **Alternatives Considered:**
+  - `GET /v1/saints/today`: the server decides the day, so device clock error can't matter. Rejected by the user (D-3) in favour of keeping the request explicit and the cache key and request key provably the same.
+  - Keeping OpenRouter as a fallback when the API fails: rejected (D-1); it would keep the shipped key and the free-text parser alive for a rare path.
+  - Switching `sydney_date.dart` to the `timezone` package (already a dependency via 08-events-calendar): not needed, since the hand-coded rule's known error window never changes the calendar date (RISK-F09-004, pinned by tests).
+  - Dropping the on-device cache and relying on HTTP caching: rejected (D-2); the explicit cache keeps the screen instant for the rest of the day and works offline after the first load.
+- **Consequences:**
+  - No AI key in the binary and no per-install generation cost. Older installs still contain the old key; revoking/rotating it is the user's call outside this feature (RISK-F09-007).
+  - The device clock now picks the day (RISK-F09-002): a clock less than a day off shows a neighbouring day's saint with the matching server date; more than a day off gets the "check your date and time" message.
+  - The feature depends on parish_app_service being up and on it staying in App Check `monitor` mode until the app ships App Check (RISK-F09-003, same as feature 08).
+  - Just after Sydney midnight the day's saint may not be ready yet; users see the "still being prepared" message and retry manually (no polling).

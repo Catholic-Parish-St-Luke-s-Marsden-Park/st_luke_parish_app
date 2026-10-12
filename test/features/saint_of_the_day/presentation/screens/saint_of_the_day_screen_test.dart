@@ -11,7 +11,7 @@ import 'package:st_luke_parish_app/features/saint_of_the_day/presentation/screen
 /// Covers REQ-F06-011 (explicit loading/success/error UI states) and
 /// REQ-F06-013 (no icon/emoji glyphs) through the full `SaintOfTheDayScreen`
 /// widget tree, overriding `saintOfTheDayProvider` directly (never the real
-/// OpenRouter datasource in widget tests) — same override-the-outermost-
+/// parish API datasource in widget tests) — same override-the-outermost-
 /// provider approach as `news_screen_test.dart`.
 const _saint = SaintOfTheDay(
   name: 'Saint John Vianney, Priest',
@@ -143,5 +143,61 @@ void main() {
         findsOneWidget,
       );
     });
+  });
+
+  group('REQ-F09-016: one exact message per failure, each with Try again', () {
+    const cases = <(SaintOfTheDayFailure, String)>[
+      (
+        SaintOfTheDayNotReadyFailure('503 code=saint_not_ready'),
+        "Today's saint is still being prepared. Please try again in a few "
+            'minutes.',
+      ),
+      (
+        SaintOfTheDayDateUnavailableFailure('404 code=saint_not_available'),
+        "Today's saint isn't available for your phone's current date. "
+            'Please check your date and time settings, then try again.',
+      ),
+      (
+        SaintOfTheDayUnavailableFailure('401 code=app_check_required'),
+        'Saint of the Day is temporarily unavailable. Please try again later.',
+      ),
+      (
+        SaintOfTheDayNetworkFailure('offline'),
+        "Unable to fetch today's saint. Please check your connection and "
+            'try again.',
+      ),
+      (
+        SaintOfTheDayNotConfiguredFailure('no API_BASE_URL'),
+        "Saint of the Day isn't set up on this build yet. Please let the "
+            'parish app team know.',
+      ),
+      (
+        SaintOfTheDayParsingFailure('empty name'),
+        "Something went wrong loading today's saint. Please try again.",
+      ),
+    ];
+
+    for (final (failure, message) in cases) {
+      testWidgets('${failure.runtimeType}', (tester) async {
+        await _pump(tester, override: (ref) => Future.error(failure));
+        await tester.pumpAndSettle();
+
+        expect(find.text(message), findsOneWidget);
+        expect(find.text('Try again'), findsOneWidget);
+        // Diagnostics (status, code, requestId) never reach the UI.
+        expect(find.textContaining(failure.message), findsNothing);
+        expect(
+          tester
+              .getSize(
+                find.ancestor(
+                  of: find.text('Try again'),
+                  matching: find.byType(InkWell),
+                ),
+              )
+              .height,
+          greaterThanOrEqualTo(48),
+        );
+      });
+    }
   });
 }

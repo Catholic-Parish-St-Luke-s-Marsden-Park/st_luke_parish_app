@@ -42,20 +42,18 @@ flutter run
 on generated output (`.g.dart`), and the app will not compile without it. Use
 `dart run build_runner watch --delete-conflicting-outputs` while developing.
 
-### Saint of the Day (OpenRouter API key)
+### Saint of the Day (Parish API)
 
-The "Saint of the Day" feature calls OpenRouter directly and needs an API key
-supplied at build/run time — it is never hardcoded in source (see
-`.claude/decisions/0005-saint-of-the-day-direct-openrouter-call.md`):
+The "Saint of the Day" screen loads from the parish API's public
+`GET /v1/saints/{date}`, where `{date}` is today's `YYYY-MM-DD` date in Sydney
+as computed on the device. No API key or `--dart-define` is needed: the origin
+is the same `API_BASE_URL` as the Ministries tab (below). Without a valid
+origin the screen shows a "not set up on this build" message and sends no
+request. See `.claude/decisions/0008-saint-of-the-day-from-parish-api.md`.
 
-```bash
-flutter run --dart-define=OPENROUTER_API_KEY=sk-or-...
-```
-
-For a release build, pass the same `--dart-define` flag to `flutter build`.
-Without it, the screen shows a "not configured" message instead of sending an
-unauthenticated request. CI/release-build wiring for this define is a
-Deployer-phase follow-up for feature 06, not yet automated.
+The result is cached on the device for the rest of that Sydney day. If the
+server hasn't prepared the day's saint yet (just after midnight), the screen
+says so and offers "Try again".
 
 ### Parish API (Ministries)
 
@@ -68,7 +66,8 @@ API_BASE_URL=https://parish-app-service.fly.dev
 
 - Origin only, no path. Release builds require `https://`.
 - If `API_BASE_URL` is unset, the origin of `BASE_URL` is used instead.
-- The app only calls `GET /v1/ministries` and `GET /v1/ministries/{id}`.
+- The app only calls `GET /v1/ministries`, `GET /v1/ministries/{id}` and
+  `GET /v1/saints/{date}` (plus `POST /tokens` for push registration).
 
 The last good response is cached on the device and refreshed in the
 background; pull down on the tab to refresh by hand. On a first launch with no

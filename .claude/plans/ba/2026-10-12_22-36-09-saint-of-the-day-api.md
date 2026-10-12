@@ -147,7 +147,8 @@ The Saint of the Day screen gets its data from the parish API's `GET /v1/saints/
   | Response | Failure |
   |---|---|
   | 503 `saint_not_ready` | `SaintOfTheDayNotReadyFailure` |
-  | 404 (incl. `saint_not_available`) | `SaintOfTheDayDateUnavailableFailure` |
+  | 404 `saint_not_available` | `SaintOfTheDayDateUnavailableFailure` |
+  | 404 with any other or no `code` (user tightened at coder handoff, 2026-10-12) | `SaintOfTheDayUnavailableFailure` |
   | 401 (incl. `app_check_required`) | `SaintOfTheDayUnavailableFailure` |
   | 400 (incl. `invalid_date`) | `SaintOfTheDayUnavailableFailure` |
   | other 503, other 5xx, other non-200 | `SaintOfTheDayUnavailableFailure` |

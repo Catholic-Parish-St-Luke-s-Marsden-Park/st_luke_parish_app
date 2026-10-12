@@ -34,16 +34,30 @@ class SaintOfTheDayScreen extends ConsumerWidget {
     );
   }
 
+  /// One fixed, user-safe message per failure type (REQ-F09-016). The
+  /// failure's diagnostic `message` is never shown.
   String _messageFor(Object error) {
-    if (error is SaintOfTheDayNotConfiguredFailure) {
-      return "Saint of the Day isn't set up on this build yet. "
-          'Please let the parish app team know.';
-    }
-    if (error is SaintOfTheDayNetworkFailure) {
-      return "Unable to fetch today's saint. Please check your connection "
-          'and try again.';
-    }
-    return "Something went wrong loading today's saint. Please try again.";
+    const generic =
+        "Something went wrong loading today's saint. Please try again.";
+    if (error is! SaintOfTheDayFailure) return generic;
+    return switch (error) {
+      SaintOfTheDayNotReadyFailure() =>
+        "Today's saint is still being prepared. Please try again in a few "
+            'minutes.',
+      SaintOfTheDayDateUnavailableFailure() =>
+        "Today's saint isn't available for your phone's current date. "
+            'Please check your date and time settings, then try again.',
+      SaintOfTheDayUnavailableFailure() =>
+        'Saint of the Day is temporarily unavailable. Please try again '
+            'later.',
+      SaintOfTheDayNetworkFailure() =>
+        "Unable to fetch today's saint. Please check your connection and "
+            'try again.',
+      SaintOfTheDayNotConfiguredFailure() =>
+        "Saint of the Day isn't set up on this build yet. Please let the "
+            'parish app team know.',
+      SaintOfTheDayParsingFailure() => generic,
+    };
   }
 }
 

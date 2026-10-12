@@ -55,15 +55,6 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
 - **Owner:** Deployer (or a dedicated test-infrastructure follow-up before CI is introduced, at the user's discretion)
 - **Status:** open
 
-- **Risk ID:** RISK-008
-- **Title:** OpenRouter request failures are not distinguished by cause — a bad/expired API key, a rate limit, a server error, and a genuine network outage all surface to the user as the same generic "check your connection" message
-- **Feature:** 06-saint-of-the-day
-- **Impact:** Medium. Confirmed via direct read of `lib/features/saint_of_the_day/data/datasources/openrouter_saint_datasource.dart:76-79`: any HTTP response with `statusCode != 200` — including `401` (bad/expired/revoked key), `429` (rate limited), or a `5xx` server error — is converted to the same `SaintOfTheDayNetworkFailure` as an actual connectivity failure (a thrown exception during the request itself, line 73), and `saint_of_the_day_screen.dart`'s `_messageFor` renders all of them as "Unable to fetch today's saint. Please check your connection and try again." This was surfaced during this feature's own visualiser phase: the user's first live run appeared to fail with this exact message, and the real cause (an invalid literal placeholder string used as the API key, which OpenRouter would reject with a 401) was indistinguishable from a genuine network problem until the underlying `flutter run` command was inspected directly. In production, if the OpenRouter key is ever revoked, expires, or the account runs out of credit, every user would see "check your connection" — a connectivity-sounding message for what is actually a configuration/billing problem needing the parish team's attention, with no signal in the app itself that anything is misconfigured.
-- **Likelihood:** Low day-to-day (a working key that stays valid will not trigger this), but certain to eventually recur given the client-side key's own accepted exposure risk (ADR-0005) — a rotated/revoked key is a plausible, foreseeable event, not a hypothetical one.
-- **Mitigation:** Distinguish `401`/`403` responses from other non-2xx responses in `OpenRouterSaintDatasource.fetchSaintText` and surface a distinct failure type (e.g. a `SaintOfTheDayAuthFailure` or similar) with a message that points at configuration rather than connectivity — without leaking the raw response body/key (REQ-F06-005 still applies). This is a small, scoped code change confined to the datasource and the screen's `_messageFor` branch; no architectural change needed. Not implemented in this feature to avoid expanding scope mid-verification; recommended as a small follow-up before or during Deployer, or as a fast-follow feature.
-- **Owner:** Deployer (or a targeted Coder follow-up, at the user's discretion)
-- **Status:** open
-
 - **Risk ID:** RISK-009
 - **Title:** Push delivery is not verified on a device after the PR #22 review fixes. iOS has never been verified.
 - **Feature:** 07-push-notifications
@@ -126,7 +117,35 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
 - **Owner:** Coder (next small follow-up on this feature, or the next Events-related feature)
 - **Status:** open
 
+- **Risk ID:** RISK-017
+- **Title:** The device clock decides which day's saint is requested (RISK-F09-002 in the 09-saint-of-the-day-api BA plan)
+- **Feature:** 09-saint-of-the-day-api
+- **Impact:** Low. By user decision D-3 the app requests `GET /v1/saints/{date}` with `sydneyDateKey(sydneyNow())`, not `/today`. The date is derived from UTC, so the device's timezone setting doesn't matter, only absolute clock error. A clock off by less than about a day shows yesterday's or tomorrow's saint with the server's matching `displayDate` (coherent, just a neighbouring day). A clock off by more than a day gets a 404 `saint_not_available`, shown as "Today's saint isn't available for your phone's current date. Please check your date and time settings, then try again." (`SaintOfTheDayDateUnavailableFailure`).
+- **Likelihood:** Low; modern phones sync time automatically.
+- **Mitigation:** Accepted by the user when choosing `/{date}` over `/today`. The 404 message tells the user what to fix. Switching to `/today` remains a small, localised change in `SaintOfTheDayRemoteDatasource` and the repository if this ever proves a problem. See ADR-0008.
+- **Owner:** Product (user)
+- **Status:** accepted
+
+- **Risk ID:** RISK-018
+- **Title:** If parish_app_service switches to App Check `enforce` mode, Saint of the Day (and Ministries) break for every user until an App Check build ships (RISK-F09-003)
+- **Feature:** 09-saint-of-the-day-api (same exposure as 08-ministries-api)
+- **Impact:** High if it happens: every `GET /v1/saints/{date}` returns 401 `app_check_required`, shown as the generic "Saint of the Day is temporarily unavailable" message.
+- **Likelihood:** Low while the server stays in its default `monitor` mode, which never requires the token.
+- **Mitigation:** `SaintOfTheDayRemoteDatasource` has an injectable extra-headers hook (`SaintRequestHeadersBuilder`) ready for an `X-Firebase-AppCheck` token; the 401's status, `code` and `requestId` are logged. Coordinate with the server owner so enforce mode is only enabled after an App Check-capable release is widely installed.
+- **Owner:** Server owner / Deployer
+- **Status:** open
+
 ## Resolved Risks
+
+- **Risk ID:** RISK-008
+- **Title:** OpenRouter request failures are not distinguished by cause — a bad/expired API key, a rate limit, a server error, and a genuine network outage all surface to the user as the same generic "check your connection" message
+- **Feature:** 06-saint-of-the-day
+- **Impact:** Medium. Confirmed via direct read of `lib/features/saint_of_the_day/data/datasources/openrouter_saint_datasource.dart:76-79`: any HTTP response with `statusCode != 200` — including `401` (bad/expired/revoked key), `429` (rate limited), or a `5xx` server error — is converted to the same `SaintOfTheDayNetworkFailure` as an actual connectivity failure (a thrown exception during the request itself, line 73), and `saint_of_the_day_screen.dart`'s `_messageFor` renders all of them as "Unable to fetch today's saint. Please check your connection and try again." This was surfaced during this feature's own visualiser phase: the user's first live run appeared to fail with this exact message, and the real cause (an invalid literal placeholder string used as the API key, which OpenRouter would reject with a 401) was indistinguishable from a genuine network problem until the underlying `flutter run` command was inspected directly. In production, if the OpenRouter key is ever revoked, expires, or the account runs out of credit, every user would see "check your connection" — a connectivity-sounding message for what is actually a configuration/billing problem needing the parish team's attention, with no signal in the app itself that anything is misconfigured.
+- **Likelihood:** Low day-to-day (a working key that stays valid will not trigger this), but certain to eventually recur given the client-side key's own accepted exposure risk (ADR-0005) — a rotated/revoked key is a plausible, foreseeable event, not a hypothetical one.
+- **Mitigation:** Distinguish `401`/`403` responses from other non-2xx responses in `OpenRouterSaintDatasource.fetchSaintText` and surface a distinct failure type (e.g. a `SaintOfTheDayAuthFailure` or similar) with a message that points at configuration rather than connectivity — without leaking the raw response body/key (REQ-F06-005 still applies). This is a small, scoped code change confined to the datasource and the screen's `_messageFor` branch; no architectural change needed. Not implemented in this feature to avoid expanding scope mid-verification; recommended as a small follow-up before or during Deployer, or as a fast-follow feature.
+- **Owner:** Deployer (or a targeted Coder follow-up, at the user's discretion)
+- **Status:** resolved (2026-10-12, 09-saint-of-the-day-api)
+  - **Resolution (09-saint-of-the-day-api coder phase, 2026-10-12):** The OpenRouter call is gone (ADR-0008). `SaintOfTheDayRemoteDatasource` now maps the parish API's responses by HTTP status and RFC 9457 problem `code` to distinct failures, each with its own message: 503 `saint_not_ready` => "still being prepared"; 404 => "check your date and time settings"; 401/400/other non-200 => "temporarily unavailable"; only timeouts and transport errors keep "check your connection". The dateKey, status, code and requestId are logged, never shown. Covered by `test/features/saint_of_the_day/data/datasources/saint_of_the_day_remote_datasource_test.dart` and the screen tests.
 
 - **Risk ID:** RISK-003
 - **Title:** Leadership-entry external links (Pope Leo XIV, Bishop Vincent Long, Fr Gayan Thamel) silently fail to launch on real Android devices — missing AndroidManifest `<queries>` block
