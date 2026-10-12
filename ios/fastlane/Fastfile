@@ -64,6 +64,20 @@ platform :ios do
       keychain_password: keychain_password
     )
 
+    # `security import` can print "MAC verification failed ... (wrong
+    # password?)" to stderr yet still exit 0, so import_certificate doesn't
+    # always raise on a bad IOS_DIST_CERTIFICATE_P12 / _PASSWORD pair. Check
+    # the identity actually landed in the keychain instead of silently
+    # limping forward into a confusing downstream failure.
+    identities = sh("security find-identity -v -p codesigning #{keychain_name.shellescape}", log: false)
+    if identities !~ /\d+\) [0-9A-F]+ "/
+      UI.user_error!(
+        "No signing identity landed in the keychain after import_certificate — " \
+        "IOS_DIST_CERTIFICATE_P12 or IOS_DIST_CERTIFICATE_PASSWORD is likely wrong " \
+        "(bad base64 or mismatched export password). Re-export and update both secrets."
+      )
+    end
+
     profile_path = File.join(Dir.mktmpdir, "profile.mobileprovision")
     File.binwrite(profile_path, Base64.decode64(ENV.fetch("IOS_PROVISIONING_PROFILE")))
 
@@ -81,18 +95,24 @@ platform :ios do
     # placeholder, since the real profile name depends on whatever a human
     # most recently exported — patch the checked-out copy here; never commit
     # this back.
-    pbxproj_path = File.expand_path("../Runner.xcodeproj/project.pbxproj", __dir__)
+    #
+    # Deliberately NOT using __dir__: inside a Fastfile, Fastlane evaluates
+    # the file through its own DSL loader, so __dir__ does not reliably
+    # resolve to ios/fastlane/ the way a normal Ruby script would. Fastlane
+    # runs with Dir.pwd == ios/ (set by the workflow's working-directory),
+    # so resolve paths relative to that instead.
+    pbxproj_path = File.expand_path("Runner.xcodeproj/project.pbxproj", Dir.pwd)
     pbxproj = File.read(pbxproj_path)
     patched = pbxproj.gsub(
       "PROVISIONING_PROFILE_SPECIFIER = \"CI_PLACEHOLDER_PROVISIONING_PROFILE\";",
       "PROVISIONING_PROFILE_SPECIFIER = \"#{profile_name}\";"
     )
-    UI.user_error!("CI_PLACEHOLDER_PROVISIONING_PROFILE not found in project.pbxproj") if patched == pbxproj
+    UI.user_error!("CI_PLACEHOLDER_PROVISIONING_PROFILE not found in #{pbxproj_path}") if patched == pbxproj
     File.write(pbxproj_path, patched)
 
     # Written fresh each run (not committed) because the exact profile name
     # depends on whatever the human most recently exported.
-    export_options_path = File.expand_path("../ExportOptions.plist", __dir__)
+    export_options_path = File.expand_path("ExportOptions.plist", Dir.pwd)
     File.write(export_options_path, <<~PLIST)
       <?xml version="1.0" encoding="UTF-8"?>
       <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
