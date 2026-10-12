@@ -262,4 +262,148 @@ void main() {
       expect(error, isA<SaintOfTheDayNetworkFailure>());
     });
   });
+
+  // Tester phase additions: edges of REQ-F09-001/002/005/006 the coder
+  // tests above do not pin.
+  group('request shape (tester)', () {
+    test('sends exactly Accept and User-Agent by default, nothing else '
+        '(REQ-F09-002: no App Check header today)', () async {
+      late http.Request sent;
+      await datasource((request) async {
+        sent = request;
+        return http.Response(saintJson(), 200);
+      }).fetchSaintJson(dateKey);
+
+      expect(sent.headers.keys.map((k) => k.toLowerCase()).toSet(), {
+        'accept',
+        'user-agent',
+      });
+    });
+
+    test('a header hook returning an empty map adds nothing', () async {
+      late http.Request sent;
+      await datasource((request) async {
+        sent = request;
+        return http.Response(saintJson(), 200);
+      }, extraHeaders: () async => const {}).fetchSaintJson(dateKey);
+
+      expect(sent.headers.keys.map((k) => k.toLowerCase()).toSet(), {
+        'accept',
+        'user-agent',
+      });
+    });
+
+    test(
+      'a base with a trailing slash still requests /v1/saints/{key}',
+      () async {
+        late Uri sent;
+        await SaintOfTheDayRemoteDatasource(
+          MockClient((request) async {
+            sent = request.url;
+            return http.Response(saintJson(), 200);
+          }),
+          baseUri: Uri.parse('https://api.example.org/'),
+        ).fetchSaintJson(dateKey);
+
+        expect(sent.toString(), 'https://api.example.org/v1/saints/2026-10-12');
+      },
+    );
+
+    test('a 200 body is returned verbatim for the parser (no shape check '
+        'in the datasource)', () async {
+      final body = await datasource(
+        (request) async => http.Response('not json', 200),
+      ).fetchSaintJson(dateKey);
+
+      expect(body, 'not json');
+    });
+  });
+
+  group('failure mapping edges (tester, REQ-F09-005/006)', () {
+    test('saint_not_ready on a 404 is Unavailable: status and code must '
+        'both match', () async {
+      await expectFailure<SaintOfTheDayUnavailableFailure>(
+        (request) async => http.Response(
+          problemJson(status: 404, code: 'saint_not_ready'),
+          404,
+          headers: problemHeaders,
+        ),
+        messageContains: ['404', 'saint_not_ready'],
+      );
+    });
+
+    test('saint_not_available on a 503 is Unavailable, not DateUnavailable '
+        'or NotReady', () async {
+      await expectFailure<SaintOfTheDayUnavailableFailure>(
+        (request) async => http.Response(
+          problemJson(status: 503, code: 'saint_not_available'),
+          503,
+          headers: problemHeaders,
+        ),
+        messageContains: ['503', 'saint_not_available'],
+      );
+    });
+
+    test('a 503 saint_not_ready served as plain application/json still '
+        'maps to NotReady', () async {
+      await expectFailure<SaintOfTheDayNotReadyFailure>(
+        (request) async => http.Response(
+          problemJson(status: 503, code: 'saint_not_ready'),
+          503,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
+    });
+
+    for (final (label, body) in [
+      ('ill-typed code', '{"status": 503, "code": 7}'),
+      ('truncated JSON', '{"status": 503, "code": "saint_not'),
+      ('JSON array', '[{"code": "saint_not_ready"}]'),
+      ('JSON null', 'null'),
+    ]) {
+      test('a malformed problem body ($label) on a 503 falls back to '
+          'status-only mapping', () async {
+        await expectFailure<SaintOfTheDayUnavailableFailure>(
+          (request) async => http.Response(body, 503, headers: problemHeaders),
+          messageContains: ['503', 'code=none', 'requestId=none'],
+        );
+      });
+    }
+
+    test('a non-UTF-8 error body does not crash the mapping', () async {
+      await expectFailure<SaintOfTheDayUnavailableFailure>(
+        (request) async => http.Response.bytes(
+          [0xff, 0xfe, 0x7b, 0xfd],
+          503,
+          headers: problemHeaders,
+        ),
+        messageContains: ['503', 'code=none'],
+      );
+    });
+
+    test('a 404 saint_not_available with a requestId carries it in the '
+        'diagnostic message', () async {
+      await expectFailure<SaintOfTheDayDateUnavailableFailure>(
+        (request) async => http.Response(
+          problemJson(
+            status: 404,
+            code: 'saint_not_available',
+            requestId: 'req-clock',
+          ),
+          404,
+          headers: problemHeaders,
+        ),
+        messageContains: ['requestId=req-clock', dateKey],
+      );
+    });
+
+    test('a timeout message names the dateKey', () async {
+      // A client that throws a TimeoutException directly exercises the
+      // same catch as the real 10s timeout without waiting for it.
+      await expectFailure<SaintOfTheDayNetworkFailure>(
+        (request) async => throw TimeoutException('slow'),
+        messageContains: [dateKey, '/v1/saints/$dateKey'],
+      );
+    });
+  });
 }

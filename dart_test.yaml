@@ -1,0 +1,11 @@
+# package:test configuration, read by `flutter test`.
+tags:
+  # Tests that call real external services (the parish website's feeds and
+  # the production parish API). They still run in a plain `flutter test`,
+  # because CLAUDE.md expects live verification. For offline or sandboxed
+  # runs, exclude them:
+  #
+  #   flutter test --exclude-tags live
+  #
+  # and run only them with `flutter test --tags live`. (RISK-007)
+  live:

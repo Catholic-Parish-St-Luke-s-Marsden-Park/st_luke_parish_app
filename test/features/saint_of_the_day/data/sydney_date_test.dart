@@ -55,6 +55,12 @@ void main() {
     test('New Year in Sydney comes while it is still Dec 31 in UTC', () {
       expect(keyAt(DateTime.utc(2026, 12, 31, 13)), '2027-01-01');
     });
+
+    test('leap day 2028: Sydney midnight into and out of 29 February', () {
+      expect(keyAt(DateTime.utc(2028, 2, 28, 12, 59)), '2028-02-28');
+      expect(keyAt(DateTime.utc(2028, 2, 28, 13)), '2028-02-29');
+      expect(keyAt(DateTime.utc(2028, 2, 29, 13)), '2028-03-01');
+    });
   });
 
   group('DST changeover windows keep the right calendar date '
@@ -71,6 +77,29 @@ void main() {
       expect(keyAt(DateTime.utc(2026, 4, 5)), '2026-04-05');
       expect(keyAt(DateTime.utc(2026, 4, 5, 13, 59)), '2026-04-05');
       expect(keyAt(DateTime.utc(2026, 4, 5, 14)), '2026-04-06');
+    });
+
+    // Tester phase: years where the 1st of the month is itself the first
+    // Sunday (zero-day offset in `_firstSundayOfMonthUtc`), so the real
+    // switch falls on the last day of the previous month.
+    test('October 2028 (1 Oct is a Sunday): real switch 16:00 UTC Sat '
+        '30 Sep', () {
+      expect(keyAt(DateTime.utc(2028, 9, 30, 13, 59)), '2028-09-30');
+      expect(keyAt(DateTime.utc(2028, 9, 30, 14)), '2028-10-01');
+      expect(keyAt(DateTime.utc(2028, 9, 30, 23, 59)), '2028-10-01');
+      expect(keyAt(DateTime.utc(2028, 10, 1)), '2028-10-01');
+      expect(keyAt(DateTime.utc(2028, 10, 1, 12, 59)), '2028-10-01');
+      expect(keyAt(DateTime.utc(2028, 10, 1, 13)), '2028-10-02');
+    });
+
+    test('April 2029 (1 Apr is a Sunday): real switch 16:00 UTC Sat '
+        '31 Mar', () {
+      expect(keyAt(DateTime.utc(2029, 3, 31, 12, 59)), '2029-03-31');
+      expect(keyAt(DateTime.utc(2029, 3, 31, 13)), '2029-04-01');
+      expect(keyAt(DateTime.utc(2029, 3, 31, 23, 59)), '2029-04-01');
+      expect(keyAt(DateTime.utc(2029, 4, 1)), '2029-04-01');
+      expect(keyAt(DateTime.utc(2029, 4, 1, 13, 59)), '2029-04-01');
+      expect(keyAt(DateTime.utc(2029, 4, 1, 14)), '2029-04-02');
     });
 
     test('October: across the mis-modelled 16:00–00:00 UTC window', () {

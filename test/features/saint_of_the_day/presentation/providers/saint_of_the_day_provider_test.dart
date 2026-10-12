@@ -150,6 +150,71 @@ void main() {
       },
     );
 
+    // Tester phase additions.
+    test('sends no App Check or other extra header through the real '
+        'provider wiring (REQ-F09-002)', () async {
+      late http.Request sent;
+      final container = containerWith(
+        apiBase: Uri.parse('https://api.example.org'),
+        handler: (request) async {
+          sent = request;
+          final key = request.url.pathSegments.last;
+          return http.Response(saintJson(dateKey: key), 200);
+        },
+      );
+
+      await container.read(saintOfTheDayProvider.future);
+
+      expect(sent.headers.keys.map((k) => k.toLowerCase()).toSet(), {
+        'accept',
+        'user-agent',
+      });
+    });
+
+    test('a reload after success is served from the on-device cache '
+        'with no second request (REQ-F09-011)', () async {
+      var requests = 0;
+      final container = containerWith(
+        apiBase: Uri.parse('https://api.example.org'),
+        handler: (request) async {
+          requests++;
+          final key = request.url.pathSegments.last;
+          return http.Response(saintJson(dateKey: key), 200);
+        },
+      );
+
+      final first = await container.read(saintOfTheDayProvider.future);
+      container.invalidate(saintOfTheDayProvider);
+      final second = await container.read(saintOfTheDayProvider.future);
+
+      expect(requests, 1);
+      expect(second.dateKey, first.dateKey);
+    });
+
+    test('an invalid API_BASE_URL resolves to no base, so NotConfigured '
+        'with no request (REQ-F09-003)', () async {
+      final invalid = resolveApiBaseUri(
+        apiBaseUrl: 'not a url',
+        legacyBaseUrl: null,
+        isRelease: false,
+      );
+      expect(invalid, isNull);
+      var requests = 0;
+      final container = containerWith(
+        apiBase: invalid,
+        handler: (request) async {
+          requests++;
+          return http.Response('{}', 200);
+        },
+      );
+
+      await expectLater(
+        container.read(saintOfTheDayProvider.future),
+        throwsA(isA<SaintOfTheDayNotConfiguredFailure>()),
+      );
+      expect(requests, 0);
+    });
+
     test('with no API base, fails NotConfigured and sends nothing '
         '(REQ-F09-003)', () async {
       var requests = 0;

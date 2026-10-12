@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/data/parsers/saint_json_parser.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/domain/failures/saint_of_the_day_failure.dart';
@@ -107,6 +109,70 @@ void main() {
       () => parseSaintJson('[]'),
       parsingFailureMentioning('not a JSON object'),
     );
+  });
+
+  // Tester phase additions (REQ-F09-008/010).
+  for (final (label, body) in [
+    ('null', 'null'),
+    ('a string', '"Saint Wilfrid"'),
+    ('a number', '42'),
+  ]) {
+    test('a top-level JSON $label is a parsing failure', () {
+      expect(
+        () => parseSaintJson(body),
+        parsingFailureMentioning('not a JSON object'),
+      );
+    });
+  }
+
+  test('an empty body is a parsing failure', () {
+    expect(() => parseSaintJson(''), parsingFailureMentioning('not valid'));
+  });
+
+  for (final bad in ['2026-10-12\n', ' 2026-10-12', '2026-10-12 ']) {
+    test('a dateKey with surrounding whitespace ${jsonEncode(bad)} is '
+        'rejected', () {
+      expect(
+        () => parseSaintJson(saintJson(dateKey: bad)),
+        parsingFailureMentioning('dateKey'),
+      );
+    });
+  }
+
+  test('empty strings in every non-key field are a valid shape; the '
+      'content guards live in the repository', () {
+    final saint = parseSaintJson(
+      saintJson(
+        overrides: {
+          'feast': '',
+          'bornDied': '',
+          'about': '',
+          'saying': '',
+          'didYouKnow': '',
+          'patronOf': '',
+          'prayer': '',
+          'displayDate': '',
+        },
+      ),
+    );
+
+    expect(saint.name, 'Saint Wilfrid, Bishop');
+    expect(saint.about, isEmpty);
+    expect(saint.displayDate, isEmpty);
+  });
+
+  test('non-ASCII text is preserved', () {
+    final saint = parseSaintJson(
+      saintJson(
+        overrides: {
+          'name': 'Saint Thérèse of Lisieux',
+          'saying': '“Love proves itself by deeds.”',
+        },
+      ),
+    );
+
+    expect(saint.name, 'Saint Thérèse of Lisieux');
+    expect(saint.saying, '“Love proves itself by deeds.”');
   });
 
   group('isWellFormedDateKey', () {
