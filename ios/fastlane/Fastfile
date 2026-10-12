@@ -106,12 +106,17 @@ platform :ios do
     # placeholder, since the real profile name depends on whatever a human
     # most recently exported — patch the checked-out copy here; never commit
     # this back.
+    # `pod install` (which already ran, before this lane) resaves the whole
+    # project.pbxproj via the Xcodeproj gem, which drops quotes around
+    # bareword-safe string values — the committed placeholder is quoted
+    # ("CI_PLACEHOLDER_PROVISIONING_PROFILE";) but by the time this lane
+    # runs it's been rewritten unquoted (CI_PLACEHOLDER_PROVISIONING_PROFILE;).
+    # Match either form; always write the replacement quoted, since
+    # profile_name can contain spaces.
     pbxproj_path = File.join(ios_dir, "Runner.xcodeproj", "project.pbxproj")
     pbxproj = File.read(pbxproj_path)
-    patched = pbxproj.gsub(
-      "PROVISIONING_PROFILE_SPECIFIER = \"CI_PLACEHOLDER_PROVISIONING_PROFILE\";",
-      "PROVISIONING_PROFILE_SPECIFIER = \"#{profile_name}\";"
-    )
+    placeholder_pattern = /PROVISIONING_PROFILE_SPECIFIER = "?CI_PLACEHOLDER_PROVISIONING_PROFILE"?;/
+    patched = pbxproj.gsub(placeholder_pattern) { "PROVISIONING_PROFILE_SPECIFIER = \"#{profile_name}\";" }
     UI.user_error!("CI_PLACEHOLDER_PROVISIONING_PROFILE not found in #{pbxproj_path}") if patched == pbxproj
     File.write(pbxproj_path, patched)
 
