@@ -58,6 +58,7 @@ class FakeWebViewController extends PlatformWebViewController {
   FakeWebViewController(super.params) : super.implementation();
 
   String? lastLoadedUrl;
+  String? lastLoadedHtml;
 
   @override
   Future<void> setJavaScriptMode(JavaScriptMode javaScriptMode) async {}
@@ -78,6 +79,11 @@ class FakeWebViewController extends PlatformWebViewController {
   @override
   Future<void> loadRequest(LoadRequestParams params) async {
     lastLoadedUrl = params.uri.toString();
+  }
+
+  @override
+  Future<void> loadHtmlString(String html, {String? baseUrl}) async {
+    lastLoadedHtml = html;
   }
 
   @override
