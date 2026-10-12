@@ -1,6 +1,7 @@
 default_platform(:ios)
 
 require "base64"
+require "fileutils"
 require "securerandom"
 require "shellwords"
 require "tmpdir"
@@ -149,40 +150,43 @@ platform :ios do
 
     Dir.chdir(project_root) do
       # `flutter build ipa` re-verifies CocoaPods itself (runs its own
-      # `pod install` check before invoking xcodebuild). Whatever `pod` it
-      # finds on PATH is typically a RubyGems-generated bin stub
+      # `pod install` check before invoking xcodebuild), and it does NOT
+      # do a fresh PATH search for `pod` at that point — confirmed from a
+      # real CI run where it kept resolving /usr/local/bin/pod directly
+      # even with a wrapper directory prepended onto PATH. Whatever `pod`
+      # it finds is typically a RubyGems-generated bin stub
       # (`Gem.activate_and_load_bin_path(...)`) that's vulnerable to
       # Bundler's env (GEM_HOME/BUNDLE_GEMFILE/etc., set job-wide by
       # `bundle exec fastlane` since we configured a local bundle path)
       # leaking into it — it then tries to activate 'cocoapods' inside the
       # wrong (fastlane's) bundle and fails with "cocoapods is not
-      # currently included in the bundle". Trying to fix this by
-      # reordering PATH just swaps in a *different* fragile stub.
+      # currently included in the bundle".
       #
-      # Instead: resolve whatever `pod` PATH would already find (the same
-      # one the standalone `pod install` step just used successfully),
-      # and wrap it in a tiny script that strips the Bundler/Gem env vars
-      # immediately before delegating — independent of which kind of
-      # stub it turns out to be on this runner image.
+      # Since shadowing via PATH doesn't take effect, replace the actual
+      # file flutter resolves: back it up, then overwrite it in place
+      # with a wrapper that strips the Bundler/Gem env vars immediately
+      # before delegating to the backed-up original. Runner is ephemeral,
+      # so mutating it directly is safe.
       real_pod = `which pod`.strip
       UI.user_error!("`pod` not found on PATH") if real_pod.empty?
 
-      wrapper_dir = Dir.mktmpdir
-      wrapper_path = File.join(wrapper_dir, "pod")
-      File.write(wrapper_path, <<~SH)
+      backup_pod = "#{real_pod}.fastlane-original"
+      FileUtils.cp(real_pod, backup_pod) unless File.exist?(backup_pod)
+      File.chmod(0o755, backup_pod)
+
+      File.write(real_pod, <<~SH)
         #!/bin/bash
         exec env -u GEM_HOME -u GEM_PATH -u GEM_ROOT \\
           -u BUNDLE_GEMFILE -u BUNDLE_PATH -u BUNDLE_BIN \\
           -u RUBYOPT -u RUBYLIB \\
-          #{real_pod.shellescape} "$@"
+          #{backup_pod.shellescape} "$@"
       SH
-      File.chmod(0o755, wrapper_path)
+      File.chmod(0o755, real_pod)
 
       sh(
         "env", "-u", "GEM_HOME", "-u", "GEM_PATH", "-u", "GEM_ROOT",
         "-u", "BUNDLE_GEMFILE", "-u", "BUNDLE_PATH", "-u", "BUNDLE_BIN",
         "-u", "RUBYOPT", "-u", "RUBYLIB",
-        "PATH=#{wrapper_dir}:#{ENV.fetch('PATH')}",
         "flutter", "build", "ipa",
         "--release",
         "--build-number=#{ENV.fetch('GITHUB_RUN_NUMBER', '1')}",
