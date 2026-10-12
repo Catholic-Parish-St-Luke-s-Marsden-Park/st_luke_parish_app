@@ -148,7 +148,20 @@ platform :ios do
     PLIST
 
     Dir.chdir(project_root) do
+      # ruby/setup-ruby + Bundler set GEM_HOME/BUNDLE_GEMFILE/etc. for the
+      # whole job so `bundle exec fastlane` can find its gems. Those env
+      # vars leak into the xcodebuild subprocess this spawns, which breaks
+      # Xcode's generated "[CP] Check Pods Manifest.lock" build-phase
+      # script — it tries to run `pod` against a mismatched Ruby/gem
+      # environment and fails with "CocoaPods is installed but broken",
+      # even though the explicit `pod install` step just before this
+      # worked fine (it isn't going through that build phase). Strip them
+      # for this one call so xcodebuild sees the same clean environment
+      # `pod install` saw.
       sh(
+        "env", "-u", "GEM_HOME", "-u", "GEM_PATH", "-u", "GEM_ROOT",
+        "-u", "BUNDLE_GEMFILE", "-u", "BUNDLE_PATH", "-u", "BUNDLE_BIN",
+        "-u", "RUBYOPT", "-u", "RUBYLIB",
         "flutter", "build", "ipa",
         "--release",
         "--build-number=#{ENV.fetch('GITHUB_RUN_NUMBER', '1')}",
