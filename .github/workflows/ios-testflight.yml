@@ -1,0 +1,80 @@
+name: iOS TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to build and upload to TestFlight"
+        required: false
+        default: main
+
+concurrency:
+  group: ios-testflight-${{ inputs.branch || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  beta:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || 'main' }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.0"
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - run: flutter analyze
+
+      # assets/app.env is bundled, non-secret, build-time config (see README.md
+      # and docs/app-store-connect-onboarding.md) — the committed default
+      # points at a local dev loopback, so release builds overwrite it here.
+      - name: Write production assets/app.env
+        run: |
+          cat > assets/app.env <<'EOF'
+          BASE_URL=https://parish-app-service.fly.dev/tokens
+          API_BASE_URL=https://parish-app-service.fly.dev
+          EOF
+
+      - name: Release-readiness gate
+        run: RELEASE_CHECK=true flutter test test/release_readiness_test.dart
+
+      - name: Verify generated code is up to date
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          git diff --exit-code -- '*.g.dart' '*.freezed.dart'
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Install CocoaPods dependencies
+        working-directory: ios
+        run: pod install
+
+      - name: Upload to TestFlight
+        working-directory: ios
+        env:
+          # Preferred: App Store Connect Team API key. Leave these three
+          # secrets unset to use the temporary Apple ID fallback below
+          # instead — see docs/app-store-connect-onboarding.md.
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+          # Temporary fallback, only used when ASC_KEY_ID is unset.
+          FASTLANE_APPLE_ID: ${{ secrets.FASTLANE_APPLE_ID }}
+          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+          FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
+          IOS_DIST_CERTIFICATE_P12: ${{ secrets.IOS_DIST_CERTIFICATE_P12 }}
+          IOS_DIST_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DIST_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+          FASTLANE_TEAM_ID: ${{ secrets.FASTLANE_TEAM_ID }}
+          CI: true
+        run: bundle exec fastlane beta
