@@ -61,9 +61,12 @@ jobs:
           bundler-cache: true
           working-directory: ios
 
+      # Use the Gemfile-pinned CocoaPods (not the runner's system install)
+      # so this matches exactly what the beta lane's pod wrapper uses later
+      # — no version drift between the two pod install invocations.
       - name: Install CocoaPods dependencies
         working-directory: ios
-        run: pod install
+        run: bundle exec pod install
 
       - name: Upload to TestFlight
         working-directory: ios

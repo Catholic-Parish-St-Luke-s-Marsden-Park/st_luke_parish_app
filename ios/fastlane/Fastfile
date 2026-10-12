@@ -1,7 +1,6 @@
 default_platform(:ios)
 
 require "base64"
-require "fileutils"
 require "securerandom"
 require "shellwords"
 require "tmpdir"
@@ -150,36 +149,32 @@ platform :ios do
 
     Dir.chdir(project_root) do
       # `flutter build ipa` re-verifies CocoaPods itself (runs its own
-      # `pod install` check before invoking xcodebuild), and it does NOT
-      # do a fresh PATH search for `pod` at that point — confirmed from a
-      # real CI run where it kept resolving /usr/local/bin/pod directly
-      # even with a wrapper directory prepended onto PATH. Whatever `pod`
-      # it finds is typically a RubyGems-generated bin stub
-      # (`Gem.activate_and_load_bin_path(...)`) that's vulnerable to
-      # Bundler's env (GEM_HOME/BUNDLE_GEMFILE/etc., set job-wide by
-      # `bundle exec fastlane` since we configured a local bundle path)
-      # leaking into it — it then tries to activate 'cocoapods' inside the
-      # wrong (fastlane's) bundle and fails with "cocoapods is not
-      # currently included in the bundle".
+      # `pod install` check before invoking xcodebuild), resolving `pod`
+      # to a fixed absolute path (confirmed from real CI runs: it kept
+      # resolving /usr/local/bin/pod directly regardless of PATH changes,
+      # and stripping Bundler/Gem env vars before delegating to that
+      # binary still failed the same way — the runner's system `pod` is
+      # a RubyGems bin stub whose own interpreter resolution is broken
+      # independent of what env it's launched with).
       #
-      # Since shadowing via PATH doesn't take effect, replace the actual
-      # file flutter resolves: back it up, then overwrite it in place
-      # with a wrapper that strips the Bundler/Gem env vars immediately
-      # before delegating to the backed-up original. Runner is ephemeral,
-      # so mutating it directly is safe.
+      # Stop depending on the runner's system CocoaPods entirely. We
+      # already have a known-good, self-contained Bundler environment
+      # right here (`bundle exec fastlane` is running successfully under
+      # it this very moment) — ios/Gemfile declares `cocoapods` alongside
+      # `fastlane`, so replace the system `pod` binary with a wrapper that
+      # delegates to `bundle exec pod` against that same Gemfile.
       real_pod = `which pod`.strip
       UI.user_error!("`pod` not found on PATH") if real_pod.empty?
 
-      backup_pod = "#{real_pod}.fastlane-original"
-      FileUtils.cp(real_pod, backup_pod) unless File.exist?(backup_pod)
-      File.chmod(0o755, backup_pod)
+      bundle_executable = `which bundle`.strip
+      UI.user_error!("`bundle` not found on PATH") if bundle_executable.empty?
+
+      gemfile_path = File.join(ios_dir, "Gemfile")
 
       File.write(real_pod, <<~SH)
         #!/bin/bash
-        exec env -u GEM_HOME -u GEM_PATH -u GEM_ROOT \\
-          -u BUNDLE_GEMFILE -u BUNDLE_PATH -u BUNDLE_BIN \\
-          -u RUBYOPT -u RUBYLIB \\
-          #{backup_pod.shellescape} "$@"
+        export BUNDLE_GEMFILE=#{gemfile_path.shellescape}
+        exec #{bundle_executable.shellescape} exec pod "$@"
       SH
       File.chmod(0o755, real_pod)
 
