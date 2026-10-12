@@ -127,15 +127,16 @@ Registration behaviour (`lib/core/notifications/notification_service.dart`):
 
 ### Point the app at the backend
 
-Set `BASE_URL` in `assets/app.env` to the device endpoint (include `/v1/devices`):
+Set `API_BASE_URL` in `assets/app.env` to the backend origin only (no path).
+The app appends `/v1/devices` itself:
 
-| Where the app runs | `BASE_URL` |
+| Where the app runs | `API_BASE_URL` |
 |---|---|
-| Production / release builds | `https://parish-app-service.fly.dev/v1/devices` |
-| Android emulator (local backend) | `http://10.0.2.2:8080/v1/devices` |
-| Physical device on Wi-Fi | `http://<your-PC-LAN-IP>:8080/v1/devices` (allow port 8080 through the firewall) |
-| Android device over USB | `http://localhost:8080/v1/devices` after `adb reverse tcp:8080 tcp:8080` |
-| iOS simulator | `http://localhost:8080/v1/devices` |
+| Production / release builds | `https://parish-app-service.fly.dev` |
+| Android emulator (local backend) | `http://10.0.2.2:8080` |
+| Physical device on Wi-Fi | `http://<your-PC-LAN-IP>:8080` (allow port 8080 through the firewall) |
+| Android device over USB | `http://localhost:8080` after `adb reverse tcp:8080 tcp:8080` |
+| iOS simulator | `http://localhost:8080` |
 
 Release builds require `https://` (plain `http` is rejected).
 
@@ -151,7 +152,7 @@ RELEASE_CHECK=true flutter test test/release_readiness_test.dart
 ```
 
 This check is skipped during normal `flutter test` runs and only runs on
-request, as a release gate. It fails if `BASE_URL` is a loopback/emulator
+request, as a release gate. It fails if `API_BASE_URL` is a loopback/emulator
 address or isn't `https`. If a bad URL slips into a release build,
 `NotificationService` no-ops token registration with no visible error
 (`debugPrint` is a no-op in release builds), so no device ever registers and
@@ -179,7 +180,7 @@ throttles data-only pushes.
 | `Cleartext HTTP traffic not permitted` | Android blocks plain `http` to non-localhost hosts. Use `adb reverse` or an `https` URL |
 | Registration fails with a `4xx` | Not retried. Check the logged `code` and `requestId` against the backend; a bad request body or App Check failure won't succeed on retry |
 | Registration fails with `429` | Rate limited (20 per 15 min per IP). The app backs off and retries; wait and try again |
-| No registration and no logs in a release build | `BASE_URL` missing, malformed or not `https`. Run the release check above |
+| No registration and no logs in a release build | `API_BASE_URL` missing, malformed or not `https`. Run the release check above |
 | iOS: no token / `APNs token unavailable` | APNs key not uploaded to Firebase, Push Notifications capability missing, or running on a simulator |
 | Emulator crash `SIGILL` in `libwebviewchromium.so` | Emulator WebView bug, unrelated to notifications. Update WebView, cold boot the emulator, or test on a real device |
 

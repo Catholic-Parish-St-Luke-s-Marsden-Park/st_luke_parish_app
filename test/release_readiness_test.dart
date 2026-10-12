@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// Guards against shipping a release build with assets/app.env still pointing
 /// at the Android emulator loopback address, which is the committed default
 /// for local development. NotificationService silently no-ops token
-/// registration when BASE_URL isn't https in release mode (debugPrint is a
+/// registration when API_BASE_URL isn't https in release mode (debugPrint is a
 /// no-op in release builds), so the failure is otherwise invisible until
 /// someone notices pushes never arrive.
 ///
@@ -17,12 +17,12 @@ void main() {
   final shouldRun = Platform.environment['RELEASE_CHECK'] == 'true';
 
   test(
-    'assets/app.env BASE_URL is a release-ready https URL',
+    'assets/app.env API_BASE_URL is a release-ready https URL',
     () {
       final lines = File('assets/app.env').readAsLinesSync();
       final line = lines.firstWhere(
-        (l) => l.trim().startsWith('BASE_URL='),
-        orElse: () => fail('assets/app.env has no BASE_URL entry'),
+        (l) => l.trim().startsWith('API_BASE_URL='),
+        orElse: () => fail('assets/app.env has no API_BASE_URL entry'),
       );
       final baseUrl = line.substring(line.indexOf('=') + 1).trim();
 
@@ -30,7 +30,7 @@ void main() {
         baseUrl,
         isNot(contains('10.0.2.2')),
         reason:
-            'BASE_URL is still the Android emulator loopback address. Set '
+            'API_BASE_URL is still the Android emulator loopback address. Set '
             'it to the production backend URL before building for release '
             '— see README.md > Push notifications.',
       );
@@ -38,7 +38,7 @@ void main() {
         Uri.tryParse(baseUrl)?.scheme,
         'https',
         reason:
-            'BASE_URL must use https for release builds; '
+            'API_BASE_URL must use https for release builds; '
             'NotificationService rejects non-https URLs in release mode.',
       );
     },

@@ -46,19 +46,24 @@ class NotificationService {
   /// Backoff between registration attempts is `attempt * _retryDelayUnit`.
   final Duration _retryDelayUnit;
 
-  /// Device registration endpoint (including `/v1/devices`) from BASE_URL in assets/app.env.
+  /// Path of the device registration route, appended to API_BASE_URL.
+  static const _devicesPath = '/v1/devices';
+
+  /// Device registration endpoint: API_BASE_URL (origin only) from
+  /// assets/app.env plus `/v1/devices`.
   /// Null, with the reason logged, if it is missing, malformed, or (in release
   /// builds) not https, so misconfiguration isn't retried as a network error.
   /// dotenv throws if assets/app.env never loaded (main.dart logs and carries
-  /// on), so that case is treated as a missing BASE_URL.
+  /// on), so that case is treated as a missing API_BASE_URL.
   Uri? get _backendUri => resolveBackendUri(
-    dotenv.isInitialized ? dotenv.maybeGet('BASE_URL') : null,
+    dotenv.isInitialized ? dotenv.maybeGet('API_BASE_URL') : null,
     isRelease: _isRelease,
   );
 
-  /// Validates and parses a raw BASE_URL value into the token endpoint.
-  /// Pulled out of [_backendUri] as a pure function so the validation rules
-  /// are unit-testable without touching dotenv or kReleaseMode.
+  /// Validates a raw API_BASE_URL value and builds the device registration
+  /// endpoint from its origin. Any path, query or fragment on the raw value is
+  /// ignored. Pulled out of [_backendUri] as a pure function so the validation
+  /// rules are unit-testable without touching dotenv or kReleaseMode.
   @visibleForTesting
   static Uri? resolveBackendUri(String? raw, {required bool isRelease}) {
     final trimmed = raw?.trim();
@@ -66,14 +71,19 @@ class NotificationService {
         ? null
         : Uri.tryParse(trimmed);
     if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
-      debugPrint('BASE_URL is missing or invalid in assets/app.env.');
+      debugPrint('API_BASE_URL is missing or invalid in assets/app.env.');
       return null;
     }
     if (isRelease && uri.scheme != 'https') {
-      debugPrint('BASE_URL must use https in release builds.');
+      debugPrint('API_BASE_URL must use https in release builds.');
       return null;
     }
-    return uri;
+    return Uri(
+      scheme: uri.scheme,
+      host: uri.host,
+      port: uri.hasPort ? uri.port : null,
+      path: _devicesPath,
+    );
   }
 
   /// SharedPreferences key holding the last token the backend accepted, used
@@ -242,7 +252,7 @@ class NotificationService {
 
   /// Sends [token] to the backend only if it, together with the backend
   /// endpoint, differs from the last successfully registered pair — so
-  /// switching BASE_URL (e.g. emulator to production) forces a fresh
+  /// switching API_BASE_URL (e.g. emulator to production) forces a fresh
   /// registration instead of being skipped as "unchanged".
   @visibleForTesting
   Future<void> sendTokenIfChanged(String token) async {
@@ -288,8 +298,8 @@ class NotificationService {
 
   /// Posts [token] to [uri], retrying with linear backoff on failure. Returns
   /// true if the server responded with a 2xx status. Takes [uri] explicitly,
-  /// rather than resolving BASE_URL itself, so the retry/backoff behaviour is
-  /// unit-testable against an injected [http.Client] independent of BASE_URL
+  /// rather than resolving API_BASE_URL itself, so the retry/backoff behaviour is
+  /// unit-testable against an injected [http.Client] independent of API_BASE_URL
   /// resolution.
   @visibleForTesting
   Future<bool> postToken(Uri uri, String token, {int maxRetries = 3}) async {

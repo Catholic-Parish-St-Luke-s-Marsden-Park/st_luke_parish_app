@@ -27,19 +27,19 @@ void main() {
       );
     });
 
-    test('accepts a valid http URL outside release mode', () {
+    test('accepts a valid http origin outside release mode', () {
       final uri = NotificationService.resolveBackendUri(
-        'http://10.0.2.2:8080/tokens',
+        'http://10.0.2.2:8080',
         isRelease: false,
       );
 
-      expect(uri, Uri.parse('http://10.0.2.2:8080/tokens'));
+      expect(uri, Uri.parse('http://10.0.2.2:8080/v1/devices'));
     });
 
     test('rejects a non-https URL in release mode', () {
       expect(
         NotificationService.resolveBackendUri(
-          'http://10.0.2.2:8080/tokens',
+          'http://10.0.2.2:8080',
           isRelease: true,
         ),
         isNull,
@@ -48,25 +48,30 @@ void main() {
 
     test('accepts an https URL in release mode', () {
       final uri = NotificationService.resolveBackendUri(
-        'https://example.onrender.com/tokens',
+        'https://parish-app-service.fly.dev',
         isRelease: true,
       );
 
-      expect(uri, Uri.parse('https://example.onrender.com/tokens'));
+      expect(uri, Uri.parse('https://parish-app-service.fly.dev/v1/devices'));
     });
 
-    test('trims surrounding whitespace', () {
-      final uri = NotificationService.resolveBackendUri(
-        '  https://example.onrender.com/tokens  ',
-        isRelease: true,
-      );
-
-      expect(uri, Uri.parse('https://example.onrender.com/tokens'));
+    test('trims whitespace and ignores a trailing slash or path', () {
+      for (final raw in [
+        '  https://parish-app-service.fly.dev  ',
+        'https://parish-app-service.fly.dev/',
+        'https://parish-app-service.fly.dev/v1/devices',
+      ]) {
+        expect(
+          NotificationService.resolveBackendUri(raw, isRelease: true),
+          Uri.parse('https://parish-app-service.fly.dev/v1/devices'),
+          reason: raw,
+        );
+      }
     });
   });
 
   group('postToken', () {
-    final uri = Uri.parse('https://example.onrender.com/tokens');
+    final uri = Uri.parse('https://example.onrender.com/v1/devices');
 
     test('returns true on a first-attempt 2xx response', () async {
       var callCount = 0;
@@ -220,13 +225,13 @@ void main() {
     }
 
     void setBaseUrl(String url) =>
-        dotenv.loadFromString(envString: 'BASE_URL=$url');
+        dotenv.loadFromString(envString: 'API_BASE_URL=$url');
 
     setUp(() {
       requests = [];
       statusCode = 204;
       SharedPreferences.setMockInitialValues({});
-      setBaseUrl('https://example.onrender.com/tokens');
+      setBaseUrl('https://example.onrender.com');
     });
 
     tearDown(dotenv.clean);
@@ -234,7 +239,7 @@ void main() {
     test('posts a new token and caches it with the backend origin', () async {
       await buildService().sendTokenIfChanged('token-1');
 
-      expect(requests, [Uri.parse('https://example.onrender.com/tokens')]);
+      expect(requests, [Uri.parse('https://example.onrender.com/v1/devices')]);
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString(prefsKey), 'token-1@https://example.onrender.com');
     });
@@ -258,17 +263,17 @@ void main() {
     });
 
     test(
-      're-registers the same token when BASE_URL moves to a new backend',
+      're-registers the same token when API_BASE_URL moves to a new backend',
       () async {
         final service = buildService();
         await service.sendTokenIfChanged('token-1');
 
-        setBaseUrl('https://parish-backend.example.org/tokens');
+        setBaseUrl('https://parish-backend.example.org');
         await service.sendTokenIfChanged('token-1');
 
         expect(requests, [
-          Uri.parse('https://example.onrender.com/tokens'),
-          Uri.parse('https://parish-backend.example.org/tokens'),
+          Uri.parse('https://example.onrender.com/v1/devices'),
+          Uri.parse('https://parish-backend.example.org/v1/devices'),
         ]);
       },
     );
@@ -296,7 +301,7 @@ void main() {
       },
     );
 
-    test('sends nothing when BASE_URL is missing', () async {
+    test('sends nothing when API_BASE_URL is missing', () async {
       dotenv.loadFromString(envString: 'OTHER=1');
 
       await buildService().sendTokenIfChanged('token-1');
@@ -312,8 +317,8 @@ void main() {
       expect(requests, isEmpty);
     });
 
-    test('sends nothing to a non-https BASE_URL in release mode', () async {
-      setBaseUrl('http://10.0.2.2:8080/tokens');
+    test('sends nothing to a non-https API_BASE_URL in release mode', () async {
+      setBaseUrl('http://10.0.2.2:8080');
 
       await buildService(isRelease: true).sendTokenIfChanged('token-1');
 
