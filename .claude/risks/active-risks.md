@@ -136,6 +136,24 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
 - **Owner:** Server owner / Deployer
 - **Status:** open
 
+- **Risk ID:** RISK-019
+- **Title:** The old OpenRouter API key may still be live and is recoverable from older installs (RISK-F09-007)
+- **Feature:** 09-saint-of-the-day-api (legacy of 06-saint-of-the-day, ADR-0005)
+- **Impact:** Medium if it is still active: any build made with `--dart-define=OPENROUTER_API_KEY` embedded the key in the binary (ADR-0005), so anyone holding an older APK/IPA could extract it and spend against the parish's OpenRouter account. Feature 09 removes the key from all new builds (verified: `git grep -il openrouter -- . ':!.claude'` is empty), but it cannot reach builds already distributed.
+- **Likelihood:** Unknown. Per the 09 BA plan, no CI/fastlane step ever passed the define, so store builds probably never carried a key; developer/sideloaded builds may have.
+- **Mitigation:** User decision, outside the code: revoke or rotate the key in the OpenRouter dashboard (nothing in this app needs it any more), or at minimum confirm a spend cap is set. Recommended to do before or at merge. Logged by the 09 verifier phase (2026-10-12) because it was only recorded in the BA plan, ADR-0008 and memory, not in this register.
+- **Owner:** User (parish app owner)
+- **Status:** open — awaiting user decision
+
+- **Risk ID:** RISK-020
+- **Title:** 09-saint-of-the-day-api visualiser pass covered only the live success state; failure states, cache reopen and large system font were not checked on a device
+- **Feature:** 09-saint-of-the-day-api
+- **Impact:** Low. The live Android render (Saint Wilfrid, no OpenRouter key in the build, cache cleared) confirmed the real data path, server `displayDate` and the hidden empty saying. The user accepted on that screenshot without a hands-on pass. The six failure messages, the newly scrollable error view (`saint_of_the_day_error_view.dart`), below-the-fold cards and large-font rendering rely on widget tests only (exact strings, 48px Try again, 1.0/1.5/2.0x sweep at 360x690) plus the repository integration test for cache reopen. The data view is visually unchanged from feature 06, which did have a human review. Same class of gap as RISK-006.
+- **Likelihood:** Low that a device-only defect exists, given the coverage above.
+- **Mitigation:** Optional ~2-minute device check during Deployer: airplane mode then open the screen (network message plus Try again), largest system font on the error and data views, and reopen after success (served from the cache with no spinner). Not blocking.
+- **Owner:** Deployer / user
+- **Status:** open (low, non-blocking)
+
 ## Resolved Risks
 
 - **Risk ID:** RISK-008
@@ -147,6 +165,7 @@ Log active technical, scraping, or delivery risks here. Add one entry per risk; 
 - **Owner:** Deployer (or a targeted Coder follow-up, at the user's discretion)
 - **Status:** resolved (2026-10-12, 09-saint-of-the-day-api)
   - **Resolution (09-saint-of-the-day-api coder phase, 2026-10-12):** The OpenRouter call is gone (ADR-0008). `SaintOfTheDayRemoteDatasource` now maps the parish API's responses by HTTP status and RFC 9457 problem `code` to distinct failures, each with its own message: 503 `saint_not_ready` => "still being prepared"; 404 => "check your date and time settings"; 401/400/other non-200 => "temporarily unavailable"; only timeouts and transport errors keep "check your connection". The dateKey, status, code and requestId are logged, never shown. Covered by `test/features/saint_of_the_day/data/datasources/saint_of_the_day_remote_datasource_test.dart` and the screen tests.
+  - **Correction (09-saint-of-the-day-api verifier phase, 2026-10-12):** The resolution note above predates the 404 tightening the user requested at coder handoff. Only a 404 with problem `code` `saint_not_available` maps to "check your date and time settings" (`SaintOfTheDayDateUnavailableFailure`); any other 404 (no body, another code) maps to "temporarily unavailable" (`SaintOfTheDayUnavailableFailure`). See `saint_of_the_day_remote_datasource.dart:109-115` and ADR-0008.
 
 - **Risk ID:** RISK-003
 - **Title:** Leadership-entry external links (Pope Leo XIV, Bishop Vincent Long, Fr Gayan Thamel) silently fail to launch on real Android devices — missing AndroidManifest `<queries>` block
