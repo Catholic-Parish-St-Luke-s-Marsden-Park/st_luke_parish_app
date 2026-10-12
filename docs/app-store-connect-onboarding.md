@@ -294,6 +294,14 @@ add the three `ASC_*` ones) as soon as access is granted.
   `subosito/flutter-action`) so this shouldn't happen on its own, but if the
   project's SDK constraint is ever bumped ahead of what's shipping on
   `stable`, this is the error you'll see.
+- **"Failed to copy plugin ..." / `rsync: mkdir ... failed: No such file or
+  directory` on `flutter pub get`** — macOS's bundled `rsync` (2.6.9) can't
+  create missing parent directories, which breaks Flutter's Swift Package
+  Manager plugin-copy step on a fresh checkout. The workflow runs
+  `flutter config --no-enable-swift-package-manager` before `pub get` to
+  avoid this, since plugins here are integrated via CocoaPods (`ios/Podfile`)
+  anyway. If this resurfaces, check that step is still present and still
+  runs before `pub get`.
 
 ## Reference
 
