@@ -149,27 +149,40 @@ platform :ios do
 
     Dir.chdir(project_root) do
       # `flutter build ipa` re-verifies CocoaPods itself (runs its own
-      # `pod install` check before invoking xcodebuild). `/usr/local/bin/pod`
-      # has a `#!/usr/bin/env ruby` shebang — ruby/setup-ruby demotes
-      # Homebrew's system Ruby in PATH in favor of its own installed Ruby
-      # (same "3.3" minor version, but a separate gem directory that
-      # doesn't have the `cocoapods` gem CocoaPods was actually installed
-      # under), so `pod` ends up running under the wrong interpreter and
-      # RubyGems reports it as "cocoapods is not currently included in the
-      # bundle" — misleading, but really just the wrong Ruby finding an
-      # empty gem set. Strip Bundler/Gem env vars AND put Homebrew's Ruby
-      # bin dirs back ahead of PATH for this one call, restoring exactly
-      # what the standalone `pod install` step (which worked) saw.
-      homebrew_ruby_bin_dirs = Dir.glob("/opt/homebrew/lib/ruby/gems/*/bin") +
-                                Dir.glob("/opt/homebrew/opt/ruby@*/bin") +
-                                Dir.glob("/opt/homebrew/opt/ruby/bin")
-      restored_path = (homebrew_ruby_bin_dirs + [ENV.fetch("PATH")]).join(":")
+      # `pod install` check before invoking xcodebuild). Whatever `pod` it
+      # finds on PATH is typically a RubyGems-generated bin stub
+      # (`Gem.activate_and_load_bin_path(...)`) that's vulnerable to
+      # Bundler's env (GEM_HOME/BUNDLE_GEMFILE/etc., set job-wide by
+      # `bundle exec fastlane` since we configured a local bundle path)
+      # leaking into it — it then tries to activate 'cocoapods' inside the
+      # wrong (fastlane's) bundle and fails with "cocoapods is not
+      # currently included in the bundle". Trying to fix this by
+      # reordering PATH just swaps in a *different* fragile stub.
+      #
+      # Instead: resolve whatever `pod` PATH would already find (the same
+      # one the standalone `pod install` step just used successfully),
+      # and wrap it in a tiny script that strips the Bundler/Gem env vars
+      # immediately before delegating — independent of which kind of
+      # stub it turns out to be on this runner image.
+      real_pod = `which pod`.strip
+      UI.user_error!("`pod` not found on PATH") if real_pod.empty?
+
+      wrapper_dir = Dir.mktmpdir
+      wrapper_path = File.join(wrapper_dir, "pod")
+      File.write(wrapper_path, <<~SH)
+        #!/bin/bash
+        exec env -u GEM_HOME -u GEM_PATH -u GEM_ROOT \\
+          -u BUNDLE_GEMFILE -u BUNDLE_PATH -u BUNDLE_BIN \\
+          -u RUBYOPT -u RUBYLIB \\
+          #{real_pod.shellescape} "$@"
+      SH
+      File.chmod(0o755, wrapper_path)
 
       sh(
         "env", "-u", "GEM_HOME", "-u", "GEM_PATH", "-u", "GEM_ROOT",
         "-u", "BUNDLE_GEMFILE", "-u", "BUNDLE_PATH", "-u", "BUNDLE_BIN",
         "-u", "RUBYOPT", "-u", "RUBYLIB",
-        "PATH=#{restored_path}",
+        "PATH=#{wrapper_dir}:#{ENV.fetch('PATH')}",
         "flutter", "build", "ipa",
         "--release",
         "--build-number=#{ENV.fetch('GITHUB_RUN_NUMBER', '1')}",
