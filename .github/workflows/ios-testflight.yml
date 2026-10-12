@@ -26,6 +26,13 @@ jobs:
           channel: stable
           cache: true
 
+      # Plugins are integrated via CocoaPods (see ios/Podfile), not Swift
+      # Package Manager, so this isn't needed — and macOS's bundled rsync
+      # (2.6.9, ancient BSD rsync) can't create missing parent directories,
+      # which makes `flutter pub get` fail copying SPM plugin sources on a
+      # fresh checkout. Disabling SPM sidesteps the bug entirely.
+      - run: flutter config --no-enable-swift-package-manager
+
       - run: flutter pub get
 
       - run: flutter analyze
