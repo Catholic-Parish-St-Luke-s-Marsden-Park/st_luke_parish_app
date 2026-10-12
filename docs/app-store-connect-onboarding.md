@@ -285,8 +285,15 @@ add the three `ASC_*` ones) as soon as access is granted.
   higher build number explicitly.
 - **CocoaPods/Xcode version drift** — if a build that works locally fails in
   CI (or vice versa), check `.github/workflows/ios-testflight.yml`'s pinned
-  `runs-on` (macOS runner, which determines the Xcode version) and
-  `flutter-version` against what's installed locally.
+  `runs-on` (macOS runner, which determines the Xcode version) against what's
+  installed locally.
+- **"version solving failed" on `flutter pub get`** — `pubspec.yaml`'s Dart
+  SDK constraint (`^3.11.0`) is newer than the Dart SDK bundled with the
+  Flutter version CI picked up. The workflow intentionally doesn't pin an
+  exact `flutter-version` (it tracks the latest `stable` release via
+  `subosito/flutter-action`) so this shouldn't happen on its own, but if the
+  project's SDK constraint is ever bumped ahead of what's shipping on
+  `stable`, this is the error you'll see.
 
 ## Reference
 
