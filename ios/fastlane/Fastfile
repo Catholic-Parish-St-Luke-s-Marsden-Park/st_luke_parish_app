@@ -171,23 +171,56 @@ platform :ios do
 
       gemfile_path = File.join(ios_dir, "Gemfile")
 
+      # This wrapper has been observed to hang indefinitely in CI at
+      # exactly this `bundle exec pod` call (verified via --verbose: the
+      # last line logged was "executing: pod --version", then nothing for
+      # 45 minutes until the job was killed by the workflow timeout) —
+      # while the identical invocation (same stripped env, same Gemfile,
+      # same vendored gems) returns instantly when reproduced locally.
+      # Since the cause isn't reproducible outside CI, make the wrapper
+      # self-diagnosing instead of guessing further: log every invocation
+      # with a timestamp, and self-timeout after 90s so a hang turns into
+      # a fast, loud failure with a stack-trace-free log instead of
+      # silently eating the whole 45-minute job timeout.
+      wrapper_log = File.join(Dir.tmpdir, "pod_wrapper.log")
       File.write(real_pod, <<~SH)
         #!/bin/bash
+        log() { printf '%s [pod wrapper] %s\\n' "$(date -u +%H:%M:%S)" "$1" >> #{wrapper_log.shellescape}; }
+        log "invoked with args: $*"
         export BUNDLE_GEMFILE=#{gemfile_path.shellescape}
-        exec #{bundle_executable.shellescape} exec pod "$@"
+        log "about to run: #{bundle_executable.shellescape} exec pod $*"
+        #{bundle_executable.shellescape} exec pod "$@" &
+        pod_pid=$!
+        ( sleep 90 && log "TIMEOUT after 90s — killing pid $pod_pid" && kill -9 "$pod_pid" 2>/dev/null ) &
+        watcher_pid=$!
+        wait "$pod_pid"
+        status=$?
+        kill "$watcher_pid" 2>/dev/null
+        log "bundle exec pod exited with status $status"
+        exit "$status"
       SH
       File.chmod(0o755, real_pod)
 
-      sh(
-        "env", "-u", "GEM_HOME", "-u", "GEM_PATH", "-u", "GEM_ROOT",
-        "-u", "BUNDLE_GEMFILE", "-u", "BUNDLE_PATH", "-u", "BUNDLE_BIN",
-        "-u", "RUBYOPT", "-u", "RUBYLIB",
-        "flutter", "build", "ipa",
-        "--release",
-        "--verbose",
-        "--build-number=#{ENV.fetch('GITHUB_RUN_NUMBER', '1')}",
-        "--export-options-plist=ios/ExportOptions.plist"
-      )
+      begin
+        sh(
+          "env", "-u", "GEM_HOME", "-u", "GEM_PATH", "-u", "GEM_ROOT",
+          "-u", "BUNDLE_GEMFILE", "-u", "BUNDLE_PATH", "-u", "BUNDLE_BIN",
+          "-u", "RUBYOPT", "-u", "RUBYLIB",
+          "flutter", "build", "ipa",
+          "--release",
+          "--verbose",
+          "--build-number=#{ENV.fetch('GITHUB_RUN_NUMBER', '1')}",
+          "--export-options-plist=ios/ExportOptions.plist"
+        )
+      ensure
+        # Always surface the pod wrapper's timestamped log, success or
+        # failure, so a hang/timeout inside it is visible in this step's
+        # own output without needing a separate always()-run CI step.
+        if File.exist?(wrapper_log)
+          UI.message("--- pod wrapper log (#{wrapper_log}) ---")
+          UI.message(File.read(wrapper_log))
+        end
+      end
     end
 
     ipa_path = Dir.glob(File.join(project_root, "build/ios/ipa/*.ipa")).first
