@@ -1,0 +1,30 @@
+- **Decision ID:** ADR-0006
+- **Title:** Load Ministries from the parish API, stale-while-revalidate with a bundled fallback
+- **Feature:** 08-ministries-api (GitHub issue #24)
+- **Date:** 2026-10-08
+- **Status:** accepted
+- **Context:**
+  - The Ministries tab rendered a hardcoded `staticMinistries` list. REQ-F03-010 (03-multi-pages) deliberately had no repository, provider or datasource, so every change to a leader, a meeting time or a ministry needed an app release.
+  - parish_app_service now stores ministries, and staff edit them in its `/admin` console (parish_app_service#13). It serves them at `GET /v1/ministries` and `GET /v1/ministries/{id}`, seeded with exactly the content of the old config.
+  - Root `CLAUDE.md` only allowed public website content.
+- **Decision:**
+  - **Data source:** read ministries from the parish API, reversing REQ-F03-010. The data layer follows the News and Saint of the Day patterns: a remote datasource, a hand-written JSON parser, sealed `MinistriesFailure` types, and a repository behind a domain contract.
+  - **Stale-while-revalidate:** `MinistriesRepository.watchMinistries()` is a stream.
+    - It emits the last good response saved in `shared_preferences` first, then the network result, which it also saves.
+    - If the network fails, the saved copy stands.
+    - With nothing saved, it emits the snapshot bundled as `assets/ministries_fallback.json`, which replaces `static_ministries_config.dart`. The bundled copy is never saved, so the cache only ever holds a real API response.
+    - A `Ministries` StreamNotifier exposes the stream. Its `refresh()` backs pull-to-refresh and reports failure, so the screen can show a SnackBar instead of failing silently.
+  - **API origin:** taken from `API_BASE_URL` in `assets/app.env`, validated with the same rules as the push `BASE_URL`. That validation was extracted from `NotificationService.resolveBackendUri` into `lib/core/config/backend_uri.dart` and is shared by both. When `API_BASE_URL` is unset, the origin of `BASE_URL` is used, because that service also hosts `/tokens`. A set but invalid `API_BASE_URL` is not silently replaced by the fallback.
+  - **App Check:** the datasource takes an optional header builder, so an `X-Firebase-AppCheck` token can be added once the server enforces App Check.
+  - **Detail screen:** looks the ministry up by id in the loaded list, and fetches `/v1/ministries/{id}` only when the id is missing. A 404 maps to `MinistryNotFoundFailure`, which shows "Ministry not found."
+  - **CLAUDE.md:** now allows the parish API's public, read-only `GET /v1/*` endpoints, alongside the existing `POST /tokens`, and forbids its `/admin` console.
+- **Alternatives Considered:**
+  - **A plain `FutureProvider` with no stream.** Showing the cache and then the network result would need two providers, or the notifier would have to own the orchestration that `CLAUDE.md` puts behind repositories.
+  - **Showing the bundled snapshot immediately on a first launch, then the network.** Rejected because it would flash release-time content before live content. The issue asks for the fallback only when there is no network.
+  - **Caching parsed entities instead of the raw body.** Rejected because it would need a second serializer. Storing the body means the cache, the bundled asset and the network all go through one parser.
+  - **freezed / json_serializable,** which `CLAUDE.md` lists. Not added, because the repo has neither, and every existing feature uses hand-written immutable classes.
+- **Consequences:**
+  - **The bundled snapshot drifts from the API** unless it is refreshed at release time. README > Parish API has the command, and `ministries_fallback_asset_test.dart` pins its contents, so a refresh shows up as a test diff.
+  - **`API_BASE_URL` in the committed `assets/app.env` points at production,** including for debug builds. The local `server/app.js` has no `/v1/ministries`. The endpoints are public and read-only.
+  - **No HTTP caching:** the server's `Cache-Control: max-age=300` is not honoured on the device. ETag / `If-None-Match` is out of scope.
+  - **Unpublishing removes the ministry from the list on the next successful refresh.** A ministry that was hidden server-side stays visible offline until then.

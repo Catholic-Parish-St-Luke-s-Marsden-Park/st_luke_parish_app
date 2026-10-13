@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/app/provider_retry.dart';
 import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
-import 'package:st_luke_parish_app/features/ministries/data/config/static_ministries_config.dart';
 import 'package:st_luke_parish_app/features/ministries/domain/entities/ministry.dart';
+import 'package:st_luke_parish_app/features/ministries/presentation/providers/ministries_providers.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/screens/ministry_detail_screen.dart';
 
-/// Covers the ministry detail screen acceptance criteria: REQ-F03-005..009.
+import '../../helpers/fake_ministries_repository.dart';
+
+/// Covers the ministry detail screen acceptance criteria REQ-F03-006..009 and
+/// the encoded mailto CTA (REQ-F08-018), driven by a fake repository serving
+/// the bundled fallback asset (REQ-F08-021). Loading/error/404 states are in
+/// `ministry_detail_screen_states_test.dart`.
 class _FakeUrlLauncherService implements UrlLauncherService {
   _FakeUrlLauncherService({this.launchResult = true});
 
@@ -21,8 +27,10 @@ class _FakeUrlLauncherService implements UrlLauncherService {
 }
 
 void main() {
-  final music = staticMinistries.firstWhere((m) => m.id == 'music');
-  final sacramental = staticMinistries.firstWhere((m) => m.id == 'sacramental');
+  final music = fallbackMinistry('music');
+  final sacramental = fallbackMinistry('sacramental');
+  const musicMailto =
+      'mailto:marsdenpark@parracatholic.org?subject=Music%20Ministry%20Interest';
 
   Future<void> pumpDetail(
     WidgetTester tester, {
@@ -40,38 +48,18 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [urlLauncherServiceProvider.overrideWithValue(fakeLauncher)],
+        retry: noAutomaticRetry,
+        overrides: [
+          urlLauncherServiceProvider.overrideWithValue(fakeLauncher),
+          ministriesRepositoryProvider.overrideWith(
+            (ref) async => FakeMinistriesRepository(),
+          ),
+        ],
         child: MaterialApp(home: MinistryDetailScreen(ministryId: ministryId)),
       ),
     );
     await tester.pumpAndSettle();
   }
-
-  group('REQ-F03-005: hero does not render the emoji', () {
-    testWidgets('no Text widget on the detail screen renders the emoji', (
-      tester,
-    ) async {
-      await pumpDetail(
-        tester,
-        ministryId: music.id,
-        fakeLauncher: _FakeUrlLauncherService(),
-      );
-
-      expect(tester.takeException(), isNull);
-      expect(find.text(music.name), findsOneWidget);
-      expect(find.text(music.tagline), findsOneWidget);
-
-      final renderedTexts = tester
-          .widgetList<Text>(find.byType(Text))
-          .map((t) => t.data)
-          .whereType<String>()
-          .toSet();
-      expect(renderedTexts, isNot(contains(music.emoji)));
-      for (final text in renderedTexts) {
-        expect(text.contains(music.emoji), isFalse);
-      }
-    });
-  });
 
   group('REQ-F03-006: detail screen renders When/Where/Open-to, About, '
       'leader row, and How to Join', () {
@@ -85,6 +73,10 @@ void main() {
       );
 
       // _StatChip renders its label uppercased (e.g. "WHEN").
+      expect(tester.takeException(), isNull);
+      expect(find.text(music.name), findsOneWidget);
+      expect(find.text(music.tagline), findsOneWidget);
+
       expect(find.text('WHEN'), findsOneWidget);
       expect(find.text('WHERE'), findsOneWidget);
       expect(find.text('OPEN TO'), findsOneWidget);
@@ -105,8 +97,8 @@ void main() {
     });
   });
 
-  group('REQ-F03-007: CTA button launches mailto:{ctaEmail}', () {
-    testWidgets('tapping the CTA button launches mailto with ctaEmail', (
+  group('REQ-F03-007 / REQ-F08-018: CTA button launches an encoded mailto', () {
+    testWidgets('tapping the CTA button launches the encoded mailto', (
       tester,
     ) async {
       final fakeLauncher = _FakeUrlLauncherService();
@@ -120,7 +112,7 @@ void main() {
       await tester.tap(find.text(music.ctaLabel));
       await tester.pumpAndSettle();
 
-      expect(fakeLauncher.launchedUrls, ['mailto:${music.ctaEmail}']);
+      expect(fakeLauncher.launchedUrls, [musicMailto]);
     });
 
     testWidgets(
@@ -138,33 +130,13 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(tester.takeException(), isNull);
-        expect(fakeLauncher.launchedUrls, ['mailto:${music.ctaEmail}']);
+        expect(fakeLauncher.launchedUrls, [musicMailto]);
       },
     );
   });
 
-  group('REQ-F03-008: sacramental ministry uses the distinct '
-      'sacraments@ ctaEmail', () {
-    test('sacramental ctaEmail is the sacraments@ address', () {
-      expect(
-        sacramental.ctaEmail,
-        'sacraments@stlukesmarsdenpark.org.au?subject=Sacramental '
-        'Programme 2026',
-      );
-    });
-
-    test('all other 15 ministries use the marsdenpark@parracatholic.org '
-        'address pattern', () {
-      final others = staticMinistries.where((m) => m.id != 'sacramental');
-      expect(others.length, 15);
-      for (final ministry in others) {
-        expect(
-          ministry.ctaEmail,
-          startsWith('marsdenpark@parracatholic.org?subject='),
-        );
-      }
-    });
-
+  group('REQ-F03-008: sacramental ministry uses the distinct sacraments@ '
+      'address', () {
     testWidgets('tapping the sacramental CTA launches the sacraments@ '
         'mailto', (tester) async {
       final fakeLauncher = _FakeUrlLauncherService();
@@ -177,7 +149,10 @@ void main() {
       await tester.tap(find.text(sacramental.ctaLabel));
       await tester.pumpAndSettle();
 
-      expect(fakeLauncher.launchedUrls, ['mailto:${sacramental.ctaEmail}']);
+      expect(fakeLauncher.launchedUrls, [
+        'mailto:sacraments@stlukesmarsdenpark.org.au'
+            '?subject=Sacramental%20Programme%202026',
+      ]);
     });
   });
 
@@ -187,7 +162,6 @@ void main() {
       const ministry = Ministry(
         id: 'x',
         category: 'x',
-        emoji: 'x',
         name: 'x',
         membersLine: 'x',
         dayLine: 'x',
@@ -201,7 +175,8 @@ void main() {
         leaderInitials: 'x',
         joinInfo: 'x',
         ctaLabel: 'x',
-        ctaEmail: 'x',
+        contactEmail: 'x',
+        emailSubject: 'x',
       );
       expect(ministry.id, 'x');
     });

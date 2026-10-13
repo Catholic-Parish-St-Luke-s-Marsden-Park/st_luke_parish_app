@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/backend_uri.dart';
 import 'notification_helpers.dart';
 
 /// Owns push notification setup: permissions, foreground display, and
@@ -66,18 +67,12 @@ class NotificationService {
   /// rules are unit-testable without touching dotenv or kReleaseMode.
   @visibleForTesting
   static Uri? resolveBackendUri(String? raw, {required bool isRelease}) {
-    final trimmed = raw?.trim();
-    final uri = (trimmed == null || trimmed.isEmpty)
-        ? null
-        : Uri.tryParse(trimmed);
-    if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
-      debugPrint('API_BASE_URL is missing or invalid in assets/app.env.');
-      return null;
-    }
-    if (isRelease && uri.scheme != 'https') {
-      debugPrint('API_BASE_URL must use https in release builds.');
-      return null;
-    }
+    final uri = validateBackendUri(
+      raw,
+      isRelease: isRelease,
+      envKey: 'API_BASE_URL',
+    );
+    if (uri == null) return null;
     return Uri(
       scheme: uri.scheme,
       host: uri.host,

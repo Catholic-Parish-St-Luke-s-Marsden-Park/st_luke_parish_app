@@ -46,8 +46,21 @@ app.*.map.json
 /android/app/release
 /android/build/
 
-# Server related 
+# Server related
 server/.env
 server/service-account.json
 server/node_modules/
 .env
+
+# Fastlane / iOS signing
+ios/.bundle/
+ios/vendor/
+ios/fastlane/report.xml
+ios/fastlane/Preview.html
+ios/fastlane/screenshots/**/*.png
+ios/fastlane/test_output
+ios/ExportOptions.plist
+*.p12
+*.mobileprovision
+*.cer
+.env.fastlane

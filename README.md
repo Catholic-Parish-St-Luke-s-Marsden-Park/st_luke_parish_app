@@ -4,8 +4,9 @@ A native Android and iOS app for **St Luke's Catholic Parish, Marsden Park** —
 Mass times, bulletins, parish news, ministries and contact details on a phone.
 
 The app reads selected **public** content from the parish website
-(<https://stlukesmarsdenpark.org.au>). Phase 1 is frontend-only: there is no
-backend, and no private or authenticated parish data is used.
+(<https://stlukesmarsdenpark.org.au>), and ministries from the parish API's
+public, read-only endpoints (see [Parish API](#parish-api-ministries)). No
+private or authenticated parish data is used.
 
 - **Platforms:** Android and iOS only. No web or desktop target.
 - **Dart SDK:** `^3.11.0` (any recent Flutter stable).
@@ -55,6 +56,34 @@ For a release build, pass the same `--dart-define` flag to `flutter build`.
 Without it, the screen shows a "not configured" message instead of sending an
 unauthenticated request. CI/release-build wiring for this define is a
 Deployer-phase follow-up for feature 06, not yet automated.
+
+### Parish API (Ministries)
+
+The Ministries tab loads from the parish API (parish_app_service), which parish
+staff edit in its `/admin` console. Set the API origin in `assets/app.env`:
+
+```
+API_BASE_URL=https://parish-app-service.fly.dev
+```
+
+- Origin only, no path. Release builds require `https://`.
+- If `API_BASE_URL` is unset, the origin of `BASE_URL` is used instead.
+- The app only calls `GET /v1/ministries` and `GET /v1/ministries/{id}`.
+
+The last good response is cached on the device and refreshed in the
+background; pull down on the tab to refresh by hand. On a first launch with no
+network, the app shows `assets/ministries_fallback.json`, a snapshot of
+`GET /v1/ministries`. **Refresh it before each release:**
+
+```bash
+curl -sS --fail https://parish-app-service.fly.dev/v1/ministries \
+  | python3 -m json.tool --indent 2 --no-ensure-ascii > assets/ministries_fallback.json
+flutter test test/features/ministries
+```
+
+`test/features/ministries/data/ministries_fallback_asset_test.dart` pins the
+snapshot's categories and ministries, so it fails when staff have changed them.
+Check the diff is expected, then update those expectations.
 
 Checks to run before opening a pull request:
 

@@ -1,0 +1,211 @@
+default_platform(:ios)
+
+require "base64"
+require "securerandom"
+require "shellwords"
+require "tmpdir"
+
+platform :ios do
+  desc "Build the Flutter app and upload it to TestFlight"
+  lane :beta do
+    team_id = ENV.fetch("FASTLANE_TEAM_ID")
+    bundle_id = "au.org.stlukesmarsdenpark.parishapp"
+
+    # Fastlane runs lanes with Dir.pwd == ios/fastlane/ (the directory
+    # containing this Fastfile) regardless of the shell's own
+    # working-directory when `fastlane` was invoked — confirmed directly
+    # from a CI stack trace (Errno::ENOENT against .../ios/fastlane/
+    # Runner.xcodeproj/...). Anchor every path to absolute locations
+    # computed once here, rather than chaining relative ".." lookups that
+    # depend on guessing Fastlane's cwd correctly at each point.
+    fastlane_dir = Dir.pwd
+    ios_dir = File.expand_path("..", fastlane_dir)
+    project_root = File.expand_path("..", ios_dir)
+
+    keychain_name = "ios-testflight.keychain-db"
+    keychain_password = SecureRandom.hex(16)
+
+    create_keychain(
+      name: keychain_name,
+      password: keychain_password,
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600,
+      lock_when_sleeps: false
+    )
+
+    # Preferred auth: an App Store Connect Team API key (ASC_KEY_ID/ASC_ISSUER_ID/
+    # ASC_KEY_CONTENT). Generating one requires the Account Holder to first
+    # grant API access (App Store Connect → Users and Access → Integrations).
+    # Until that happens, TEMPORARY fallback: authenticate as an individual
+    # Apple ID instead (FASTLANE_APPLE_ID + FASTLANE_PASSWORD app-specific
+    # password + a FASTLANE_SESSION cookie from `fastlane spaceauth`, run
+    # locally once since interactive 2FA can't happen in CI) — see
+    # docs/app-store-connect-onboarding.md. Switch back to the API key lane
+    # as soon as Account Holder access is granted; the session cookie expires
+    # periodically and needs manual regeneration.
+    # GitHub Actions sets the env var to an empty string when a secret isn't
+    # configured rather than omitting it, so check for a non-empty value.
+    using_api_key = !ENV["ASC_KEY_ID"].to_s.empty?
+
+    api_key = if using_api_key
+      app_store_connect_api_key(
+        key_id: ENV.fetch("ASC_KEY_ID"),
+        issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+        key_content: ENV.fetch("ASC_KEY_CONTENT"),
+        is_key_content_base64: true,
+        in_house: false
+      )
+    else
+      UI.message("ASC_KEY_ID not set — falling back to Apple ID + FASTLANE_SESSION auth (temporary).")
+      nil
+    end
+
+    # Certificate and provisioning profile are exported once by a human and
+    # stored as base64-encoded GitHub secrets — see
+    # docs/app-store-connect-onboarding.md. Re-export and update the secrets
+    # when they expire or are revoked (~1 year for the certificate).
+    cert_path = File.join(Dir.mktmpdir, "distribution.p12")
+    File.binwrite(cert_path, Base64.decode64(ENV.fetch("IOS_DIST_CERTIFICATE_P12")))
+
+    import_certificate(
+      certificate_path: cert_path,
+      certificate_password: ENV.fetch("IOS_DIST_CERTIFICATE_PASSWORD"),
+      keychain_name: keychain_name,
+      keychain_password: keychain_password
+    )
+
+    # `security import` can print "MAC verification failed ... (wrong
+    # password?)" to stderr yet still exit 0, so import_certificate doesn't
+    # always raise on a bad IOS_DIST_CERTIFICATE_P12 / _PASSWORD pair. Check
+    # the identity actually landed in the keychain instead of silently
+    # limping forward into a confusing downstream failure.
+    identities = sh("security find-identity -v -p codesigning #{keychain_name.shellescape}", log: false)
+    if identities !~ /\d+\) [0-9A-F]+ "/
+      UI.user_error!(
+        "No signing identity landed in the keychain after import_certificate — " \
+        "IOS_DIST_CERTIFICATE_P12 or IOS_DIST_CERTIFICATE_PASSWORD is likely wrong " \
+        "(bad base64 or mismatched export password). Re-export and update both secrets."
+      )
+    end
+
+    profile_path = File.join(Dir.mktmpdir, "profile.mobileprovision")
+    File.binwrite(profile_path, Base64.decode64(ENV.fetch("IOS_PROVISIONING_PROFILE")))
+
+    install_provisioning_profile(path: profile_path)
+
+    profile_name = sh(
+      "security cms -D -i #{profile_path.shellescape} | plutil -extract Name raw -o - -",
+      log: false
+    ).strip
+    UI.user_error!("Could not read a Name from the provisioning profile") if profile_name.empty?
+
+    # `xcodebuild archive` (not just the export step) needs
+    # PROVISIONING_PROFILE_SPECIFIER to resolve to a real, installed profile
+    # for manual signing. The committed project.pbxproj only holds a
+    # placeholder, since the real profile name depends on whatever a human
+    # most recently exported — patch the checked-out copy here; never commit
+    # this back.
+    # `pod install` (which already ran, before this lane) resaves the whole
+    # project.pbxproj via the Xcodeproj gem, which drops quotes around
+    # bareword-safe string values — the committed placeholder is quoted
+    # ("CI_PLACEHOLDER_PROVISIONING_PROFILE";) but by the time this lane
+    # runs it's been rewritten unquoted (CI_PLACEHOLDER_PROVISIONING_PROFILE;).
+    # Match either form; always write the replacement quoted, since
+    # profile_name can contain spaces.
+    pbxproj_path = File.join(ios_dir, "Runner.xcodeproj", "project.pbxproj")
+    pbxproj = File.read(pbxproj_path)
+    placeholder_pattern = /PROVISIONING_PROFILE_SPECIFIER = "?CI_PLACEHOLDER_PROVISIONING_PROFILE"?;/
+    patched = pbxproj.gsub(placeholder_pattern) { "PROVISIONING_PROFILE_SPECIFIER = \"#{profile_name}\";" }
+    UI.user_error!("CI_PLACEHOLDER_PROVISIONING_PROFILE not found in #{pbxproj_path}") if patched == pbxproj
+    File.write(pbxproj_path, patched)
+
+    # Written fresh each run (not committed) because the exact profile name
+    # depends on whatever the human most recently exported.
+    export_options_path = File.join(ios_dir, "ExportOptions.plist")
+    File.write(export_options_path, <<~PLIST)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+      \t<key>method</key>
+      \t<string>app-store</string>
+      \t<key>teamID</key>
+      \t<string>#{team_id}</string>
+      \t<key>signingStyle</key>
+      \t<string>manual</string>
+      \t<key>uploadBitcode</key>
+      \t<false/>
+      \t<key>uploadSymbols</key>
+      \t<true/>
+      \t<key>provisioningProfiles</key>
+      \t<dict>
+      \t\t<key>#{bundle_id}</key>
+      \t\t<string>#{profile_name}</string>
+      \t</dict>
+      </dict>
+      </plist>
+    PLIST
+
+    Dir.chdir(project_root) do
+      # `flutter build ipa` re-verifies CocoaPods itself (runs its own
+      # `pod install` check before invoking xcodebuild), resolving `pod`
+      # to a fixed absolute path (confirmed from real CI runs: it kept
+      # resolving /usr/local/bin/pod directly regardless of PATH changes,
+      # and stripping Bundler/Gem env vars before delegating to that
+      # binary still failed the same way — the runner's system `pod` is
+      # a RubyGems bin stub whose own interpreter resolution is broken
+      # independent of what env it's launched with).
+      #
+      # Stop depending on the runner's system CocoaPods entirely. We
+      # already have a known-good, self-contained Bundler environment
+      # right here (`bundle exec fastlane` is running successfully under
+      # it this very moment) — ios/Gemfile declares `cocoapods` alongside
+      # `fastlane`, so replace the system `pod` binary with a wrapper that
+      # delegates to `bundle exec pod` against that same Gemfile.
+      real_pod = `which pod`.strip
+      UI.user_error!("`pod` not found on PATH") if real_pod.empty?
+
+      bundle_executable = `which bundle`.strip
+      UI.user_error!("`bundle` not found on PATH") if bundle_executable.empty?
+
+      gemfile_path = File.join(ios_dir, "Gemfile")
+
+      File.write(real_pod, <<~SH)
+        #!/bin/bash
+        export BUNDLE_GEMFILE=#{gemfile_path.shellescape}
+        exec #{bundle_executable.shellescape} exec pod "$@"
+      SH
+      File.chmod(0o755, real_pod)
+
+      sh(
+        "env", "-u", "GEM_HOME", "-u", "GEM_PATH", "-u", "GEM_ROOT",
+        "-u", "BUNDLE_GEMFILE", "-u", "BUNDLE_PATH", "-u", "BUNDLE_BIN",
+        "-u", "RUBYOPT", "-u", "RUBYLIB",
+        "flutter", "build", "ipa",
+        "--release",
+        "--build-number=#{ENV.fetch('GITHUB_RUN_NUMBER', '1')}",
+        "--export-options-plist=ios/ExportOptions.plist"
+      )
+    end
+
+    ipa_path = Dir.glob(File.join(project_root, "build/ios/ipa/*.ipa")).first
+    UI.user_error!("No .ipa found under build/ios/ipa after `flutter build ipa`") unless ipa_path
+
+    if using_api_key
+      upload_to_testflight(
+        api_key: api_key,
+        ipa: ipa_path,
+        skip_waiting_for_build_processing: true
+      )
+    else
+      # Apple ID fallback: FASTLANE_PASSWORD and FASTLANE_SESSION are picked
+      # up automatically from the environment by Spaceship/pilot.
+      upload_to_testflight(
+        apple_id: ENV.fetch("FASTLANE_APPLE_ID"),
+        ipa: ipa_path,
+        skip_waiting_for_build_processing: true
+      )
+    end
+  end
+end

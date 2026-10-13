@@ -5,10 +5,21 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 
 /// Reusable in-app WebView content: a full-page [WebViewWidget] loading
-/// [url], a loading overlay while the page is loading, and a user-visible
-/// error state if the main-frame load fails (e.g. no network). Genuinely
-/// reusable across features (not tied to Donate) per root `CLAUDE.md`'s
-/// `lib/shared/` guidance.
+/// either [url] or [html] (exactly one must be given), a loading overlay
+/// while the page is loading, and a user-visible error state if the
+/// main-frame load fails (e.g. no network). Genuinely reusable across
+/// features (not tied to Donate) per root `CLAUDE.md`'s `lib/shared/`
+/// guidance.
+///
+/// [html] exists for content that itself needs to nest an `<iframe>` --
+/// e.g. the Contact tab's Google Maps preview, which embeds
+/// `.../maps?...&output=embed`. That endpoint checks (server-side) that
+/// the request actually came from inside an `<iframe>`, and refuses it
+/// ("The Google Maps Embed API must be used in an iframe.") when loaded
+/// directly as a [WebViewWidget]'s own top-level page via [url]/
+/// `loadRequest` -- loading a small wrapper document via [html]/
+/// `loadHtmlString`, with the embed URL as a genuine nested `<iframe src>`
+/// inside it, satisfies that check the same way a real browser does.
 ///
 /// Deliberately renders bare content only, with no own `Scaffold`/`AppBar`:
 /// this app's bottom-nav tabs (including Donate) render inside a single
@@ -18,12 +29,25 @@ import '../../core/theme/app_typography.dart';
 /// widget as its own route (outside the bottom-nav shell) and want an
 /// `AppBar` of their own; it is not rendered by this widget itself.
 class SimpleWebViewScreen extends StatefulWidget {
-  const SimpleWebViewScreen({super.key, required this.url, this.title});
+  const SimpleWebViewScreen({super.key, this.url, this.html, this.title})
+    : assert(
+        (url == null) != (html == null),
+        'Provide exactly one of url or html',
+      );
 
   /// Optional title for callers that wrap this widget in their own
   /// `Scaffold`/`AppBar` when pushing it as a standalone route.
   final String? title;
-  final String url;
+
+  /// A remote URL to load directly as the WebView's own page. Exactly one
+  /// of [url]/[html] must be non-null.
+  final String? url;
+
+  /// A complete local HTML document to load via `loadHtmlString` instead
+  /// of a remote [url] -- see the class doc for why (nested `<iframe>`
+  /// content like the Google Maps embed). Exactly one of [url]/[html] must
+  /// be non-null.
+  final String? html;
 
   @override
   State<SimpleWebViewScreen> createState() => _SimpleWebViewScreenState();
@@ -65,8 +89,17 @@ class _SimpleWebViewScreenState extends State<SimpleWebViewScreen> {
             });
           },
         ),
-      )
-      ..loadRequest(Uri.parse(widget.url));
+      );
+    _load();
+  }
+
+  void _load() {
+    final url = widget.url;
+    if (url != null) {
+      _controller.loadRequest(Uri.parse(url));
+    } else {
+      _controller.loadHtmlString(widget.html!);
+    }
   }
 
   void _retry() {
@@ -74,7 +107,7 @@ class _SimpleWebViewScreenState extends State<SimpleWebViewScreen> {
       _isLoading = true;
       _hasError = false;
     });
-    _controller.loadRequest(Uri.parse(widget.url));
+    _load();
   }
 
   @override
