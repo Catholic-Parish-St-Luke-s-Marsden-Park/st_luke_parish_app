@@ -195,7 +195,6 @@ void main() {
         'with no request (REQ-F09-003)', () async {
       final invalid = resolveApiBaseUri(
         apiBaseUrl: 'not a url',
-        legacyBaseUrl: null,
         isRelease: false,
       );
       expect(invalid, isNull);

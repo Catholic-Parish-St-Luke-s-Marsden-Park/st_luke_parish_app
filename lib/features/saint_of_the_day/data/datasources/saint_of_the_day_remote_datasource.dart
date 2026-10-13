@@ -53,8 +53,8 @@ class SaintOfTheDayRemoteDatasource {
     final baseUri = _baseUri;
     if (baseUri == null) {
       throw SaintOfTheDayNotConfiguredFailure(
-        'No parish API origin for dateKey=$dateKey: set API_BASE_URL (or '
-        'BASE_URL) in assets/app.env.',
+        'No parish API origin for dateKey=$dateKey: set API_BASE_URL in '
+        'assets/app.env.',
       );
     }
     final uri = baseUri.replace(pathSegments: ['v1', 'saints', dateKey]);
