@@ -46,7 +46,7 @@ dependencies:
 
   shared_preferences: ^2.5.5
 
-  # Push notifications. flutter_dotenv loads assets/app.env (BASE_URL).
+  # Push notifications. flutter_dotenv loads assets/app.env (API_BASE_URL).
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0
   flutter_local_notifications: ^22.3.1
@@ -87,6 +87,13 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+
+  # iOS plugins come from CocoaPods only. With Swift Package Manager on (the
+  # Flutter default), every iOS build re-adds an SPM package to
+  # project.pbxproj, and xcodebuild archive then hangs in CI fetching the
+  # Firebase SDK a second time (see commit 08c0751).
+  config:
+    enable-swift-package-manager: false
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

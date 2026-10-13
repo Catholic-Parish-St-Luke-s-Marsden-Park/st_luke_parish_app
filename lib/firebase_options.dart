@@ -59,10 +59,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAJrnsA0rPuqfld8AFpKiUyw057KD22IOg',
-    appId: '1:899235635763:ios:327441ea45c90a27c87946',
+    appId: '1:899235635763:ios:58427b01aa8c82d7c87946',
     messagingSenderId: '899235635763',
     projectId: 'st-luke-s-parish-app',
     storageBucket: 'st-luke-s-parish-app.firebasestorage.app',
-    iosBundleId: 'au.org.stlukesmarsdenpark.stLukeParishApp',
+    iosBundleId: 'au.org.stlukesmarsdenpark.parishapp',
   );
 }

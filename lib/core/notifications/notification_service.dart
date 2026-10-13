@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' show PlatformDispatcher;
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode, visibleForTesting;
@@ -46,22 +47,39 @@ class NotificationService {
   /// Backoff between registration attempts is `attempt * _retryDelayUnit`.
   final Duration _retryDelayUnit;
 
-  /// Token endpoint (including `/tokens`) from BASE_URL in assets/app.env.
+  /// Path of the device registration route, appended to API_BASE_URL.
+  static const _devicesPath = '/v1/devices';
+
+  /// Device registration endpoint: API_BASE_URL (origin only) from
+  /// assets/app.env plus `/v1/devices`.
   /// Null, with the reason logged, if it is missing, malformed, or (in release
   /// builds) not https, so misconfiguration isn't retried as a network error.
   /// dotenv throws if assets/app.env never loaded (main.dart logs and carries
-  /// on), so that case is treated as a missing BASE_URL.
+  /// on), so that case is treated as a missing API_BASE_URL.
   Uri? get _backendUri => resolveBackendUri(
-    dotenv.isInitialized ? dotenv.maybeGet('BASE_URL') : null,
+    dotenv.isInitialized ? dotenv.maybeGet('API_BASE_URL') : null,
     isRelease: _isRelease,
   );
 
-  /// Validates and parses a raw BASE_URL value into the token endpoint.
-  /// Pulled out of [_backendUri] as a pure function so the validation rules
-  /// are unit-testable without touching dotenv or kReleaseMode.
+  /// Validates a raw API_BASE_URL value and builds the device registration
+  /// endpoint from its origin. Any path, query or fragment on the raw value is
+  /// ignored. Pulled out of [_backendUri] as a pure function so the validation
+  /// rules are unit-testable without touching dotenv or kReleaseMode.
   @visibleForTesting
-  static Uri? resolveBackendUri(String? raw, {required bool isRelease}) =>
-      validateBackendUri(raw, isRelease: isRelease, envKey: 'BASE_URL');
+  static Uri? resolveBackendUri(String? raw, {required bool isRelease}) {
+    final uri = validateBackendUri(
+      raw,
+      isRelease: isRelease,
+      envKey: 'API_BASE_URL',
+    );
+    if (uri == null) return null;
+    return Uri(
+      scheme: uri.scheme,
+      host: uri.host,
+      port: uri.hasPort ? uri.port : null,
+      path: _devicesPath,
+    );
+  }
 
   /// SharedPreferences key holding the last token the backend accepted, used
   /// to skip redundant registrations.
@@ -229,7 +247,7 @@ class NotificationService {
 
   /// Sends [token] to the backend only if it, together with the backend
   /// endpoint, differs from the last successfully registered pair — so
-  /// switching BASE_URL (e.g. emulator to production) forces a fresh
+  /// switching API_BASE_URL (e.g. emulator to production) forces a fresh
   /// registration instead of being skipped as "unchanged".
   @visibleForTesting
   Future<void> sendTokenIfChanged(String token) async {
@@ -252,10 +270,31 @@ class NotificationService {
     }
   }
 
+  /// Body for `POST /v1/devices`. Topics are omitted so the server keeps any
+  /// it has stored. [platform] is injectable for tests.
+  @visibleForTesting
+  Map<String, Object> buildRegistrationBody(String token, {String? platform}) {
+    return {
+      'fcmToken': token,
+      'platform': platform ?? (Platform.isIOS ? 'ios' : 'android'),
+      'locale': PlatformDispatcher.instance.locale.toLanguageTag(),
+    };
+  }
+
+  String _describeProblem(String body) {
+    try {
+      final json = jsonDecode(body);
+      if (json is Map<String, dynamic>) {
+        return 'code=${json['code']} requestId=${json['requestId']}';
+      }
+    } catch (_) {}
+    return 'unparseable response body';
+  }
+
   /// Posts [token] to [uri], retrying with linear backoff on failure. Returns
   /// true if the server responded with a 2xx status. Takes [uri] explicitly,
-  /// rather than resolving BASE_URL itself, so the retry/backoff behaviour is
-  /// unit-testable against an injected [http.Client] independent of BASE_URL
+  /// rather than resolving API_BASE_URL itself, so the retry/backoff behaviour is
+  /// unit-testable against an injected [http.Client] independent of API_BASE_URL
   /// resolution.
   @visibleForTesting
   Future<bool> postToken(Uri uri, String token, {int maxRetries = 3}) async {
@@ -265,18 +304,31 @@ class NotificationService {
             .post(
               uri,
               headers: {'Content-Type': 'application/json'},
-              body: jsonEncode({'fcm_token': token}),
+              body: jsonEncode(buildRegistrationBody(token)),
             )
             .timeout(const Duration(seconds: 10));
 
-        if (response.statusCode >= 200 && response.statusCode < 300) {
+        final status = response.statusCode;
+        if (status >= 200 && status < 300) {
           return true;
         }
 
+        // RFC 9457 problem body: log only the stable code and request id.
         debugPrint(
-          'Token registration failed (status ${response.statusCode}): '
-          '${response.body}',
+          'Token registration failed (status $status): '
+          '${_describeProblem(response.body)}',
         );
+
+        // A 4xx other than 429 (bad request, App Check) will not succeed on
+        // retry, so give up immediately.
+        if (status >= 400 && status < 500 && status != 429) {
+          return false;
+        }
+        // Rate limited (20 per 15 min per IP): back off much longer.
+        if (status == 429 && attempt < maxRetries) {
+          await Future.delayed(_retryDelayUnit * attempt * 5);
+          continue;
+        }
       } catch (e) {
         debugPrint('Token registration attempt $attempt failed: $e');
       }

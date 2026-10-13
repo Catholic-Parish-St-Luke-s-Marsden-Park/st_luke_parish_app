@@ -184,6 +184,7 @@ platform :ios do
         "-u", "RUBYOPT", "-u", "RUBYLIB",
         "flutter", "build", "ipa",
         "--release",
+        "--verbose",
         "--build-number=#{ENV.fetch('GITHUB_RUN_NUMBER', '1')}",
         "--export-options-plist=ios/ExportOptions.plist"
       )
