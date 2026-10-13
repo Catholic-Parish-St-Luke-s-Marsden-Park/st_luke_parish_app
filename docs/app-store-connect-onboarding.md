@@ -185,13 +185,19 @@ secret/cert expires).
    Store" (the exact name doesn't matter — the Fastfile reads it back
    dynamically at build time rather than expecting a specific string) →
    **Generate**, then **Download** the `.mobileprovision` file.
-4. **Re-download `GoogleService-Info.plist` for the corrected bundle ID** —
-   the committed file's `BUNDLE_ID` still references the old identifier
-   (`au.org.stlukesmarsdenpark.stLukeParishApp`). In the Firebase console
-   (project `st-luke-s-parish-app`), add/select an iOS app registered under
-   `au.org.stlukesmarsdenpark.parishapp`, download its `GoogleService-Info.plist`,
-   and replace `ios/Runner/GoogleService-Info.plist` with it. Until this is
-   done, push notifications may silently fail to register.
+4. **Point Firebase at the corrected bundle ID** — done in the repo (#43).
+   The Firebase iOS app for `au.org.stlukesmarsdenpark.parishapp` is
+   `1:899235635763:ios:58427b01aa8c82d7c87946`, and
+   `ios/Runner/GoogleService-Info.plist`, the iOS block of
+   `lib/firebase_options.dart` and `firebase.json` all reference it.
+   `main.dart` initialises Firebase from `DefaultFirebaseOptions`, so
+   `lib/firebase_options.dart`, not the plist, decides which Firebase app an
+   iOS build registers as; keep the two in step if the app is ever
+   re-registered. One console step remains: under **Project Settings → Cloud
+   Messaging → Apple app configuration**, upload the APNs auth key (.p8) for
+   this app. Without it FCM rejects iOS sends with `THIRD_PARTY_AUTH_ERROR`.
+   The old iOS app (`au.org.stlukesmarsdenpark.stLukeParishApp`) can be
+   deleted once no installed build uses it.
 5. **Add the GitHub repository secrets** — under
    **Settings → Secrets and variables → Actions**:
 
