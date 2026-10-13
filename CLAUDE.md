@@ -22,7 +22,7 @@ The app also reads parish content that staff edit in the parish API (parish_app_
 
 Phase 2 may introduce Supabase for backend-supported capabilities such as notifications. Phase 1 code should remain ready for future backend integration, but must not overengineer backend patterns before they are needed.
 
-The app must only consume public parish website content and the parish API's public, read-only endpoints (`GET /v1/*`). The only write the app makes is push-token registration (`POST /tokens`). Never call the parish API's `/admin` console or any authenticated endpoint. Do not assume other private APIs, admin endpoints, or unpublished data sources exist.
+The app must only consume public parish website content and the parish API's public, read-only endpoints (`GET /v1/*`). The only write the app makes is push-token registration (`POST /v1/devices`). Never call the parish API's `/admin` console or any authenticated endpoint. Do not assume other private APIs, admin endpoints, or unpublished data sources exist.
 
 ## Tech Stack
 
@@ -447,7 +447,7 @@ Do not mark a feature complete until its code, tests, and UI states are verified
 ## Security and Reliability Rules
 
 - Scrape public content only
-- Call only the parish API's public, read-only `GET /v1/*` endpoints, plus `POST /tokens` for push registration
+- Call only the parish API's public, read-only `GET /v1/*` endpoints, plus `POST /v1/devices` for push registration
 - Do not access private, authenticated, or administrative pages or endpoints
 - Do not hardcode secrets, tokens, or credentials in source code
 - Add request timeouts and safe failure handling

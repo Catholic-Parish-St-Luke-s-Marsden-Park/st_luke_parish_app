@@ -15,7 +15,7 @@ Future<void> main() async {
   // Push notification setup is best-effort: Mass times, bulletins and contact
   // details don't depend on it, so a failure here must never stop runApp.
   try {
-    // App-side config (BASE_URL) only; must load before NotificationService reads it.
+    // App-side config (API_BASE_URL) only; must load before NotificationService reads it.
     await dotenv.load(fileName: 'assets/app.env');
   } catch (e) {
     debugPrint('Failed to load assets/app.env: $e');

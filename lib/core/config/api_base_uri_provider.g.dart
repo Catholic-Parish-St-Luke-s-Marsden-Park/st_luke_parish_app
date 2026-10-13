@@ -11,10 +11,9 @@ part of 'api_base_uri_provider.dart';
 /// Origin of the parish API (parish_app_service), e.g.
 /// `https://parish-app-service.fly.dev`, or null when it isn't configured.
 ///
-/// Read from `API_BASE_URL` in assets/app.env. Until that is set, falls back
-/// to the origin of `BASE_URL`, which holds the full `/tokens` endpoint on
-/// the same service. dotenv throws if assets/app.env never loaded (main.dart
-/// logs and carries on), so that case is treated as both keys missing.
+/// Read from `API_BASE_URL` in assets/app.env. dotenv throws if
+/// assets/app.env never loaded (main.dart logs and carries on), so that case
+/// is treated as `API_BASE_URL` missing.
 
 @ProviderFor(apiBaseUri)
 final apiBaseUriProvider = ApiBaseUriProvider._();
@@ -22,20 +21,18 @@ final apiBaseUriProvider = ApiBaseUriProvider._();
 /// Origin of the parish API (parish_app_service), e.g.
 /// `https://parish-app-service.fly.dev`, or null when it isn't configured.
 ///
-/// Read from `API_BASE_URL` in assets/app.env. Until that is set, falls back
-/// to the origin of `BASE_URL`, which holds the full `/tokens` endpoint on
-/// the same service. dotenv throws if assets/app.env never loaded (main.dart
-/// logs and carries on), so that case is treated as both keys missing.
+/// Read from `API_BASE_URL` in assets/app.env. dotenv throws if
+/// assets/app.env never loaded (main.dart logs and carries on), so that case
+/// is treated as `API_BASE_URL` missing.
 
 final class ApiBaseUriProvider extends $FunctionalProvider<Uri?, Uri?, Uri?>
     with $Provider<Uri?> {
   /// Origin of the parish API (parish_app_service), e.g.
   /// `https://parish-app-service.fly.dev`, or null when it isn't configured.
   ///
-  /// Read from `API_BASE_URL` in assets/app.env. Until that is set, falls back
-  /// to the origin of `BASE_URL`, which holds the full `/tokens` endpoint on
-  /// the same service. dotenv throws if assets/app.env never loaded (main.dart
-  /// logs and carries on), so that case is treated as both keys missing.
+  /// Read from `API_BASE_URL` in assets/app.env. dotenv throws if
+  /// assets/app.env never loaded (main.dart logs and carries on), so that case
+  /// is treated as `API_BASE_URL` missing.
   ApiBaseUriProvider._()
     : super(
         from: null,
@@ -69,4 +66,4 @@ final class ApiBaseUriProvider extends $FunctionalProvider<Uri?, Uri?, Uri?>
   }
 }
 
-String _$apiBaseUriHash() => r'7914176bb547c399fa42f366d2d09779f42bcf26';
+String _$apiBaseUriHash() => r'd1c4a9902407363e12913ef6f044729e2c464725';

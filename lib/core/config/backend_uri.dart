@@ -4,8 +4,9 @@ import 'package:flutter/foundation.dart';
 ///
 /// Returns null, with the reason logged, if [raw] is missing, malformed or
 /// (in release builds) not https. [envKey] only names the setting in the
-/// log line. Shared by `BASE_URL` (push token registration) and
-/// `API_BASE_URL` (the parish API), so both follow the same rules.
+/// log line. Shared by the parish API origin provider and push token
+/// registration, which both read `API_BASE_URL`, so both follow the same
+/// rules.
 Uri? validateBackendUri(
   String? raw, {
   required bool isRelease,
