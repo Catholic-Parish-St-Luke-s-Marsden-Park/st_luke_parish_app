@@ -12,7 +12,7 @@ sealed class MinistriesFailure implements Exception {
   String toString() => '$runtimeType: $message';
 }
 
-/// No valid parish API origin is configured (`API_BASE_URL`/`BASE_URL` in
+/// No valid parish API origin is configured (`API_BASE_URL` in
 /// assets/app.env), so no request was sent.
 final class MinistriesNotConfiguredFailure extends MinistriesFailure {
   const MinistriesNotConfiguredFailure(super.message);

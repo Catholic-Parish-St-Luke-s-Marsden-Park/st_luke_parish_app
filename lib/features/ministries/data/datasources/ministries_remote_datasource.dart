@@ -22,7 +22,7 @@ class MinistriesRemoteDatasource {
 
   final http.Client _client;
 
-  /// API origin, or null when `API_BASE_URL`/`BASE_URL` is not configured.
+  /// API origin, or null when `API_BASE_URL` is not configured.
   final Uri? _baseUri;
   final RequestHeadersBuilder? _extraHeaders;
 
@@ -46,8 +46,7 @@ class MinistriesRemoteDatasource {
     final baseUri = _baseUri;
     if (baseUri == null) {
       throw const MinistriesNotConfiguredFailure(
-        'No parish API origin: set API_BASE_URL (or BASE_URL) in '
-        'assets/app.env.',
+        'No parish API origin: set API_BASE_URL in assets/app.env.',
       );
     }
     final uri = baseUri.replace(pathSegments: pathSegments);

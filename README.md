@@ -67,7 +67,6 @@ API_BASE_URL=https://parish-app-service.fly.dev
 ```
 
 - Origin only, no path. Release builds require `https://`.
-- If `API_BASE_URL` is unset, the origin of `BASE_URL` is used instead.
 - The app only calls `GET /v1/ministries` and `GET /v1/ministries/{id}`.
 
 The last good response is cached on the device and refreshed in the

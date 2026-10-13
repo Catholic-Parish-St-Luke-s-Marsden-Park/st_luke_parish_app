@@ -37,11 +37,7 @@ void main() {
             '— see README.md > Push notifications.',
       );
       expect(
-        resolveApiBaseUri(
-          apiBaseUrl: apiBaseUrl,
-          legacyBaseUrl: null,
-          isRelease: true,
-        ),
+        resolveApiBaseUri(apiBaseUrl: apiBaseUrl, isRelease: true),
         isNotNull,
         reason:
             'API_BASE_URL must be an https origin for release builds; '
