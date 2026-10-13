@@ -9,19 +9,19 @@ part of 'saint_of_the_day_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Wires the concrete [SaintOfTheDayRepositoryImpl] behind the abstract
-/// [SaintOfTheDayRepository] contract, so a future Supabase-backed cache
-/// (see ADR-0005) can be swapped in later without touching presentation
-/// code — same pattern as `bulletinsRepositoryProvider`. `Future`-typed
-/// because `SharedPreferences.getInstance()` is itself async.
+/// [SaintOfTheDayRepository] contract (REQ-F09-017): the parish API origin
+/// comes from `apiBaseUriProvider` and the client from `httpClientProvider`,
+/// as in `ministriesRepositoryProvider`. `Future`-typed because
+/// `SharedPreferences.getInstance()` is itself async.
 
 @ProviderFor(saintOfTheDayRepository)
 final saintOfTheDayRepositoryProvider = SaintOfTheDayRepositoryProvider._();
 
 /// Wires the concrete [SaintOfTheDayRepositoryImpl] behind the abstract
-/// [SaintOfTheDayRepository] contract, so a future Supabase-backed cache
-/// (see ADR-0005) can be swapped in later without touching presentation
-/// code — same pattern as `bulletinsRepositoryProvider`. `Future`-typed
-/// because `SharedPreferences.getInstance()` is itself async.
+/// [SaintOfTheDayRepository] contract (REQ-F09-017): the parish API origin
+/// comes from `apiBaseUriProvider` and the client from `httpClientProvider`,
+/// as in `ministriesRepositoryProvider`. `Future`-typed because
+/// `SharedPreferences.getInstance()` is itself async.
 
 final class SaintOfTheDayRepositoryProvider
     extends
@@ -34,10 +34,10 @@ final class SaintOfTheDayRepositoryProvider
         $FutureModifier<SaintOfTheDayRepository>,
         $FutureProvider<SaintOfTheDayRepository> {
   /// Wires the concrete [SaintOfTheDayRepositoryImpl] behind the abstract
-  /// [SaintOfTheDayRepository] contract, so a future Supabase-backed cache
-  /// (see ADR-0005) can be swapped in later without touching presentation
-  /// code — same pattern as `bulletinsRepositoryProvider`. `Future`-typed
-  /// because `SharedPreferences.getInstance()` is itself async.
+  /// [SaintOfTheDayRepository] contract (REQ-F09-017): the parish API origin
+  /// comes from `apiBaseUriProvider` and the client from `httpClientProvider`,
+  /// as in `ministriesRepositoryProvider`. `Future`-typed because
+  /// `SharedPreferences.getInstance()` is itself async.
   SaintOfTheDayRepositoryProvider._()
     : super(
         from: null,
@@ -65,22 +65,22 @@ final class SaintOfTheDayRepositoryProvider
 }
 
 String _$saintOfTheDayRepositoryHash() =>
-    r'f2291e27e3f4bdaaaf03a61fd0996b49d2076487';
+    r'19698d290d8d0f48df5d6e3cb3a22f13dbe6ffc6';
 
 /// Exposes today's saint to [SaintOfTheDayScreen] as
-/// `AsyncValue<SaintOfTheDay>` (REQ-F06-011). `@riverpod` generates an
-/// `AutoDispose...` provider by default; the on-device cache in `data/`
-/// (not this provider) is what avoids re-calling OpenRouter more than once
-/// per Sydney calendar day (REQ-F06-008).
+/// `AsyncValue<SaintOfTheDay>`. `@riverpod` generates an `AutoDispose...`
+/// provider by default; the on-device cache in `data/` (not this provider)
+/// is what avoids requesting the same Sydney day from the parish API more
+/// than once (REQ-F09-011).
 
 @ProviderFor(saintOfTheDay)
 final saintOfTheDayProvider = SaintOfTheDayProvider._();
 
 /// Exposes today's saint to [SaintOfTheDayScreen] as
-/// `AsyncValue<SaintOfTheDay>` (REQ-F06-011). `@riverpod` generates an
-/// `AutoDispose...` provider by default; the on-device cache in `data/`
-/// (not this provider) is what avoids re-calling OpenRouter more than once
-/// per Sydney calendar day (REQ-F06-008).
+/// `AsyncValue<SaintOfTheDay>`. `@riverpod` generates an `AutoDispose...`
+/// provider by default; the on-device cache in `data/` (not this provider)
+/// is what avoids requesting the same Sydney day from the parish API more
+/// than once (REQ-F09-011).
 
 final class SaintOfTheDayProvider
     extends
@@ -91,10 +91,10 @@ final class SaintOfTheDayProvider
         >
     with $FutureModifier<SaintOfTheDay>, $FutureProvider<SaintOfTheDay> {
   /// Exposes today's saint to [SaintOfTheDayScreen] as
-  /// `AsyncValue<SaintOfTheDay>` (REQ-F06-011). `@riverpod` generates an
-  /// `AutoDispose...` provider by default; the on-device cache in `data/`
-  /// (not this provider) is what avoids re-calling OpenRouter more than once
-  /// per Sydney calendar day (REQ-F06-008).
+  /// `AsyncValue<SaintOfTheDay>`. `@riverpod` generates an `AutoDispose...`
+  /// provider by default; the on-device cache in `data/` (not this provider)
+  /// is what avoids requesting the same Sydney day from the parish API more
+  /// than once (REQ-F09-011).
   SaintOfTheDayProvider._()
     : super(
         from: null,

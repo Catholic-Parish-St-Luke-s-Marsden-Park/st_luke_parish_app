@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 
 /// Shared failure treatment (REQ-F06-011): a user-friendly [message] (no
-/// raw exception text) plus an optional retry action. Used for network
-/// failures, parsing failures, and the "not configured" (missing API key)
-/// state alike — the caller supplies the message text appropriate to the
+/// raw exception text) plus an optional retry action. Used for every
+/// failure kind (REQ-F09-016) — the caller supplies the message text appropriate to the
 /// failure kind.
 class SaintOfTheDayErrorView extends StatelessWidget {
   const SaintOfTheDayErrorView({
@@ -21,7 +20,9 @@ class SaintOfTheDayErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Padding(
+    // Scrollable so the longer feature 09 messages reflow rather than
+    // overflow at large system text sizes on small phones (REQ-F09-016).
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 20),
       child: Column(
         children: [

@@ -1,0 +1,22 @@
+# Journal — 09-saint-of-the-day-api — verifier
+
+- 2026-10-12_23-52 Baseline: HEAD `adda2f4`, 0 behind `origin/main` `6ef2edd`, clean tree. Matches the brief.
+- I read the BA, coder and visualiser plans, ADR-0005, ADR-0008 and `active-risks.md`. I read every changed `lib/features/saint_of_the_day` file and every feature test file directly.
+- Gates:
+  - `dart format` 201 files, 0 changed.
+  - `flutter analyze` clean.
+  - `flutter test` 611 passed, 2 skipped, 0 failed.
+  - `--exclude-tags live` 606 passed, 2 skipped, 0 failed.
+- build_runner:
+  - The incremental run skipped all inputs, so it proved nothing.
+  - `build_runner clean` followed by build wrote 16 outputs, and `git status` stayed empty. The committed `.g.dart` matches its source, and there was nothing to restore.
+- Traceability: 23 of 23 requirements are traced, with no mismatches. Observations only (not defects):
+  - The whitespace-only-section rendering gap is cosmetic.
+  - The cache read and prefs init sit outside the typed wrapper. The screen still shows the generic message.
+  - The CLAUDE.md overview wording on parish API usage is slightly stale. That is the user's file to change.
+- Risk register:
+  - Appended a correction to RISK-008 (only 404 `saint_not_available` maps to "check your date and time").
+  - Added RISK-019: revoke or rotate the old OpenRouter key. This is a user decision, previously only recorded in the BA plan, ADR and memory.
+  - Added RISK-020: the visualiser covered only the live success state. Low and non-blocking.
+- Visualiser judgement: adequate given the automated coverage. Still, no human did a hands-on pass and no device run tested failure states or large font. A short optional device check is recommended during Deployer.
+- Verdict: PASS. Stopping for user approval. Not committed.

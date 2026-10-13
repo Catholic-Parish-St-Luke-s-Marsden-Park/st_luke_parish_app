@@ -42,20 +42,18 @@ flutter run
 on generated output (`.g.dart`), and the app will not compile without it. Use
 `dart run build_runner watch --delete-conflicting-outputs` while developing.
 
-### Saint of the Day (OpenRouter API key)
+### Saint of the Day (Parish API)
 
-The "Saint of the Day" feature calls OpenRouter directly and needs an API key
-supplied at build/run time — it is never hardcoded in source (see
-`.claude/decisions/0005-saint-of-the-day-direct-openrouter-call.md`):
+The "Saint of the Day" screen loads from the parish API's public
+`GET /v1/saints/{date}`, where `{date}` is today's `YYYY-MM-DD` date in Sydney
+as computed on the device. No API key or `--dart-define` is needed: the origin
+is the same `API_BASE_URL` as the Ministries tab (below). Without a valid
+origin the screen shows a "not set up on this build" message and sends no
+request. See `.claude/decisions/0008-saint-of-the-day-from-parish-api.md`.
 
-```bash
-flutter run --dart-define=OPENROUTER_API_KEY=sk-or-...
-```
-
-For a release build, pass the same `--dart-define` flag to `flutter build`.
-Without it, the screen shows a "not configured" message instead of sending an
-unauthenticated request. CI/release-build wiring for this define is a
-Deployer-phase follow-up for feature 06, not yet automated.
+The result is cached on the device for the rest of that Sydney day. If the
+server hasn't prepared the day's saint yet (just after midnight), the screen
+says so and offers "Try again".
 
 ### Parish API (Ministries)
 
@@ -67,7 +65,8 @@ API_BASE_URL=https://parish-app-service.fly.dev
 ```
 
 - Origin only, no path. Release builds require `https://`.
-- The app only calls `GET /v1/ministries` and `GET /v1/ministries/{id}`.
+- The app only calls `GET /v1/ministries`, `GET /v1/ministries/{id}` and
+  `GET /v1/saints/{date}` (plus `POST /v1/devices` for push registration).
 
 The last good response is cached on the device and refreshed in the
 background; pull down on the tab to refresh by hand. On a first launch with no
@@ -158,13 +157,13 @@ Registration behaviour (`lib/core/notifications/notification_service.dart`):
 Set `API_BASE_URL` in `assets/app.env` to the backend origin only (no path).
 The app appends `/v1/devices` itself:
 
-| Where the app runs | `API_BASE_URL` |
-|---|---|
-| Production / release builds | `https://parish-app-service.fly.dev` |
-| Android emulator (local backend) | `http://10.0.2.2:8080` |
-| Physical device on Wi-Fi | `http://<your-PC-LAN-IP>:8080` (allow port 8080 through the firewall) |
-| Android device over USB | `http://localhost:8080` after `adb reverse tcp:8080 tcp:8080` |
-| iOS simulator | `http://localhost:8080` |
+| Where the app runs               | `API_BASE_URL`                                                        |
+| -------------------------------- | --------------------------------------------------------------------- |
+| Production / release builds      | `https://parish-app-service.fly.dev`                                  |
+| Android emulator (local backend) | `http://10.0.2.2:8080`                                                |
+| Physical device on Wi-Fi         | `http://<your-PC-LAN-IP>:8080` (allow port 8080 through the firewall) |
+| Android device over USB          | `http://localhost:8080` after `adb reverse tcp:8080 tcp:8080`         |
+| iOS simulator                    | `http://localhost:8080`                                               |
 
 Release builds require `https://` (plain `http` is rejected).
 
@@ -202,15 +201,15 @@ throttles data-only pushes.
 
 ### Troubleshooting
 
-| Symptom | Likely cause and fix |
-|---|---|
-| `Connection refused` on registration | `localhost` on the device points at the device itself. Use `10.0.2.2` (emulator), `adb reverse`, or the PC's LAN IP; make sure the backend is running |
-| `Cleartext HTTP traffic not permitted` | Android blocks plain `http` to non-localhost hosts. Use `adb reverse` or an `https` URL |
-| Registration fails with a `4xx` | Not retried. Check the logged `code` and `requestId` against the backend; a bad request body or App Check failure won't succeed on retry |
-| Registration fails with `429` | Rate limited (20 per 15 min per IP). The app backs off and retries; wait and try again |
-| No registration and no logs in a release build | `API_BASE_URL` missing, malformed or not `https`. Run the release check above |
-| iOS: no token / `APNs token unavailable` | APNs key not uploaded to Firebase, Push Notifications capability missing, or running on a simulator |
-| Emulator crash `SIGILL` in `libwebviewchromium.so` | Emulator WebView bug, unrelated to notifications. Update WebView, cold boot the emulator, or test on a real device |
+| Symptom                                            | Likely cause and fix                                                                                                                                  |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Connection refused` on registration               | `localhost` on the device points at the device itself. Use `10.0.2.2` (emulator), `adb reverse`, or the PC's LAN IP; make sure the backend is running |
+| `Cleartext HTTP traffic not permitted`             | Android blocks plain `http` to non-localhost hosts. Use `adb reverse` or an `https` URL                                                               |
+| Registration fails with a `4xx`                    | Not retried. Check the logged `code` and `requestId` against the backend; a bad request body or App Check failure won't succeed on retry              |
+| Registration fails with `429`                      | Rate limited (20 per 15 min per IP). The app backs off and retries; wait and try again                                                                |
+| No registration and no logs in a release build     | `API_BASE_URL` missing, malformed or not `https`. Run the release check above                                                                         |
+| iOS: no token / `APNs token unavailable`           | APNs key not uploaded to Firebase, Push Notifications capability missing, or running on a simulator                                                   |
+| Emulator crash `SIGILL` in `libwebviewchromium.so` | Emulator WebView bug, unrelated to notifications. Update WebView, cold boot the emulator, or test on a real device                                    |
 
 ## Testing
 

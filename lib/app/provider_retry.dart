@@ -10,10 +10,9 @@
 /// This app does not want that. Each feature's async surface already
 /// renders an explicit error view with a "Try again" button, so a failure
 /// should reach the user immediately and let them decide. Retrying
-/// silently would leave them on a spinner for ~38s, and for the paid
-/// OpenRouter call behind `saintOfTheDayProvider` it would also issue ten
-/// more requests for failures that cannot succeed on retry — a revoked
-/// key's 401, or a 429 that each attempt makes worse.
+/// silently would leave them on a spinner for ~38s, and would issue ten
+/// more requests for failures that cannot succeed on retry — such as the
+/// parish API's 401 `app_check_required` or 404 `saint_not_available`.
 ///
 /// Returning `null` means "do not retry". Shared by `main.dart` and the
 /// provider tests so production and test behaviour cannot drift apart.

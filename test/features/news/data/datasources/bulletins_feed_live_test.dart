@@ -1,3 +1,8 @@
+// Real-network test: excluded from offline runs with
+// `flutter test --exclude-tags live` (see dart_test.yaml, RISK-007).
+@Tags(['live'])
+library;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:st_luke_parish_app/features/news/data/datasources/bulletins_feed_datasource.dart';

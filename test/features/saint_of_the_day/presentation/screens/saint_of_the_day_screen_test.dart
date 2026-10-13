@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/app/provider_retry.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/domain/entities/saint_of_the_day.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/domain/failures/saint_of_the_day_failure.dart';
 import 'package:st_luke_parish_app/features/saint_of_the_day/presentation/providers/saint_of_the_day_provider.dart';
@@ -11,7 +12,7 @@ import 'package:st_luke_parish_app/features/saint_of_the_day/presentation/screen
 /// Covers REQ-F06-011 (explicit loading/success/error UI states) and
 /// REQ-F06-013 (no icon/emoji glyphs) through the full `SaintOfTheDayScreen`
 /// widget tree, overriding `saintOfTheDayProvider` directly (never the real
-/// OpenRouter datasource in widget tests) — same override-the-outermost-
+/// parish API datasource in widget tests) — same override-the-outermost-
 /// provider approach as `news_screen_test.dart`.
 const _saint = SaintOfTheDay(
   name: 'Saint John Vianney, Priest',
@@ -143,5 +144,151 @@ void main() {
         findsOneWidget,
       );
     });
+  });
+
+  // Tester phase additions.
+  group('tester: REQ-F09-013/015/016 behaviour', () {
+    testWidgets('the header shows the server displayDate (REQ-F09-013)', (
+      tester,
+    ) async {
+      await _pump(tester, override: (ref) async => _saint);
+      await tester.pumpAndSettle();
+
+      expect(find.text('SEPTEMBER 1'), findsOneWidget);
+    });
+
+    testWidgets('a full saint with an empty saying shows the other five '
+        'sections and hides Famous Saying (REQ-F09-010)', (tester) async {
+      const noSaying = SaintOfTheDay(
+        name: 'Saint John Vianney, Priest',
+        feast: 'August 4 - Optional Memorial',
+        bornDied: '1786 - 1859',
+        about: 'A dedicated parish priest.',
+        saying: '',
+        didYouKnow: 'A fact.',
+        patronOf: 'Parish priests',
+        prayer: 'A short prayer.',
+        dateKey: '2026-09-01',
+        displayDate: 'September 1',
+      );
+      await _pump(tester, override: (ref) async => noSaying);
+      await tester.pumpAndSettle();
+
+      for (final label in [
+        'ABOUT',
+        'BORN & DIED',
+        'DID YOU KNOW?',
+        'PATRON OF',
+        'PRAYER',
+      ]) {
+        expect(find.text(label), findsOneWidget, reason: label);
+      }
+      expect(find.text('FAMOUS SAYING'), findsNothing);
+    });
+
+    testWidgets('Try again re-runs the load: NotReady then success shows '
+        'the saint (REQ-F09-015)', (tester) async {
+      var calls = 0;
+      // The app's own retry policy (main.dart): without it Riverpod's
+      // default automatic retry would recover before Try again is shown.
+      await tester.pumpWidget(
+        ProviderScope(
+          retry: noAutomaticRetry,
+          overrides: [
+            saintOfTheDayProvider.overrideWith((ref) {
+              calls++;
+              if (calls == 1) {
+                return Future.error(const SaintOfTheDayNotReadyFailure('503'));
+              }
+              return Future.value(_saint);
+            }),
+          ],
+          child: const MaterialApp(home: SaintOfTheDayScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('still being prepared'), findsOneWidget);
+
+      await tester.tap(find.text('Try again'));
+      await tester.pumpAndSettle();
+
+      expect(calls, 2);
+      expect(find.text('Saint John Vianney, Priest'), findsOneWidget);
+      expect(find.text('Try again'), findsNothing);
+    });
+
+    testWidgets('an unexpected non-failure error shows the generic message, '
+        'not its text', (tester) async {
+      await _pump(
+        tester,
+        override: (ref) => Future.error(StateError('internal detail')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          "Something went wrong loading today's saint. Please try again.",
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('internal detail'), findsNothing);
+      expect(find.text('Try again'), findsOneWidget);
+    });
+  });
+
+  group('REQ-F09-016: one exact message per failure, each with Try again', () {
+    const cases = <(SaintOfTheDayFailure, String)>[
+      (
+        SaintOfTheDayNotReadyFailure('503 code=saint_not_ready'),
+        "Today's saint is still being prepared. Please try again in a few "
+            'minutes.',
+      ),
+      (
+        SaintOfTheDayDateUnavailableFailure('404 code=saint_not_available'),
+        "Today's saint isn't available for your phone's current date. "
+            'Please check your date and time settings, then try again.',
+      ),
+      (
+        SaintOfTheDayUnavailableFailure('401 code=app_check_required'),
+        'Saint of the Day is temporarily unavailable. Please try again later.',
+      ),
+      (
+        SaintOfTheDayNetworkFailure('offline'),
+        "Unable to fetch today's saint. Please check your connection and "
+            'try again.',
+      ),
+      (
+        SaintOfTheDayNotConfiguredFailure('no API_BASE_URL'),
+        "Saint of the Day isn't set up on this build yet. Please let the "
+            'parish app team know.',
+      ),
+      (
+        SaintOfTheDayParsingFailure('empty name'),
+        "Something went wrong loading today's saint. Please try again.",
+      ),
+    ];
+
+    for (final (failure, message) in cases) {
+      testWidgets('${failure.runtimeType}', (tester) async {
+        await _pump(tester, override: (ref) => Future.error(failure));
+        await tester.pumpAndSettle();
+
+        expect(find.text(message), findsOneWidget);
+        expect(find.text('Try again'), findsOneWidget);
+        // Diagnostics (status, code, requestId) never reach the UI.
+        expect(find.textContaining(failure.message), findsNothing);
+        expect(
+          tester
+              .getSize(
+                find.ancestor(
+                  of: find.text('Try again'),
+                  matching: find.byType(InkWell),
+                ),
+              )
+              .height,
+          greaterThanOrEqualTo(48),
+        );
+      });
+    }
   });
 }

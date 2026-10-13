@@ -127,7 +127,7 @@ void main() {
         await pumpShell(
           tester,
           overrides: [
-            // Never the real OpenRouter datasource/SharedPreferences in a
+            // Never the real parish API datasource/SharedPreferences in a
             // shell-level test — the screen's own content/failure states
             // are covered by saint_of_the_day_screen_test.dart.
             saintOfTheDayProvider.overrideWith(

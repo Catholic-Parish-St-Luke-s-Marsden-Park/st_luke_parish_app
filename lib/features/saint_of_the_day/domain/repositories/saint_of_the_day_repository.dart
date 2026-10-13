@@ -9,8 +9,8 @@ import '../entities/saint_of_the_day.dart';
 /// rather than letting a raw exception escape.
 abstract class SaintOfTheDayRepository {
   /// Returns today's saint (`Australia/Sydney` calendar day), serving a
-  /// same-day cached value when available (REQ-F06-008) and otherwise
-  /// calling OpenRouter, parsing the response, and caching the result
-  /// before returning it (REQ-F06-009).
+  /// same-day cached value when available (REQ-F09-011) and otherwise
+  /// fetching it from the parish API's `GET /v1/saints/{date}` and caching
+  /// the result before returning it (REQ-F09-012).
   Future<SaintOfTheDay> getTodaysSaint();
 }

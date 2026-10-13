@@ -180,4 +180,33 @@ void main() {
       });
     },
   );
+
+  group('REQ-F09-016: the feature 09 failure states reflow without overflow '
+      'at 1.0x, 1.5x and 2.0x text scale on the smallest phone', () {
+    const failures = <SaintOfTheDayFailure>[
+      SaintOfTheDayNotReadyFailure('503'),
+      SaintOfTheDayDateUnavailableFailure('404'),
+      SaintOfTheDayUnavailableFailure('401'),
+      SaintOfTheDayNetworkFailure('offline'),
+      SaintOfTheDayNotConfiguredFailure('no base'),
+      SaintOfTheDayParsingFailure('empty'),
+    ];
+    for (final failure in failures) {
+      for (final scaler in [
+        TextScaler.noScaling,
+        TextScaler.linear(1.5),
+        TextScaler.linear(2.0),
+      ]) {
+        testWidgets('${failure.runtimeType} at $scaler', (tester) async {
+          await expectNoOverflowAt(
+            tester,
+            smallPhoneSize,
+            scaler,
+            override: (ref) => Future.error(failure),
+          );
+          expect(find.text('Try again'), findsOneWidget);
+        });
+      }
+    }
+  });
 }

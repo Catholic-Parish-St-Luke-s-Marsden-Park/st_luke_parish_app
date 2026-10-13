@@ -4,11 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/entities/saint_of_the_day.dart';
 
-/// Cache boundary for today's saint (REQ-F06-010). Deliberately narrow
-/// (read/write by date key only) so a future Supabase/Firebase-backed
-/// shared cache can replace [SharedPreferencesSaintOfTheDayCache] without
-/// any change to `SaintOfTheDayRepositoryImpl`, the domain entity, or the
-/// presentation layer — see ADR-0005.
+/// Cache boundary for today's saint (REQ-F06-010, kept by D-2 of feature
+/// 09). Deliberately narrow (read/write by date key only), so it saves a
+/// request to the parish API per Sydney day without the repository, the
+/// domain entity or the presentation layer depending on how it is stored
+/// — see ADR-0008.
 abstract class SaintOfTheDayCache {
   /// Returns the cached entry for [dateKey] (`YYYY-MM-DD`, Sydney-local),
   /// or `null` on a cache miss.
