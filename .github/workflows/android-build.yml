@@ -1,0 +1,90 @@
+name: Android Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to build a signed Android App Bundle from"
+        required: false
+        default: main
+
+concurrency:
+  group: android-build-${{ inputs.branch || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || 'main' }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - run: flutter analyze
+
+      # assets/app.env is bundled, non-secret, build-time config — the
+      # committed default points at a local dev loopback, so release builds
+      # overwrite it here (same values as the iOS workflow).
+      - name: Write production assets/app.env
+        run: |
+          cat > assets/app.env <<'EOF'
+          BASE_URL=https://parish-app-service.fly.dev/tokens
+          API_BASE_URL=https://parish-app-service.fly.dev
+          EOF
+
+      - name: Release-readiness gate
+        run: RELEASE_CHECK=true flutter test test/release_readiness_test.dart
+
+      - name: Verify generated code is up to date
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          git diff --exit-code -- '*.g.dart' '*.freezed.dart'
+
+      # Decodes the upload keystore and writes android/key.properties, which
+      # android/app/build.gradle.kts reads to sign the release bundle. Both
+      # files are gitignored and only ever exist on the runner.
+      - name: Configure release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for v in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!v}" ]; then
+              echo "::error::Missing required secret $v"
+              exit 1
+            fi
+          done
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          {
+            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyPassword=$ANDROID_KEY_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "storeFile=upload-keystore.jks"
+          } > android/key.properties
+
+      # Play requires a strictly increasing versionCode per upload; the run
+      # number provides that. versionName still comes from pubspec.yaml.
+      - name: Build signed App Bundle
+        run: flutter build appbundle --release --build-number=${{ github.run_number }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 30
