@@ -91,9 +91,9 @@ void main() {
       final expected = [
         (
           label: 'Phone',
-          value: '(02) 8530 0173',
+          value: '(02) 7261 0246',
           action: ContactAction.call,
-          actionTarget: 'tel:0285300173',
+          actionTarget: 'tel:0272610246',
           subtitle: null,
         ),
         (
@@ -179,13 +179,13 @@ void main() {
 
   group('REQ-F03-013: tapping call/email/url tiles launches the '
       'corresponding tel:/mailto:/https: URI', () {
-    testWidgets('tapping Phone launches tel:0285300173', (tester) async {
+    testWidgets('tapping Phone launches tel:0272610246', (tester) async {
       final fakeLauncher = _FakeUrlLauncherService();
       await pumpContactScreen(tester, fakeLauncher: fakeLauncher);
 
-      await tapText(tester, '(02) 8530 0173');
+      await tapText(tester, '(02) 7261 0246');
 
-      expect(fakeLauncher.launchedUrls, ['tel:0285300173']);
+      expect(fakeLauncher.launchedUrls, ['tel:0272610246']);
     });
 
     testWidgets('tapping Mobile launches tel:0422724160', (tester) async {
@@ -239,10 +239,10 @@ void main() {
       final fakeLauncher = _FakeUrlLauncherService(launchResult: false);
       await pumpContactScreen(tester, fakeLauncher: fakeLauncher);
 
-      await tapText(tester, '(02) 8530 0173');
+      await tapText(tester, '(02) 7261 0246');
 
       expect(tester.takeException(), isNull);
-      expect(fakeLauncher.launchedUrls, ['tel:0285300173']);
+      expect(fakeLauncher.launchedUrls, ['tel:0272610246']);
     });
   });
 

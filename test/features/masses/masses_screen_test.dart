@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/features/masses/data/config/static_mass_schedule_config.dart';
 import 'package:st_luke_parish_app/features/masses/domain/entities/mass_schedule.dart';
 import 'package:st_luke_parish_app/features/masses/domain/entities/mass_sub_group.dart';
 import 'package:st_luke_parish_app/features/masses/domain/entities/mass_time.dart';
+import 'package:st_luke_parish_app/features/masses/domain/entities/mass_times_card.dart';
+import 'package:st_luke_parish_app/features/masses/domain/entities/parish_activity.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/providers/mass_schedule_provider.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_screen.dart';
+import 'package:st_luke_parish_app/features/masses/presentation/widgets/activity_ribbon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_card.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_section_header.dart';
 
@@ -18,12 +22,12 @@ import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_sec
 /// note and the BA plan's Acceptance Criteria).
 void main() {
   Future<void> pumpMassesScreen(WidgetTester tester) async {
-    // MassesScreen's content (hero + 2 sections, 9 rows) is taller than the
-    // default 800x600 test surface, which would leave the second section's
-    // rows outside the ListView's build/cache extent. Use a tall surface so
-    // every row is built without needing to scroll mid-test (same pattern
+    // MassesScreen's content (hero + What's On + Regular Activities) is far
+    // taller than the default 800x600 test surface, which would leave the
+    // second section outside the ListView's build/cache extent. Use a tall
+    // surface so everything is built without scrolling mid-test (same pattern
     // as contact_screen_test.dart).
-    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.physicalSize = const Size(800, 4000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -35,6 +39,13 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  // Scoped to the ribbons: "Marsden Park Care Community Mass" is also a
+  // Weekday row name in the What's On card.
+  Finder ribbonTitle(ParishActivity activity) => find.descendant(
+    of: find.byType(ActivityRibbon),
+    matching: find.text(activity.title),
+  );
 
   group(
     'REQ-F04-001: MassesScreen renders real content, not a placeholder',
@@ -70,36 +81,101 @@ void main() {
     });
   });
 
-  group('REQ-F04-003/004: "What\'s On" section and its 3 sub-groups', () {
-    testWidgets('renders "What\'s On" as the first section title, with '
-        'exactly 3 sub-group labels in order', (tester) async {
+  group('REQ-F04-003/004: "What\'s On" section: a Weekend card, then a '
+      'Weekday card', () {
+    testWidgets('renders "What\'s On" as the first section title, then the '
+        'two card headings and the weekend sub-group labels in order', (
+      tester,
+    ) async {
       await pumpMassesScreen(tester);
 
       expect(find.text("What's On"), findsOneWidget);
+      expect(find.byType(MassCard), findsNWidgets(2));
 
-      final subGroupLabels = ['SUNDAY', 'SATURDAY VIGIL', 'WEEKDAY'];
-      for (final label in subGroupLabels) {
-        expect(find.text(label), findsOneWidget);
+      // Weekend card (Saturday Vigil, then Sunday), then the Weekday card
+      // (2026-10-15).
+      final inOrder = [
+        'Weekend Mass Times',
+        'SATURDAY VIGIL MASS',
+        'SUNDAY MASS TIMES',
+        'Weekday Mass Times',
+      ];
+      for (final text in inOrder) {
+        expect(find.text(text), findsOneWidget, reason: text);
       }
-
-      // Confirm relative order top-to-bottom via vertical position.
-      final positions = subGroupLabels
-          .map((l) => tester.getTopLeft(find.text(l)).dy)
+      final positions = inOrder
+          .map((t) => tester.getTopLeft(find.text(t)).dy)
           .toList();
       expect(positions, orderedEquals(List.of(positions)..sort()));
+
+      // The Weekday card's lone group label would repeat its heading.
+      expect(find.text('WEEKDAY'), findsNothing);
+    });
+
+    testWidgets('each heading sits in its own card, above its Mass rows', (
+      tester,
+    ) async {
+      await pumpMassesScreen(tester);
+
+      Finder inCard(String heading, String text) => find.descendant(
+        of: find.ancestor(
+          of: find.text(heading),
+          matching: find.byType(MassCard),
+        ),
+        matching: find.text(text),
+      );
+      const sundayTimes = 'Times: 8:00 AM, 10:00 AM and 5:30 PM';
+      expect(inCard('Weekend Mass Times', 'Time: 5:30 PM'), findsOneWidget);
+      expect(inCard('Weekend Mass Times', sundayTimes), findsOneWidget);
+      expect(inCard('Weekend Mass Times', 'Wednesday: 7:30 AM'), findsNothing);
+      expect(
+        inCard('Weekday Mass Times', 'Wednesday: 7:30 AM'),
+        findsOneWidget,
+      );
+      expect(inCard('Weekday Mass Times', 'Friday: 11:00 AM'), findsOneWidget);
+      expect(inCard('Weekday Mass Times', sundayTimes), findsNothing);
+    });
+
+    testWidgets('the Mass times cards are always open: no expansion tiles '
+        'or tap targets', (tester) async {
+      await pumpMassesScreen(tester);
+
+      for (final type in [ExpansionTile, InkWell, GestureDetector]) {
+        expect(
+          find.descendant(
+            of: find.byType(MassCard),
+            matching: find.byType(type),
+          ),
+          findsNothing,
+        );
+      }
     });
   });
 
-  group('REQ-F04-005: Sunday sub-group — exactly 3 no-note rows, in order', () {
-    testWidgets('renders the 3 exact Sunday rows', (tester) async {
+  group('REQ-F04-005: Sunday Mass Times — the three times on one row, then '
+      'the Care Community row', () {
+    testWidgets('renders the Sunday times row above the Care Community row', (
+      tester,
+    ) async {
       await pumpMassesScreen(tester);
 
-      const rows = ['Sun 8:00 AM', 'Sun 10:00 AM', 'Sun 5:30 PM'];
-      for (final time in rows) {
-        expect(find.text(time), findsOneWidget);
-      }
-      // "Sunday Mass" appears 3 times (once per Sunday row).
-      expect(find.text('Sunday Mass'), findsNWidgets(3));
+      const timesRow = 'Times: 8:00 AM, 10:00 AM and 5:30 PM';
+      expect(find.text(timesRow), findsOneWidget);
+      expect(find.text('10:00 AM'), findsOneWidget);
+      expect(find.text('Marsden Park Care Community'), findsOneWidget);
+      expect(
+        find.text(
+          '4th Sunday of the month: Liturgy of the Word with Holy Communion',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        tester.getTopLeft(find.text(timesRow)).dy,
+        lessThan(tester.getTopLeft(find.text('10:00 AM')).dy),
+      );
+      // The old one-row-per-Mass layout is gone.
+      expect(find.text('Sunday Mass'), findsNothing);
+      expect(find.text('Sun 8:00 AM'), findsNothing);
     });
   });
 
@@ -107,26 +183,68 @@ void main() {
     testWidgets('renders the exact Vigil row and its note', (tester) async {
       await pumpMassesScreen(tester);
 
-      expect(find.text('Sat 5:30 PM'), findsOneWidget);
-      expect(find.text('Vigil Mass'), findsOneWidget);
+      expect(find.text('Time: 5:30 PM'), findsOneWidget);
       expect(find.text('Reconciliation from 4:30–5:25pm'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Time: 5:30 PM')).dy,
+        lessThan(
+          tester.getTopLeft(find.text('Reconciliation from 4:30–5:25pm')).dy,
+        ),
+      );
+      expect(find.text('Sat 5:30 PM'), findsNothing);
     });
   });
 
-  group(
-    'REQ-F04-007: Weekday sub-group — exactly 3 no-note rows, in order',
-    () {
-      testWidgets('renders the 3 exact Weekday rows', (tester) async {
-        await pumpMassesScreen(tester);
+  group('REQ-F04-007: Weekday sub-group — day/time rows plus the monthly '
+      'Care Community Mass, in order', () {
+    testWidgets('renders the exact Weekday rows', (tester) async {
+      await pumpMassesScreen(tester);
 
-        expect(find.text('Wed 7:30 AM'), findsOneWidget);
-        expect(find.text('Fri 6:30 PM'), findsOneWidget);
-        expect(find.text('Fri 11:00 AM'), findsOneWidget);
-        expect(find.text('Weekday Mass'), findsNWidgets(2));
-        expect(find.text('Marsden Park Care Community Mass'), findsOneWidget);
-      });
-    },
-  );
+      const times = [
+        'Wednesday: 7:30 AM',
+        'Thursday: 9:00 AM',
+        'Friday: 6:30 PM',
+        'Friday: 11:00 AM',
+      ];
+      for (final time in times) {
+        expect(find.text(time), findsOneWidget);
+      }
+      final positions = times
+          .map((t) => tester.getTopLeft(find.text(t)).dy)
+          .toList();
+      expect(positions, orderedEquals(List.of(positions)..sort()));
+
+      expect(
+        find.descendant(
+          of: find.byType(MassCard),
+          matching: find.text('Marsden Park Care Community Mass'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('2nd Friday of the month'), findsOneWidget);
+      expect(
+        find.text(
+          '1st Friday of the month: Healing Mass & Benediction, with the '
+          'Anointing of the Sick',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the removed weekday Mass titles no longer appear', (
+      tester,
+    ) async {
+      await pumpMassesScreen(tester);
+
+      expect(find.text('Weekday Mass'), findsNothing);
+      expect(find.textContaining('College Mass'), findsNothing);
+      expect(find.text('Thu 9:30 AM'), findsNothing);
+      // Weekday names are spelled out (2026-10-15).
+      for (final short in ['Wed ', 'Thu ', 'Fri ']) {
+        expect(find.textContaining(short), findsNothing, reason: short);
+      }
+    });
+  });
 
   group('REQ-F04-008: no stray location/venue text in "What\'s On"', () {
     testWidgets('only the Saturday Vigil row carries a note, and it is the '
@@ -141,42 +259,121 @@ void main() {
     });
   });
 
-  group('REQ-F04-009: "Reconciliation & Sacraments" section — exactly 3 rows, '
-      'in order', () {
-    testWidgets('renders the section title and its 3 exact rows', (
+  group('REQ-F04-009: "Regular Activities" section (formerly '
+      '"Reconciliation & Sacraments"), from the parish bulletin', () {
+    testWidgets('renders one collapsed ribbon per activity, in order', (
       tester,
     ) async {
       await pumpMassesScreen(tester);
 
-      expect(find.text('Reconciliation & Sacraments'), findsOneWidget);
+      expect(find.text('Regular Parish Activities'), findsOneWidget);
+      expect(find.text('Reconciliation & Sacraments'), findsNothing);
+      expect(
+        find.byType(ActivityRibbon),
+        findsNWidgets(regularActivities.length),
+      );
 
-      expect(find.text('Sat 4:30 PM'), findsOneWidget);
-      expect(find.text('Reconciliation'), findsOneWidget);
-      expect(find.text('Before the Vigil Mass'), findsOneWidget);
+      final positions = [
+        for (final activity in regularActivities)
+          tester.getTopLeft(ribbonTitle(activity)).dy,
+      ];
+      expect(positions, orderedEquals(List.of(positions)..sort()));
 
-      expect(find.text('By request'), findsOneWidget);
-      expect(find.text('Baptisms & House Blessings'), findsOneWidget);
-
-      expect(find.text('By enrolment'), findsOneWidget);
-      expect(find.text('Sacramental Programme'), findsOneWidget);
+      // Collapsed: details stay hidden until a ribbon is tapped.
+      expect(find.text('WHEN'), findsNothing);
+      expect(find.text(regularActivities.first.description!), findsNothing);
     });
 
-    testWidgets('"Reconciliation & Sacraments" is the second section, '
+    testWidgets('tapping a ribbon pulls down its When / Where / Who, '
+        'description and contact', (tester) async {
+      await pumpMassesScreen(tester);
+
+      final youth = regularActivities.firstWhere(
+        (a) => a.title == 'Youth Ministry',
+      );
+      await tester.tap(find.text(youth.title));
+      await tester.pumpAndSettle();
+
+      for (final label in ['WHEN', 'WHERE', 'WHO', 'CONTACT']) {
+        expect(find.text(label), findsOneWidget, reason: label);
+      }
+      for (final detail in youth.details) {
+        expect(find.text(detail), findsOneWidget, reason: detail);
+      }
+
+      await tester.tap(find.text(youth.title));
+      await tester.pumpAndSettle();
+      expect(find.text('WHEN'), findsNothing);
+    });
+
+    testWidgets("every activity's details show once expanded", (tester) async {
+      await pumpMassesScreen(tester);
+
+      // One at a time, so the list never grows past the built area.
+      for (final activity in regularActivities) {
+        expect(activity.details, isNotEmpty, reason: activity.title);
+        await tester.ensureVisible(ribbonTitle(activity));
+        await tester.tap(ribbonTitle(activity));
+        await tester.pumpAndSettle();
+        for (final detail in activity.details) {
+          expect(find.text(detail), findsWidgets, reason: detail);
+        }
+        await tester.tap(ribbonTitle(activity));
+        await tester.pumpAndSettle();
+      }
+      expect(find.text('WHEN'), findsNothing);
+    });
+
+    test('the parish email is the contact on the enquiry activities', () {
+      final contacts = [
+        for (final activity in regularActivities) ?activity.contact,
+      ];
+      expect(contacts, isNotEmpty);
+      expect(contacts, everyElement('marsdenpark@parracatholic.org'));
+    });
+
+    test('each activity kind is used once, so every ribbon has its own '
+        'icon', () {
+      final kinds = regularActivities.map((a) => a.kind).toList();
+      expect(kinds.toSet().length, kinds.length);
+      expect(kinds.toSet(), ParishActivityKind.values.toSet());
+    });
+
+    test('drops one-off bulletin dates and the old placeholder rows', () {
+      final allText = regularActivities
+          .expand((a) => [a.title, ...a.details])
+          .join('\n');
+      for (final stale in [
+        'This Weekend',
+        'This weekend',
+        'Next Youth Program',
+        'Next session',
+        'October',
+        'November',
+        'Baptisms & House Blessings',
+        'Sacramental Programme',
+      ]) {
+        expect(allText, isNot(contains(stale)));
+      }
+      // Enquiry emails stay as printed in the bulletin.
+      expect(allText, contains('marsdenpark@parracatholic.org'));
+    });
+
+    testWidgets('"Regular Activities" is the second section, '
         'after "What\'s On"', (tester) async {
       await pumpMassesScreen(tester);
 
       final whatsOnY = tester.getTopLeft(find.text("What's On")).dy;
       final reconciliationY = tester
-          .getTopLeft(find.text('Reconciliation & Sacraments'))
+          .getTopLeft(find.text('Regular Parish Activities'))
           .dy;
       expect(reconciliationY, greaterThan(whatsOnY));
     });
   });
 
-  group('REQ-F04-010: no stray location/venue text in "Reconciliation & '
-      'Sacraments"', () {
-    testWidgets('only the Reconciliation row carries a note, and it is '
-        'the exact expected string', (tester) async {
+  group('REQ-F04-010: no stray location/venue text in "Regular '
+      'Activities"', () {
+    testWidgets('no activity mentions a "venue"', (tester) async {
       await pumpMassesScreen(tester);
 
       final textWidgets = tester.widgetList<Text>(find.byType(Text));
@@ -187,11 +384,15 @@ void main() {
     });
   });
 
-  group('REQ-F04-011: no icon/emoji anywhere on the screen', () {
-    testWidgets('no Icon widget is rendered', (tester) async {
+  group('REQ-F04-011: no icon/emoji on the Mass times (Regular Activities '
+      'ribbons carry their own icons)', () {
+    testWidgets("no Icon widget inside the What's On card", (tester) async {
       await pumpMassesScreen(tester);
 
-      expect(find.byType(Icon), findsNothing);
+      expect(
+        find.descendant(of: find.byType(MassCard), matching: find.byType(Icon)),
+        findsNothing,
+      );
     });
 
     testWidgets('no rendered Text contains an emoji glyph', (tester) async {
@@ -211,7 +412,8 @@ void main() {
     });
   });
 
-  group('REQ-F04-012: no "Details"/chevron/arrow affordance on any row', () {
+  group('REQ-F04-012: no "Details"/chevron/arrow affordance on any Mass '
+      'row', () {
     testWidgets('no chevron/arrow icon and no "Details" text anywhere', (
       tester,
     ) async {
@@ -222,11 +424,18 @@ void main() {
       expect(find.textContaining('Details'), findsNothing);
       expect(find.textContaining('↗'), findsNothing);
 
-      // No tap targets: MassRow itself is not wrapped in any gesture
-      // detector/inkwell in the tree (rows are plain, non-interactive
-      // text per REQ-F04-012).
-      expect(find.byType(InkWell), findsNothing);
-      expect(find.byType(GestureDetector), findsNothing);
+      // No tap targets on Mass rows: the What's On card has no gesture
+      // detector/inkwell (rows are plain, non-interactive text per
+      // REQ-F04-012). Only the Regular Activities ribbons are tappable.
+      for (final type in [InkWell, GestureDetector]) {
+        expect(
+          find.descendant(
+            of: find.byType(MassCard),
+            matching: find.byType(type),
+          ),
+          findsNothing,
+        );
+      }
     });
   });
 
@@ -261,14 +470,18 @@ void main() {
     });
   });
 
-  group('REQ-F04-014: exactly 2 sections and exactly 2 cards total', () {
-    testWidgets('exactly 2 MassSectionHeader and 2 MassCard widgets', (
-      tester,
-    ) async {
+  group('REQ-F04-014: exactly 2 sections: two Mass times cards, then the '
+      'activity ribbons', () {
+    testWidgets('exactly 2 MassSectionHeader, 2 MassCard and one ribbon per '
+        'activity', (tester) async {
       await pumpMassesScreen(tester);
 
       expect(find.byType(MassSectionHeader), findsNWidgets(2));
       expect(find.byType(MassCard), findsNWidgets(2));
+      expect(
+        find.byType(ActivityRibbon),
+        findsNWidgets(regularActivities.length),
+      );
       // No third/fourth section title such as a live-calendar-fed
       // "Upcoming Events" section.
       expect(find.text('Upcoming Events'), findsNothing);
@@ -296,13 +509,18 @@ void main() {
     testWidgets('overriding massScheduleProvider changes rendered '
         'content', (tester) async {
       const overriddenSchedule = MassSchedule(
-        whatsOnSubGroups: [
-          MassSubGroup(
-            label: 'Sunday',
-            rows: [MassTime(time: 'Sun 9:00 AM', name: 'Test Mass')],
+        whatsOnCards: [
+          MassTimesCard(
+            title: 'Test Card',
+            subGroups: [
+              MassSubGroup(
+                label: 'Sunday',
+                rows: [MassTime(time: 'Sun 9:00 AM', name: 'Test Mass')],
+              ),
+            ],
           ),
         ],
-        reconciliationAndSacraments: [],
+        regularActivities: [],
       );
 
       await tester.pumpWidget(
@@ -333,8 +551,9 @@ void main() {
     Future<void> expectNoOverflowAt(
       WidgetTester tester,
       Size size,
-      TextScaler textScaler,
-    ) async {
+      TextScaler textScaler, {
+      bool expandRibbons = false,
+    }) async {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -354,6 +573,15 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+
+      if (expandRibbons) {
+        for (final activity in regularActivities) {
+          final title = ribbonTitle(activity);
+          await tester.scrollUntilVisible(title, 200);
+          await tester.tap(title);
+          await tester.pumpAndSettle();
+        }
+      }
 
       expect(
         tester.takeException(),
@@ -379,6 +607,16 @@ void main() {
         tester,
       ) async {
         await expectNoOverflowAt(tester, size, TextScaler.linear(2.0));
+      });
+
+      testWidgets('no overflow at $size, TextScaler.linear(2.0), every '
+          'activity ribbon expanded', (tester) async {
+        await expectNoOverflowAt(
+          tester,
+          size,
+          TextScaler.linear(2.0),
+          expandRibbons: true,
+        );
       });
     }
   });

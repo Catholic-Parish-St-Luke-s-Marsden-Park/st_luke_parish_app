@@ -223,7 +223,14 @@ void main() {
 
       expect(find.byType(Drawer), findsOneWidget);
 
-      final listTiles = tester.widgetList<ListTile>(find.byType(ListTile));
+      // Scoped to the drawer: the Parish tab's About St Luke's card is also
+      // a ListTile (inside its ExpansionTile).
+      final listTiles = tester.widgetList<ListTile>(
+        find.descendant(
+          of: find.byType(Drawer),
+          matching: find.byType(ListTile),
+        ),
+      );
       expect(listTiles.length, 2);
 
       expect(

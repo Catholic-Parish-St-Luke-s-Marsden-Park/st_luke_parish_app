@@ -14,7 +14,7 @@ abstract class UrlLauncherService {
 
 /// URI schemes that carry an authority/host component (e.g.
 /// `https://example.com`). `tel:` and `mailto:` URIs are valid without one
-/// (e.g. `tel:0285300173`, `mailto:someone@example.com`), so the host check
+/// (e.g. `tel:0272610246`, `mailto:someone@example.com`), so the host check
 /// below only applies to schemes in this set.
 const Set<String> _schemesRequiringHost = {'http', 'https'};
 

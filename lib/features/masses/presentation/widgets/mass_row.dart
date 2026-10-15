@@ -31,13 +31,16 @@ class MassRow extends StatelessWidget {
             runSpacing: 2,
             children: [
               Text(
-                massTime.time,
+                massTime.label == null
+                    ? massTime.time
+                    : '${massTime.label}: ${massTime.time}',
                 style: textTheme.titleSmall?.copyWith(
                   color: AppColors.primaryNavy,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              Text(massTime.name, style: textTheme.bodyLarge),
+              if (massTime.name != null)
+                Text(massTime.name!, style: textTheme.bodyLarge),
             ],
           ),
           if (massTime.note != null)

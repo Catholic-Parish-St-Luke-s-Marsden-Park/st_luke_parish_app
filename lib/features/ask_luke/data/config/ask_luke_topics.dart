@@ -9,11 +9,22 @@ import '../../domain/entities/ask_luke_topic.dart';
 const List<AskLukeTopic> askLukeTopics = [
   AskLukeTopic(
     label: 'Mass times',
+    // Must match the Masses tab's "What's On" schedule
+    // (lib/features/masses/data/config/static_mass_schedule_config.dart);
+    // ask_luke_screen_test.dart fails if a time or note there is missing.
     response:
-        'Weekend Mass: Saturday 6:00pm (Vigil), Sunday 8:00am & 10:00am. '
-        'Weekday Mass: Tuesday–Friday 9:00am. Times may vary on public '
-        'holidays — please check the parish bulletin for the latest '
-        'schedule.',
+        'Saturday Vigil Mass: 5:30 PM '
+        '(Reconciliation from 4:30–5:25pm).\n'
+        'Sunday Mass Times: 8:00 AM, 10:00 AM and 5:30 PM. '
+        'Marsden Park Care Community: 10:00 AM, 4th Sunday of the month: '
+        'Liturgy of the Word with Holy Communion.\n'
+        'Weekday: Wednesday 7:30 AM, Thursday 9:00 AM and Friday 6:30 PM '
+        '(1st Friday of the month: Healing Mass & Benediction, with the '
+        'Anointing of the Sick).\n'
+        'Marsden Park Care Community Mass: Friday 11:00 AM, '
+        '2nd Friday of the month.\n'
+        'Times may vary on public holidays — please check the parish '
+        'bulletin for the latest schedule.',
   ),
   AskLukeTopic(
     label: 'Join a ministry',

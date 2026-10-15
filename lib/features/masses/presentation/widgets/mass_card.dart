@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_shapes.dart';
 
-/// Rounded card container grouping Mass rows, used for both the "What's
-/// On" section (three labeled sub-groups) and the "Reconciliation &
-/// Sacraments" section (a flat row list). Plain content only — no icons,
-/// no tap affordance (REQ-F04-011, REQ-F04-012).
+/// Rounded card container for one "What's On" Mass times card, e.g.
+/// "Weekend Mass Times". Plain content only — no icons, no tap
+/// affordance (REQ-F04-011, REQ-F04-012).
 class MassCard extends StatelessWidget {
   const MassCard({super.key, required this.child});
 

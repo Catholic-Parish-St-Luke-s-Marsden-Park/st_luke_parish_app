@@ -25,11 +25,14 @@ class AskLukeScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.cream,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const AskLukeHeader(),
-            Expanded(
+      // No outer SafeArea: the header's navy gradient runs up behind the
+      // status bar so its white icons stay readable.
+      body: Column(
+        children: [
+          const AskLukeHeader(),
+          Expanded(
+            child: SafeArea(
+              top: false,
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 children: [
@@ -71,8 +74,8 @@ class AskLukeScreen extends ConsumerWidget {
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

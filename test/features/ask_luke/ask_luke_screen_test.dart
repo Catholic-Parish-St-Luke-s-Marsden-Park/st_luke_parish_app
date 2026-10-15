@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:st_luke_parish_app/features/ask_luke/data/config/ask_luke_topics.dart';
 import 'package:st_luke_parish_app/features/ask_luke/presentation/screens/ask_luke_screen.dart';
 import 'package:st_luke_parish_app/features/ask_luke/presentation/widgets/quick_reply_chip.dart';
+import 'package:st_luke_parish_app/features/masses/data/config/static_mass_schedule_config.dart';
 
 /// Covers the Ask Luke screen acceptance criteria: REQ-F02-020 through
 /// REQ-F02-028.
@@ -85,15 +86,43 @@ void main() {
       );
     }
 
+    test('Mass times answer matches the Masses tab schedule', () {
+      final answer = askLukeTopics
+          .firstWhere((t) => t.label == 'Mass times')
+          .response;
+      final groups = staticMassSchedule.whatsOnSubGroups;
+
+      // Same sections, in the same order as the Masses tab.
+      final positions = [
+        for (final group in groups) answer.indexOf('${group.label}:'),
+      ];
+      expect(positions, everyElement(isNonNegative));
+      expect(positions, orderedEquals(List.of(positions)..sort()));
+
+      // Every time and note on the Masses tab appears in the answer.
+      for (final row in groups.expand((g) => g.rows)) {
+        expect(answer, contains(row.time));
+        if (row.note != null) expect(answer, contains(row.note));
+      }
+    });
+
     testWidgets('response strings match the BA plan verbatim', (tester) async {
       final byLabel = {for (final t in askLukeTopics) t.label: t.response};
 
       expect(
         byLabel['Mass times'],
-        'Weekend Mass: Saturday 6:00pm (Vigil), Sunday 8:00am & 10:00am. '
-        'Weekday Mass: Tuesday–Friday 9:00am. Times may vary on public '
-        'holidays — please check the parish bulletin for the latest '
-        'schedule.',
+        'Saturday Vigil Mass: 5:30 PM '
+        '(Reconciliation from 4:30–5:25pm).\n'
+        'Sunday Mass Times: 8:00 AM, 10:00 AM and 5:30 PM. '
+        'Marsden Park Care Community: 10:00 AM, 4th Sunday of the month: '
+        'Liturgy of the Word with Holy Communion.\n'
+        'Weekday: Wednesday 7:30 AM, Thursday 9:00 AM and Friday 6:30 PM '
+        '(1st Friday of the month: Healing Mass & Benediction, with the '
+        'Anointing of the Sick).\n'
+        'Marsden Park Care Community Mass: Friday 11:00 AM, '
+        '2nd Friday of the month.\n'
+        'Times may vary on public holidays — please check the parish '
+        'bulletin for the latest schedule.',
       );
       expect(
         byLabel['Join a ministry'],
@@ -114,6 +143,46 @@ void main() {
         'of the Sick. Contact the parish office for more information on '
         'preparation and scheduling.',
       );
+    });
+  });
+
+  group('Close button returns to the previous screen', () {
+    testWidgets('tapping Close pops Ask Luke', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AskLukeScreen(),
+                    ),
+                  ),
+                  child: const Text('Open Ask Luke'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open Ask Luke'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AskLukeScreen), findsOneWidget);
+
+      final close = find.byTooltip('Close');
+      expect(close, findsOneWidget);
+      // At least a 48x48 tap target (CLAUDE.md accessibility rules).
+      final size = tester.getSize(
+        find.ancestor(of: close, matching: find.byType(IconButton)),
+      );
+      expect(size.width, greaterThanOrEqualTo(48));
+      expect(size.height, greaterThanOrEqualTo(48));
+
+      await tester.tap(close);
+      await tester.pumpAndSettle();
+      expect(find.byType(AskLukeScreen), findsNothing);
+      expect(find.text('Open Ask Luke'), findsOneWidget);
     });
   });
 

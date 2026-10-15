@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
-/// Top-level section title ("What's On" / "Reconciliation & Sacraments").
+/// Top-level section title ("What's On" / "Regular Activities").
 /// Kept local to the Masses feature rather than reusing the Parish tab's
 /// `SectionLabel`, to keep feature concerns isolated per root `CLAUDE.md`
 /// (matching the precedent set by Ministries' own

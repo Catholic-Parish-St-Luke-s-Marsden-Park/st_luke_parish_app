@@ -206,7 +206,14 @@ void main() {
         ];
 
         for (final label in tabLabels) {
-          await tester.tap(find.text(label));
+          // Scoped to the bottom bar: "Parish" is also a Church Leadership
+          // group title on the Parish tab.
+          await tester.tap(
+            find.descendant(
+              of: find.byType(NavigationBar),
+              matching: find.text(label),
+            ),
+          );
           // Donate's WebView loading state uses an indefinitely-animating
           // CircularProgressIndicator, which would make pumpAndSettle hang
           // forever; a bounded pump is sufficient to build the tab body.
