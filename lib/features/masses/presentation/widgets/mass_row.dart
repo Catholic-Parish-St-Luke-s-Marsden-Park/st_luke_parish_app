@@ -21,6 +21,10 @@ class MassRow extends StatelessWidget {
   /// "Day: time".
   final bool listTimes;
 
+  /// Mass times are the main thing people look for, so they are set larger
+  /// than the surrounding text (parish request, 2026-10-16).
+  static const double timeFontSize = 19;
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -43,9 +47,9 @@ class MassRow extends StatelessWidget {
                     constraints: const BoxConstraints(minWidth: 104),
                     child: Text(
                       day,
-                      style: textTheme.titleSmall?.copyWith(
+                      style: textTheme.titleMedium?.copyWith(
                         color: AppColors.primaryNavy,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
                       ),
                     ),
                   ),
@@ -54,13 +58,17 @@ class MassRow extends StatelessWidget {
                     const ExcludeSemantics(
                       child: Text(
                         '·',
-                        style: TextStyle(color: AppColors.textMuted),
+                        style: TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: timeFontSize,
+                        ),
                       ),
                     ),
                   Text(
                     time,
-                    style: textTheme.titleSmall?.copyWith(
+                    style: textTheme.titleMedium?.copyWith(
                       color: AppColors.primaryNavy,
+                      fontSize: timeFontSize,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -70,8 +78,9 @@ class MassRow extends StatelessWidget {
                   massTime.label == null
                       ? massTime.time
                       : '${massTime.label}: ${massTime.time}',
-                  style: textTheme.titleSmall?.copyWith(
+                  style: textTheme.titleMedium?.copyWith(
                     color: AppColors.primaryNavy,
+                    fontSize: timeFontSize,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

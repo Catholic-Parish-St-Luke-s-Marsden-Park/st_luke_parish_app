@@ -286,6 +286,15 @@ void main() {
         positions.add(timeY);
       }
       expect(positions, orderedEquals(List.of(positions)..sort()));
+      // Wednesday and Thursday share one line to save space; each Friday
+      // keeps its own line for its note.
+      expect(positions[0], moreOrLessEquals(positions[1], epsilon: 2));
+      expect(
+        tester.getTopLeft(find.text('Thursday')).dx,
+        greaterThan(tester.getTopLeft(find.text('7:30 AM')).dx),
+      );
+      expect(positions[2], greaterThan(positions[1] + 10));
+      expect(positions[3], greaterThan(positions[2] + 10));
       // No "Day: time" text is left.
       expect(find.textContaining(': 7:30 AM'), findsNothing);
 

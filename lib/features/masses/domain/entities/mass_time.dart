@@ -30,4 +30,9 @@ class MassTime {
   /// Optional: weekday Mass rows show only the day and time.
   final String? name;
   final String? note;
+
+  /// Just a day and one time, e.g. "Wednesday 7:30 AM": nothing else to
+  /// show, so several of these can share a line.
+  bool get isDayAndTimeOnly =>
+      label != null && moreTimes.isEmpty && name == null && note == null;
 }
