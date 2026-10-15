@@ -85,11 +85,11 @@ void main() {
 
   group('REQ-F04-003/004: "What\'s On" section: Saturday Vigil, Sunday, '
       'then Weekday cards', () {
-    testWidgets('renders "What\'s On" as the first section title, then the '
-        'three card headings in order', (tester) async {
+    testWidgets('renders the three card headings in order, with no '
+        '"What\'s On" title above them', (tester) async {
       await pumpMassesScreen(tester);
 
-      expect(find.text("What's On"), findsOneWidget);
+      expect(find.text("What's On"), findsNothing);
       expect(find.byType(MassCard), findsNWidgets(3));
 
       // Saturday Vigil first, then Sunday, then Weekday (2026-10-15).
@@ -434,11 +434,11 @@ void main() {
       expect(allText, contains('marsdenpark@parracatholic.org'));
     });
 
-    testWidgets('"Regular Activities" is the second section, '
-        'after "What\'s On"', (tester) async {
+    testWidgets('"Regular Parish Activities" comes after the Mass times '
+        'cards', (tester) async {
       await pumpMassesScreen(tester);
 
-      final whatsOnY = tester.getTopLeft(find.text("What's On")).dy;
+      final whatsOnY = tester.getTopLeft(find.byType(MassCard).last).dy;
       final reconciliationY = tester
           .getTopLeft(find.text('Regular Parish Activities'))
           .dy;
@@ -586,13 +586,13 @@ void main() {
     });
   });
 
-  group('REQ-F04-014: exactly 2 sections: three Mass times cards, then '
-      'the activity ribbons', () {
-    testWidgets('exactly 2 MassSectionHeader, 3 MassCard and one ribbon per '
+  group('REQ-F04-014: three Mass times cards, then the activity ribbons '
+      'under the only section title', () {
+    testWidgets('exactly 1 MassSectionHeader, 3 MassCard and one ribbon per '
         'activity', (tester) async {
       await pumpMassesScreen(tester);
 
-      expect(find.byType(MassSectionHeader), findsNWidgets(2));
+      expect(find.byType(MassSectionHeader), findsOneWidget);
       expect(find.byType(MassCard), findsNWidgets(3));
       expect(
         find.byType(ActivityRibbon),

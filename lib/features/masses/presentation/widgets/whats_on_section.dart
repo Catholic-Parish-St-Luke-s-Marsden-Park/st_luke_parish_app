@@ -4,10 +4,9 @@ import '../../domain/entities/mass_times_card.dart';
 import 'mass_card.dart';
 import 'mass_times_card_icon.dart';
 import 'mass_row.dart';
-import 'mass_section_header.dart';
 import 'mass_sub_group_label.dart';
 
-/// Section 1 — "What's On": one always-open [MassCard] per
+/// Section 1 — the Mass times (no section title): one always-open [MassCard] per
 /// [MassTimesCard] (Saturday Vigil Mass, Sunday Mass Times, Weekday Mass
 /// Times), each with a navy title band. Sub-group labels show only when a
 /// card holds more than one group, since a lone label would repeat the
@@ -22,7 +21,9 @@ class WhatsOnSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const MassSectionHeader("What's On"),
+        // No section title: the cards' own navy headers say what they are
+        // (parish request, 2026-10-15).
+        const SizedBox(height: 12),
         for (final card in cards)
           MassCard(
             title: card.title,
