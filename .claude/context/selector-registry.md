@@ -2,6 +2,7 @@
 
 | Target | Source Page | Selector Type | Selector / Path | Attribute | Fallback | Last Verified | Notes |
 |---|---|---|---|---|---|---|---|
+| `pastoral_council_minutes_url` | `https://stlukesmarsdenpark.org.au/` | css | `a[href]` whose text contains "pastoral council" and "minutes" (case-insensitive) | `href` | `PastoralPlanConfig.councilMinutesUrl` | 2026-10-16 | The home page's "Parish Pastoral Council Meeting Minutes" button; matched by label, not styling classes. `lib/features/parish/data/selectors/parish_home_selectors.dart` |
 
 **News/bulletins (05-news-tab):** intentionally has no entry here. Bulletin
 data is extracted from the WordPress category RSS feed

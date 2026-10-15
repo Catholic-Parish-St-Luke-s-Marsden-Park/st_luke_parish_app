@@ -4,6 +4,10 @@
 abstract final class ExternalLinks {
   static const String parishSite = 'https://stlukesmarsdenpark.org.au';
 
+  /// The parish home page, read for the latest Parish Pastoral Council
+  /// minutes link.
+  static const String parishHomePage = '$parishSite/';
+
   /// The parish website's Donate page, loaded in-app via
   /// `SimpleWebViewScreen` on the Donate tab.
   static const String donate = '$parishSite/donate/';
