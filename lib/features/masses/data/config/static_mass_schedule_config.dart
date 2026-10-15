@@ -45,21 +45,27 @@ const List<MassTime> weekdayMasses = [
   ),
 ];
 
-/// "What's On" section: a "Weekend Mass Times" card (Saturday Vigil first,
-/// then Sunday) and a "Weekday Mass Times" card (parish request,
-/// 2026-10-15).
+/// "What's On" section: "Saturday Vigil Mass", "Sunday Mass Times" and
+/// "Weekday Mass Times" cards, in that order (parish request, 2026-10-15).
 const List<MassTimesCard> whatsOnCards = [
   MassTimesCard(
-    title: 'Weekend Mass Times',
-    highlightTimes: true,
+    title: 'Saturday Vigil Mass',
+    kind: MassTimesCardKind.saturdayVigil,
+    listTimes: true,
     subGroups: [
       MassSubGroup(label: 'Saturday Vigil Mass', rows: saturdayVigilMasses),
-      MassSubGroup(label: 'Sunday Mass Times', rows: sundayMasses),
     ],
   ),
   MassTimesCard(
+    title: 'Sunday Mass Times',
+    kind: MassTimesCardKind.sunday,
+    listTimes: true,
+    subGroups: [MassSubGroup(label: 'Sunday Mass Times', rows: sundayMasses)],
+  ),
+  MassTimesCard(
     title: 'Weekday Mass Times',
-    highlightTimes: true,
+    kind: MassTimesCardKind.weekday,
+    listTimes: true,
     subGroups: [MassSubGroup(label: 'Weekday', rows: weekdayMasses)],
   ),
 ];

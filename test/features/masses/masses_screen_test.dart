@@ -12,6 +12,7 @@ import 'package:st_luke_parish_app/features/masses/presentation/providers/mass_s
 import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_screen.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/activity_ribbon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_card.dart';
+import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_row.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_section_header.dart';
 
 /// Covers the Masses tab acceptance criteria: REQ-F04-001..024.
@@ -82,23 +83,19 @@ void main() {
     });
   });
 
-  group('REQ-F04-003/004: "What\'s On" section: a Weekend card, then a '
-      'Weekday card', () {
+  group('REQ-F04-003/004: "What\'s On" section: Saturday Vigil, Sunday, '
+      'then Weekday cards', () {
     testWidgets('renders "What\'s On" as the first section title, then the '
-        'two card headings and the weekend sub-group labels in order', (
-      tester,
-    ) async {
+        'three card headings in order', (tester) async {
       await pumpMassesScreen(tester);
 
       expect(find.text("What's On"), findsOneWidget);
-      expect(find.byType(MassCard), findsNWidgets(2));
+      expect(find.byType(MassCard), findsNWidgets(3));
 
-      // Weekend card (Saturday Vigil, then Sunday), then the Weekday card
-      // (2026-10-15).
+      // Saturday Vigil first, then Sunday, then Weekday (2026-10-15).
       final inOrder = [
-        'Weekend Mass Times',
-        'SATURDAY VIGIL MASS',
-        'SUNDAY MASS TIMES',
+        'Saturday Vigil Mass',
+        'Sunday Mass Times',
         'Weekday Mass Times',
       ];
       for (final text in inOrder) {
@@ -109,15 +106,39 @@ void main() {
           .toList();
       expect(positions, orderedEquals(List.of(positions)..sort()));
 
-      // Sub-headings use the darker gold, readable on white (WCAG AA).
-      for (final label in ['SATURDAY VIGIL MASS', 'SUNDAY MASS TIMES']) {
-        final text = tester.widget<Text>(find.text(label));
-        expect(text.style?.color, AppColors.darkGold, reason: label);
-        expect(text.style?.fontSize, greaterThanOrEqualTo(14), reason: label);
+      // No "Weekend Mass Times" card and no repeated sub-labels.
+      for (final gone in [
+        'Weekend Mass Times',
+        'SATURDAY VIGIL MASS',
+        'SUNDAY MASS TIMES',
+        'WEEKDAY',
+      ]) {
+        expect(find.text(gone), findsNothing, reason: gone);
       }
+    });
 
-      // The Weekday card's lone group label would repeat its heading.
-      expect(find.text('WEEKDAY'), findsNothing);
+    testWidgets('each card heading is white text on a navy band', (
+      tester,
+    ) async {
+      await pumpMassesScreen(tester);
+
+      for (final heading in [
+        'Saturday Vigil Mass',
+        'Sunday Mass Times',
+        'Weekday Mass Times',
+      ]) {
+        final text = tester.widget<Text>(find.text(heading));
+        expect(text.style?.color, Colors.white, reason: heading);
+        final band = tester.widget<Container>(
+          find
+              .ancestor(
+                of: find.text(heading),
+                matching: find.byType(Container),
+              )
+              .first,
+        );
+        expect(band.color, AppColors.primaryNavy, reason: heading);
+      }
     });
 
     testWidgets('each heading sits in its own card, above its Mass rows', (
@@ -132,9 +153,11 @@ void main() {
         ),
         matching: find.text(text),
       );
-      expect(inCard('Weekend Mass Times', '5:30 PM'), findsNWidgets(2));
-      expect(inCard('Weekend Mass Times', '8:00 AM'), findsOneWidget);
-      expect(inCard('Weekend Mass Times', 'Wednesday'), findsNothing);
+      expect(inCard('Saturday Vigil Mass', '5:30 PM'), findsOneWidget);
+      expect(inCard('Saturday Vigil Mass', '8:00 AM'), findsNothing);
+      expect(inCard('Sunday Mass Times', '8:00 AM'), findsOneWidget);
+      expect(inCard('Sunday Mass Times', '5:30 PM'), findsOneWidget);
+      expect(inCard('Sunday Mass Times', 'Wednesday'), findsNothing);
       expect(inCard('Weekday Mass Times', 'Wednesday'), findsOneWidget);
       expect(inCard('Weekday Mass Times', '11:00 AM'), findsOneWidget);
       expect(inCard('Weekday Mass Times', '8:00 AM'), findsNothing);
@@ -156,14 +179,14 @@ void main() {
     });
   });
 
-  group('REQ-F04-005: Sunday Mass Times — the three times as ovals on one '
+  group('REQ-F04-005: Sunday Mass Times — the three times on one '
       'row, then the Care Community row', () {
     testWidgets('renders the Sunday times above the Care Community row', (
       tester,
     ) async {
       await pumpMassesScreen(tester);
 
-      final sundayLabelY = tester.getTopLeft(find.text('SUNDAY MASS TIMES')).dy;
+      final sundayLabelY = tester.getTopLeft(find.text('Sunday Mass Times')).dy;
       final careY = tester
           .getTopLeft(find.text('at Marsden Park Care Community'))
           .dy;
@@ -181,7 +204,7 @@ void main() {
       expect(rowYs.toSet(), hasLength(1));
       expect(rowYs.first, greaterThan(sundayLabelY));
       expect(rowYs.first, lessThan(careY));
-      // 10:00 AM: the Sunday Mass oval and the Care Community oval.
+      // 10:00 AM: the Sunday Mass and the Care Community row.
       expect(find.text('10:00 AM'), findsNWidgets(2));
       expect(find.text('at Marsden Park Care Community'), findsOneWidget);
       expect(
@@ -190,6 +213,20 @@ void main() {
         ),
         findsOneWidget,
       );
+      // Times are plain text: no gold oval behind them.
+      final goldBoxes = tester
+          .widgetList<DecoratedBox>(
+            find.descendant(
+              of: find.byType(MassCard),
+              matching: find.byType(DecoratedBox),
+            ),
+          )
+          .where(
+            (box) =>
+                box.decoration is BoxDecoration &&
+                (box.decoration as BoxDecoration).color == AppColors.gold,
+          );
+      expect(goldBoxes, isEmpty);
       // The old "Times:" text and one-row-per-Mass layout are gone.
       expect(find.textContaining('Times:'), findsNothing);
       expect(find.text('Sunday Mass'), findsNothing);
@@ -220,7 +257,7 @@ void main() {
     testWidgets('renders the exact Weekday rows', (tester) async {
       await pumpMassesScreen(tester);
 
-      // Each row: the day name, then its time in an oval on the same line.
+      // Each row: the day name, then its time on the same line.
       const rows = [
         ('Wednesday', '7:30 AM'),
         ('Thursday', '9:00 AM'),
@@ -424,13 +461,54 @@ void main() {
 
   group('REQ-F04-011: no icon/emoji on the Mass times (Regular Activities '
       'ribbons carry their own icons)', () {
-    testWidgets("no Icon widget inside the What's On card", (tester) async {
+    testWidgets('no Icon widget on any Mass row', (tester) async {
       await pumpMassesScreen(tester);
 
       expect(
-        find.descendant(of: find.byType(MassCard), matching: find.byType(Icon)),
+        find.descendant(of: find.byType(MassRow), matching: find.byType(Icon)),
         findsNothing,
       );
+    });
+
+    testWidgets('each card title has its own icon in the navy band', (
+      tester,
+    ) async {
+      await pumpMassesScreen(tester);
+
+      const expected = {
+        'Saturday Vigil Mass': Icons.nights_stay_outlined,
+        'Sunday Mass Times': Icons.wb_sunny_outlined,
+        'Weekday Mass Times': Icons.calendar_today_outlined,
+      };
+      for (final MapEntry(key: title, value: icon) in expected.entries) {
+        final card = find.ancestor(
+          of: find.text(title),
+          matching: find.byType(MassCard),
+        );
+        expect(
+          find.descendant(of: card, matching: find.byIcon(icon)),
+          findsOneWidget,
+          reason: title,
+        );
+        expect(
+          tester.getTopLeft(find.byIcon(icon)).dx,
+          lessThan(tester.getTopLeft(find.text(title)).dx),
+          reason: '$title icon comes first',
+        );
+      }
+    });
+
+    testWidgets('Mass row text is navy, matching the times', (tester) async {
+      await pumpMassesScreen(tester);
+
+      for (final text in [
+        'Wednesday',
+        'at Marsden Park Care Community',
+        'Marsden Park Care Community Mass',
+      ]) {
+        final widget = tester.widget<Text>(find.text(text).first);
+        expect(widget.style?.color, AppColors.primaryNavy, reason: text);
+      }
     });
 
     testWidgets('no rendered Text contains an emoji glyph', (tester) async {
@@ -508,14 +586,14 @@ void main() {
     });
   });
 
-  group('REQ-F04-014: exactly 2 sections: two Mass times cards, then the '
-      'activity ribbons', () {
-    testWidgets('exactly 2 MassSectionHeader, 2 MassCard and one ribbon per '
+  group('REQ-F04-014: exactly 2 sections: three Mass times cards, then '
+      'the activity ribbons', () {
+    testWidgets('exactly 2 MassSectionHeader, 3 MassCard and one ribbon per '
         'activity', (tester) async {
       await pumpMassesScreen(tester);
 
       expect(find.byType(MassSectionHeader), findsNWidgets(2));
-      expect(find.byType(MassCard), findsNWidgets(2));
+      expect(find.byType(MassCard), findsNWidgets(3));
       expect(
         find.byType(ActivityRibbon),
         findsNWidgets(regularActivities.length),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_shapes.dart';
 import '../../domain/entities/mass_time.dart';
 
 /// A single, plain-text, non-interactive row rendering one [MassTime]'s
@@ -13,17 +12,14 @@ import '../../domain/entities/mass_time.dart';
 /// text scale reflow instead of overflowing (CLAUDE.md accessibility
 /// rules; REQ-F04-020).
 class MassRow extends StatelessWidget {
-  const MassRow({
-    super.key,
-    required this.massTime,
-    this.highlightTimes = false,
-  });
+  const MassRow({super.key, required this.massTime, this.listTimes = false});
 
   final MassTime massTime;
 
-  /// Show each time in a gold oval (like the Saint of the Day pill) instead
-  /// of as "Label: time" text. Decoration only; nothing is tappable.
-  final bool highlightTimes;
+  /// Lay out the day (if any) and each time as separate text, e.g.
+  /// "Wednesday   7:30 AM" or "8:00 AM · 10:00 AM · 5:30 PM", rather than
+  /// "Day: time".
+  final bool listTimes;
 
   @override
   Widget build(BuildContext context) {
@@ -37,11 +33,11 @@ class MassRow extends StatelessWidget {
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: 10,
-            runSpacing: 8,
+            runSpacing: 2,
             children: [
-              if (highlightTimes) ...[
+              if (listTimes) ...[
                 if (massTime.label case final day?)
-                  // A minimum (not fixed) width lines the ovals up under
+                  // A minimum (not fixed) width lines the times up under
                   // each other, but still grows with large system text.
                   ConstrainedBox(
                     constraints: const BoxConstraints(minWidth: 104),
@@ -49,11 +45,26 @@ class MassRow extends StatelessWidget {
                       day,
                       style: textTheme.titleSmall?.copyWith(
                         color: AppColors.primaryNavy,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                for (final time in massTime.allTimes) _TimePill(time),
+                for (final (i, time) in massTime.allTimes.indexed) ...[
+                  if (i > 0)
+                    const ExcludeSemantics(
+                      child: Text(
+                        '·',
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
+                    ),
+                  Text(
+                    time,
+                    style: textTheme.titleSmall?.copyWith(
+                      color: AppColors.primaryNavy,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ] else
                 Text(
                   massTime.label == null
@@ -65,7 +76,12 @@ class MassRow extends StatelessWidget {
                   ),
                 ),
               if (massTime.name != null)
-                Text(massTime.name!, style: textTheme.bodyLarge),
+                Text(
+                  massTime.name!,
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: AppColors.primaryNavy,
+                  ),
+                ),
             ],
           ),
           if (massTime.note != null)
@@ -74,34 +90,6 @@ class MassRow extends StatelessWidget {
               child: Text(massTime.note!, style: textTheme.bodySmall),
             ),
         ],
-      ),
-    );
-  }
-}
-
-/// A time in a gold oval, styled like the Saint of the Day pill. Not a
-/// button: there is no tap behaviour.
-class _TimePill extends StatelessWidget {
-  const _TimePill(this.time);
-
-  final String time;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.gold,
-        borderRadius: AppShapes.pillBorderRadius,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        child: Text(
-          time,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
       ),
     );
   }
