@@ -8,6 +8,10 @@ abstract final class AppColors {
 
   static const Color gold = Color(0xFFC9A030);
   static const Color lightGold = Color(0xFFE8C060);
+
+  /// Gold dark enough for text on white (5.4:1, WCAG AA); [gold] itself is
+  /// only 2.4:1 and suits fills, not text.
+  static const Color darkGold = Color(0xFF85660F);
   static const Color paleGold = Color(0xFFFDF3D0);
 
   static const Color cream = Color(0xFFF8F6F1);

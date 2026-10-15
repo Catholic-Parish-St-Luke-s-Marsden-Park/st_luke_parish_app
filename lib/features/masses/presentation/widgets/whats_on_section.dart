@@ -45,7 +45,8 @@ class WhatsOnSection extends StatelessWidget {
                 for (final subGroup in card.subGroups) ...[
                   if (card.subGroups.length > 1)
                     MassSubGroupLabel(subGroup.label),
-                  for (final row in subGroup.rows) MassRow(massTime: row),
+                  for (final row in subGroup.rows)
+                    MassRow(massTime: row, highlightTimes: card.highlightTimes),
                 ],
               ],
             ),

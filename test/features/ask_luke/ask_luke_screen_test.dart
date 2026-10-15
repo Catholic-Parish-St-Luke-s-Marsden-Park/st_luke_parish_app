@@ -101,7 +101,9 @@ void main() {
 
       // Every time and note on the Masses tab appears in the answer.
       for (final row in groups.expand((g) => g.rows)) {
-        expect(answer, contains(row.time));
+        for (final time in row.allTimes) {
+          expect(answer, contains(time));
+        }
         if (row.note != null) expect(answer, contains(row.note));
       }
     });

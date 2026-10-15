@@ -6,9 +6,22 @@
 /// There is no sorting/date-math requirement for this static schedule, so a
 /// structured `DateTime`/`TimeOfDay` is intentionally not used here.
 class MassTime {
-  const MassTime({required this.time, this.label, this.name, this.note});
+  const MassTime({
+    required this.time,
+    this.moreTimes = const [],
+    this.label,
+    this.name,
+    this.note,
+  });
 
   final String time;
+
+  /// Further times for the same Mass, e.g. Sunday's 10:00 AM and 5:30 PM
+  /// alongside 8:00 AM.
+  final List<String> moreTimes;
+
+  /// [time] followed by [moreTimes].
+  List<String> get allTimes => [time, ...moreTimes];
 
   /// Optional prefix shown before [time], e.g. "Time" renders
   /// "Time: 5:30 PM".

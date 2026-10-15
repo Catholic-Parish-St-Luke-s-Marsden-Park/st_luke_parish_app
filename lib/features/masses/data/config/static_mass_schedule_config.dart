@@ -15,18 +15,14 @@ import '../../domain/entities/parish_activity.dart';
 /// [whatsOnCards]; `ask_luke_screen_test.dart` checks this.
 
 const List<MassTime> saturdayVigilMasses = [
-  MassTime(
-    label: 'Time',
-    time: '5:30 PM',
-    note: 'Reconciliation from 4:30–5:25pm',
-  ),
+  MassTime(time: '5:30 PM', note: 'Reconciliation from 4:30–5:25pm'),
 ];
 
 const List<MassTime> sundayMasses = [
-  MassTime(label: 'Times', time: '8:00 AM, 10:00 AM and 5:30 PM'),
+  MassTime(time: '8:00 AM', moreTimes: ['10:00 AM', '5:30 PM']),
   MassTime(
     time: '10:00 AM',
-    name: 'Marsden Park Care Community',
+    name: 'at Marsden Park Care Community',
     note: '4th Sunday of the month: Liturgy of the Word with Holy Communion',
   ),
 ];
@@ -55,6 +51,7 @@ const List<MassTime> weekdayMasses = [
 const List<MassTimesCard> whatsOnCards = [
   MassTimesCard(
     title: 'Weekend Mass Times',
+    highlightTimes: true,
     subGroups: [
       MassSubGroup(label: 'Saturday Vigil Mass', rows: saturdayVigilMasses),
       MassSubGroup(label: 'Sunday Mass Times', rows: sundayMasses),
@@ -62,6 +59,7 @@ const List<MassTimesCard> whatsOnCards = [
   ),
   MassTimesCard(
     title: 'Weekday Mass Times',
+    highlightTimes: true,
     subGroups: [MassSubGroup(label: 'Weekday', rows: weekdayMasses)],
   ),
 ];

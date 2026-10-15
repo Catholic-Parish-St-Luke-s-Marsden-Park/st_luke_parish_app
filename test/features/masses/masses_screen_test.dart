@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/core/theme/app_colors.dart';
 import 'package:st_luke_parish_app/features/masses/data/config/static_mass_schedule_config.dart';
 import 'package:st_luke_parish_app/features/masses/domain/entities/mass_schedule.dart';
 import 'package:st_luke_parish_app/features/masses/domain/entities/mass_sub_group.dart';
@@ -108,6 +109,13 @@ void main() {
           .toList();
       expect(positions, orderedEquals(List.of(positions)..sort()));
 
+      // Sub-headings use the darker gold, readable on white (WCAG AA).
+      for (final label in ['SATURDAY VIGIL MASS', 'SUNDAY MASS TIMES']) {
+        final text = tester.widget<Text>(find.text(label));
+        expect(text.style?.color, AppColors.darkGold, reason: label);
+        expect(text.style?.fontSize, greaterThanOrEqualTo(14), reason: label);
+      }
+
       // The Weekday card's lone group label would repeat its heading.
       expect(find.text('WEEKDAY'), findsNothing);
     });
@@ -124,16 +132,12 @@ void main() {
         ),
         matching: find.text(text),
       );
-      const sundayTimes = 'Times: 8:00 AM, 10:00 AM and 5:30 PM';
-      expect(inCard('Weekend Mass Times', 'Time: 5:30 PM'), findsOneWidget);
-      expect(inCard('Weekend Mass Times', sundayTimes), findsOneWidget);
-      expect(inCard('Weekend Mass Times', 'Wednesday: 7:30 AM'), findsNothing);
-      expect(
-        inCard('Weekday Mass Times', 'Wednesday: 7:30 AM'),
-        findsOneWidget,
-      );
-      expect(inCard('Weekday Mass Times', 'Friday: 11:00 AM'), findsOneWidget);
-      expect(inCard('Weekday Mass Times', sundayTimes), findsNothing);
+      expect(inCard('Weekend Mass Times', '5:30 PM'), findsNWidgets(2));
+      expect(inCard('Weekend Mass Times', '8:00 AM'), findsOneWidget);
+      expect(inCard('Weekend Mass Times', 'Wednesday'), findsNothing);
+      expect(inCard('Weekday Mass Times', 'Wednesday'), findsOneWidget);
+      expect(inCard('Weekday Mass Times', '11:00 AM'), findsOneWidget);
+      expect(inCard('Weekday Mass Times', '8:00 AM'), findsNothing);
     });
 
     testWidgets('the Mass times cards are always open: no expansion tiles '
@@ -152,28 +156,42 @@ void main() {
     });
   });
 
-  group('REQ-F04-005: Sunday Mass Times — the three times on one row, then '
-      'the Care Community row', () {
-    testWidgets('renders the Sunday times row above the Care Community row', (
+  group('REQ-F04-005: Sunday Mass Times — the three times as ovals on one '
+      'row, then the Care Community row', () {
+    testWidgets('renders the Sunday times above the Care Community row', (
       tester,
     ) async {
       await pumpMassesScreen(tester);
 
-      const timesRow = 'Times: 8:00 AM, 10:00 AM and 5:30 PM';
-      expect(find.text(timesRow), findsOneWidget);
-      expect(find.text('10:00 AM'), findsOneWidget);
-      expect(find.text('Marsden Park Care Community'), findsOneWidget);
+      final sundayLabelY = tester.getTopLeft(find.text('SUNDAY MASS TIMES')).dy;
+      final careY = tester
+          .getTopLeft(find.text('at Marsden Park Care Community'))
+          .dy;
+      // 10:00 AM's first match is Sunday Mass (the second is the Care
+      // Community); 5:30 PM's last match is Sunday (the first is the Vigil).
+      final rowYs = [
+        for (final finder in [
+          find.text('8:00 AM'),
+          find.text('10:00 AM').first,
+          find.text('5:30 PM').last,
+        ])
+          tester.getTopLeft(finder).dy,
+      ];
+      // The three Sunday times share one line, under the Sunday label.
+      expect(rowYs.toSet(), hasLength(1));
+      expect(rowYs.first, greaterThan(sundayLabelY));
+      expect(rowYs.first, lessThan(careY));
+      // 10:00 AM: the Sunday Mass oval and the Care Community oval.
+      expect(find.text('10:00 AM'), findsNWidgets(2));
+      expect(find.text('at Marsden Park Care Community'), findsOneWidget);
       expect(
         find.text(
           '4th Sunday of the month: Liturgy of the Word with Holy Communion',
         ),
         findsOneWidget,
       );
-      expect(
-        tester.getTopLeft(find.text(timesRow)).dy,
-        lessThan(tester.getTopLeft(find.text('10:00 AM')).dy),
-      );
-      // The old one-row-per-Mass layout is gone.
+      // The old "Times:" text and one-row-per-Mass layout are gone.
+      expect(find.textContaining('Times:'), findsNothing);
       expect(find.text('Sunday Mass'), findsNothing);
       expect(find.text('Sun 8:00 AM'), findsNothing);
     });
@@ -183,14 +201,16 @@ void main() {
     testWidgets('renders the exact Vigil row and its note', (tester) async {
       await pumpMassesScreen(tester);
 
-      expect(find.text('Time: 5:30 PM'), findsOneWidget);
+      // First "5:30 PM" is the Vigil; the second is Sunday evening.
+      final vigil = find.text('5:30 PM').first;
       expect(find.text('Reconciliation from 4:30–5:25pm'), findsOneWidget);
       expect(
-        tester.getTopLeft(find.text('Time: 5:30 PM')).dy,
+        tester.getTopLeft(vigil).dy,
         lessThan(
           tester.getTopLeft(find.text('Reconciliation from 4:30–5:25pm')).dy,
         ),
       );
+      expect(find.textContaining('Time:'), findsNothing);
       expect(find.text('Sat 5:30 PM'), findsNothing);
     });
   });
@@ -200,19 +220,37 @@ void main() {
     testWidgets('renders the exact Weekday rows', (tester) async {
       await pumpMassesScreen(tester);
 
-      const times = [
-        'Wednesday: 7:30 AM',
-        'Thursday: 9:00 AM',
-        'Friday: 6:30 PM',
-        'Friday: 11:00 AM',
+      // Each row: the day name, then its time in an oval on the same line.
+      const rows = [
+        ('Wednesday', '7:30 AM'),
+        ('Thursday', '9:00 AM'),
+        ('Friday', '6:30 PM'),
+        ('Friday', '11:00 AM'),
       ];
-      for (final time in times) {
-        expect(find.text(time), findsOneWidget);
+      expect(find.text('Wednesday'), findsOneWidget);
+      expect(find.text('Thursday'), findsOneWidget);
+      expect(find.text('Friday'), findsNWidgets(2));
+      final fridays = find.text('Friday');
+      final positions = <double>[];
+      for (final (i, (day, time)) in rows.indexed) {
+        final dayFinder = day == 'Friday' ? fridays.at(i - 2) : find.text(day);
+        final timeFinder = find.text(time);
+        expect(timeFinder, findsOneWidget, reason: time);
+        final timeY = tester.getCenter(timeFinder).dy;
+        expect(
+          tester.getCenter(dayFinder).dy,
+          moreOrLessEquals(timeY, epsilon: 2),
+          reason: '$day and $time share a line',
+        );
+        expect(
+          tester.getTopLeft(timeFinder).dx,
+          greaterThan(tester.getTopLeft(dayFinder).dx),
+        );
+        positions.add(timeY);
       }
-      final positions = times
-          .map((t) => tester.getTopLeft(find.text(t)).dy)
-          .toList();
       expect(positions, orderedEquals(List.of(positions)..sort()));
+      // No "Day: time" text is left.
+      expect(find.textContaining(': 7:30 AM'), findsNothing);
 
       expect(
         find.descendant(

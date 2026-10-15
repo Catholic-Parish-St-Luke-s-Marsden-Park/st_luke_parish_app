@@ -5,6 +5,7 @@ import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
 import 'package:st_luke_parish_app/features/parish/data/config/church_leadership_config.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/screens/parish_screen.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/widgets/about_st_lukes_section.dart';
+import 'package:st_luke_parish_app/features/parish/presentation/widgets/parish_prayer_section.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/widgets/leadership_entry_tile.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/widgets/parish_hero_banner.dart';
 
@@ -393,6 +394,38 @@ void main() {
       await tester.tap(find.text("About St Luke's"));
       await tester.pumpAndSettle();
       expect(find.text(paragraphs.last), findsNothing);
+    });
+  });
+
+  group('Our Parish Prayer', () {
+    testWidgets('the prayer and its invocations show at the bottom, after '
+        'Church Leadership', (tester) async {
+      await pumpParishScreen(tester, fakeLauncher: _FakeUrlLauncherService());
+
+      expect(find.text('OUR PARISH PRAYER'), findsOneWidget);
+      expect(find.text(ParishPrayerSection.prayer), findsOneWidget);
+      for (final invocation in ParishPrayerSection.invocations) {
+        expect(find.text(invocation), findsOneWidget);
+      }
+
+      double top(Finder finder) => tester.getTopLeft(finder).dy;
+      final prayerY = top(find.text('OUR PARISH PRAYER'));
+      expect(prayerY, greaterThan(top(find.text('CHURCH LEADERSHIP'))));
+      for (final tile in tester.widgetList(find.byType(LeadershipEntryTile))) {
+        expect(prayerY, greaterThan(top(find.byWidget(tile))));
+      }
+    });
+
+    test('the prayer text matches the parish web app', () {
+      expect(
+        ParishPrayerSection.prayer,
+        startsWith('O God, You show us in St Luke, our patron,'),
+      );
+      expect(
+        ParishPrayerSection.prayer,
+        endsWith('We ask this through Christ our Lord. Amen.'),
+      );
+      expect(ParishPrayerSection.invocations, hasLength(4));
     });
   });
 }

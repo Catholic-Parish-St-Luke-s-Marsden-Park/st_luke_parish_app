@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_shapes.dart';
 import '../../domain/entities/mass_time.dart';
 
 /// A single, plain-text, non-interactive row rendering one [MassTime]'s
@@ -12,9 +13,17 @@ import '../../domain/entities/mass_time.dart';
 /// text scale reflow instead of overflowing (CLAUDE.md accessibility
 /// rules; REQ-F04-020).
 class MassRow extends StatelessWidget {
-  const MassRow({super.key, required this.massTime});
+  const MassRow({
+    super.key,
+    required this.massTime,
+    this.highlightTimes = false,
+  });
 
   final MassTime massTime;
+
+  /// Show each time in a gold oval (like the Saint of the Day pill) instead
+  /// of as "Label: time" text. Decoration only; nothing is tappable.
+  final bool highlightTimes;
 
   @override
   Widget build(BuildContext context) {
@@ -28,17 +37,33 @@ class MassRow extends StatelessWidget {
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: 10,
-            runSpacing: 2,
+            runSpacing: 8,
             children: [
-              Text(
-                massTime.label == null
-                    ? massTime.time
-                    : '${massTime.label}: ${massTime.time}',
-                style: textTheme.titleSmall?.copyWith(
-                  color: AppColors.primaryNavy,
-                  fontWeight: FontWeight.w700,
+              if (highlightTimes) ...[
+                if (massTime.label case final day?)
+                  // A minimum (not fixed) width lines the ovals up under
+                  // each other, but still grows with large system text.
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 104),
+                    child: Text(
+                      day,
+                      style: textTheme.titleSmall?.copyWith(
+                        color: AppColors.primaryNavy,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                for (final time in massTime.allTimes) _TimePill(time),
+              ] else
+                Text(
+                  massTime.label == null
+                      ? massTime.time
+                      : '${massTime.label}: ${massTime.time}',
+                  style: textTheme.titleSmall?.copyWith(
+                    color: AppColors.primaryNavy,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
               if (massTime.name != null)
                 Text(massTime.name!, style: textTheme.bodyLarge),
             ],
@@ -49,6 +74,34 @@ class MassRow extends StatelessWidget {
               child: Text(massTime.note!, style: textTheme.bodySmall),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// A time in a gold oval, styled like the Saint of the Day pill. Not a
+/// button: there is no tap behaviour.
+class _TimePill extends StatelessWidget {
+  const _TimePill(this.time);
+
+  final String time;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.gold,
+        borderRadius: AppShapes.pillBorderRadius,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        child: Text(
+          time,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
     );
   }

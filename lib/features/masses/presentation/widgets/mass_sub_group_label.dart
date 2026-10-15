@@ -13,12 +13,16 @@ class MassSubGroupLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 12, 2, 6),
-      child: Text(
-        label.toUpperCase(),
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: AppColors.gold,
-          fontWeight: FontWeight.w700,
+      padding: const EdgeInsets.fromLTRB(2, 14, 2, 6),
+      child: Semantics(
+        header: true,
+        child: Text(
+          label.toUpperCase(),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: AppColors.darkGold,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+          ),
         ),
       ),
     );
