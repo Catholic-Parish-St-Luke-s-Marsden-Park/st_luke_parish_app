@@ -266,52 +266,40 @@ void main() {
     });
   });
 
-  group(
-    'REQ-F05-023/024/025: exactly 2 static announcements, exact content',
-    () {
-      testWidgets(
-        'renders both announcements with exact badge/title/body/date',
-        (tester) async {
-          await pumpNewsScreen(
-            tester,
-            fakeRepository: _FakeBulletinsRepository.returning([
-              _bulletin('30th August 2026'),
-            ]),
-          );
-
-          expect(staticAnnouncements, hasLength(2));
-
-          expect(find.text('MILESTONE'), findsOneWidget);
-          expect(find.text('New Parish Building Now Open'), findsOneWidget);
-          expect(
-            find.text(
-              'Our purpose-built parish building was opened and blessed on '
-              'the Feast of St Luke in October 2025. All Masses and parish '
-              'events are now held at the corner of Frontier Avenue and '
-              'Northbourne Drive.',
-            ),
-            findsOneWidget,
-          );
-          expect(find.text('October 2025'), findsOneWidget);
-
-          expect(find.text('NEW TO THE AREA?'), findsOneWidget);
-          expect(find.text('New to Marsden Park?'), findsOneWidget);
-          expect(
-            find.text(
-              "If you've recently moved to Marsden Park, Elara, Colebee or "
-              'surrounds, email us at marsdenpark@parracatholic.org with your '
-              'name and contact details to stay updated.',
-            ),
-            findsOneWidget,
-          );
-          expect(find.text('Ongoing'), findsOneWidget);
-
-          // REQ-F05-025: the reference app's third entry must not appear.
-          expect(find.text('Sacramental Programme 2026'), findsNothing);
-        },
+  group('REQ-F05-023/024/025: the static announcement, exact content', () {
+    testWidgets('renders the announcement with exact badge/title/body/date; '
+        '"New to Marsden Park?" has moved to the Parish tab', (tester) async {
+      await pumpNewsScreen(
+        tester,
+        fakeRepository: _FakeBulletinsRepository.returning([
+          _bulletin('30th August 2026'),
+        ]),
       );
-    },
-  );
+
+      expect(staticAnnouncements, hasLength(1));
+
+      expect(find.text('MILESTONE'), findsOneWidget);
+      expect(find.text('New Parish Building Now Open'), findsOneWidget);
+      expect(
+        find.text(
+          'Our purpose-built parish building was opened and blessed on '
+          'the Feast of St Luke in October 2025. All Masses and parish '
+          'events are now held at the corner of Frontier Avenue and '
+          'Northbourne Drive.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('October 2025'), findsOneWidget);
+
+      // Moved to the Parish tab (parish request, 2026-10-16).
+      expect(find.text('NEW TO THE AREA?'), findsNothing);
+      expect(find.text('New to Marsden Park?'), findsNothing);
+      expect(find.text('Ongoing'), findsNothing);
+
+      // REQ-F05-025: the reference app's third entry must not appear.
+      expect(find.text('Sacramental Programme 2026'), findsNothing);
+    });
+  });
 
   group('REQ-F05-026/027/028: Prayer Intentions card content and CTA', () {
     testWidgets('renders the quote, body, and CTA; tapping the CTA launches '

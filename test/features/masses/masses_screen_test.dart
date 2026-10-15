@@ -11,6 +11,7 @@ import 'package:st_luke_parish_app/features/masses/domain/entities/parish_activi
 import 'package:st_luke_parish_app/features/masses/presentation/providers/mass_schedule_provider.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_screen.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/activity_ribbon.dart';
+import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_symbol_icon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_card.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_row.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_section_header.dart';
@@ -286,15 +287,6 @@ void main() {
         positions.add(timeY);
       }
       expect(positions, orderedEquals(List.of(positions)..sort()));
-      // Wednesday and Thursday share one line to save space; each Friday
-      // keeps its own line for its note.
-      expect(positions[0], moreOrLessEquals(positions[1], epsilon: 2));
-      expect(
-        tester.getTopLeft(find.text('Thursday')).dx,
-        greaterThan(tester.getTopLeft(find.text('7:30 AM')).dx),
-      );
-      expect(positions[2], greaterThan(positions[1] + 10));
-      expect(positions[3], greaterThan(positions[2] + 10));
       // No "Day: time" text is left.
       expect(find.textContaining(': 7:30 AM'), findsNothing);
 
@@ -484,27 +476,28 @@ void main() {
     ) async {
       await pumpMassesScreen(tester);
 
-      const expected = {
-        'Saturday Vigil Mass': Icons.nights_stay_outlined,
-        'Sunday Mass Times': Icons.wb_sunny_outlined,
-        'Weekday Mass Times': Icons.calendar_today_outlined,
+      // A chalice and the host for the Vigil and Sunday Masses; a calendar for
+      // weekdays. No sun or moon.
+      final expected = {
+        'Saturday Vigil Mass': find.byType(MassSymbolIcon),
+        'Sunday Mass Times': find.byType(MassSymbolIcon),
+        'Weekday Mass Times': find.byIcon(Icons.calendar_today_outlined),
       };
       for (final MapEntry(key: title, value: icon) in expected.entries) {
         final card = find.ancestor(
           of: find.text(title),
           matching: find.byType(MassCard),
         );
+        final inCard = find.descendant(of: card, matching: icon);
+        expect(inCard, findsOneWidget, reason: title);
         expect(
-          find.descendant(of: card, matching: find.byIcon(icon)),
-          findsOneWidget,
-          reason: title,
-        );
-        expect(
-          tester.getTopLeft(find.byIcon(icon)).dx,
+          tester.getTopLeft(inCard).dx,
           lessThan(tester.getTopLeft(find.text(title)).dx),
           reason: '$title icon comes first',
         );
       }
+      expect(find.byIcon(Icons.nights_stay_outlined), findsNothing);
+      expect(find.byIcon(Icons.wb_sunny_outlined), findsNothing);
     });
 
     testWidgets('Mass row text is navy, matching the times', (tester) async {

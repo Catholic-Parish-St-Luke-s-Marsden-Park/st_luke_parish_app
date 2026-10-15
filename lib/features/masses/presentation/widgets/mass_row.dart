@@ -23,7 +23,7 @@ class MassRow extends StatelessWidget {
 
   /// Mass times are the main thing people look for, so they are set larger
   /// than the surrounding text (parish request, 2026-10-16).
-  static const double timeFontSize = 19;
+  static const double _timeFontSize = 19;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +60,7 @@ class MassRow extends StatelessWidget {
                         '·',
                         style: TextStyle(
                           color: AppColors.textMuted,
-                          fontSize: timeFontSize,
+                          fontSize: _timeFontSize,
                         ),
                       ),
                     ),
@@ -68,7 +68,7 @@ class MassRow extends StatelessWidget {
                     time,
                     style: textTheme.titleMedium?.copyWith(
                       color: AppColors.primaryNavy,
-                      fontSize: timeFontSize,
+                      fontSize: _timeFontSize,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -80,7 +80,7 @@ class MassRow extends StatelessWidget {
                       : '${massTime.label}: ${massTime.time}',
                   style: textTheme.titleMedium?.copyWith(
                     color: AppColors.primaryNavy,
-                    fontSize: timeFontSize,
+                    fontSize: _timeFontSize,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

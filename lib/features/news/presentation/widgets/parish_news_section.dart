@@ -5,7 +5,7 @@ import 'announcement_list_item.dart';
 import 'news_card.dart';
 import 'news_section_header.dart';
 
-/// "Parish News" section: exactly 2 static announcement entries
+/// "Parish News" section: the static announcement entries
 /// (REQ-F05-023..025).
 class ParishNewsSection extends StatelessWidget {
   const ParishNewsSection({super.key});

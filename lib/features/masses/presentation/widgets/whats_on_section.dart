@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../domain/entities/mass_time.dart';
 import '../../domain/entities/mass_times_card.dart';
 import 'mass_card.dart';
-import 'mass_days_row.dart';
 import 'mass_times_card_icon.dart';
 import 'mass_row.dart';
 import 'mass_sub_group_label.dart';
@@ -39,35 +37,13 @@ class WhatsOnSection extends StatelessWidget {
                 for (final subGroup in card.subGroups) ...[
                   if (card.subGroups.length > 1)
                     MassSubGroupLabel(subGroup.label),
-                  for (final rows in _lines(subGroup.rows, card.listTimes))
-                    if (rows.length > 1)
-                      MassDaysRow(massTimes: rows)
-                    else
-                      MassRow(massTime: rows.single, listTimes: card.listTimes),
+                  for (final row in subGroup.rows)
+                    MassRow(massTime: row, listTimes: card.listTimes),
                 ],
               ],
             ),
           ),
       ],
     );
-  }
-
-  /// Splits [rows] into display lines: back-to-back day-and-time-only
-  /// Masses (e.g. Wednesday and Thursday) share a line; every other row
-  /// gets its own.
-  static List<List<MassTime>> _lines(List<MassTime> rows, bool listTimes) {
-    final lines = <List<MassTime>>[];
-    for (final row in rows) {
-      final previous = lines.lastOrNull;
-      if (listTimes &&
-          row.isDayAndTimeOnly &&
-          previous != null &&
-          previous.last.isDayAndTimeOnly) {
-        previous.add(row);
-      } else {
-        lines.add([row]);
-      }
-    }
-    return lines;
   }
 }

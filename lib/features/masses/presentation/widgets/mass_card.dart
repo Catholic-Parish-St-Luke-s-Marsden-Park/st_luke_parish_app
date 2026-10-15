@@ -20,7 +20,7 @@ class MassCard extends StatelessWidget {
   final Widget child;
 
   /// Optional decorative icon before the [title], in the navy band.
-  final IconData? icon;
+  final Widget? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -41,10 +41,8 @@ class MassCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                if (icon != null) ...[
-                  ExcludeSemantics(
-                    child: Icon(icon, color: AppColors.lightGold, size: 22),
-                  ),
+                if (icon case final icon?) ...[
+                  ExcludeSemantics(child: icon),
                   const SizedBox(width: 10),
                 ],
                 Expanded(

@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_shapes.dart';
 import '../../../../core/theme/app_typography.dart';
+import 'pastoral_plan_panel.dart';
 import 'section_label.dart';
 
 /// "About St Luke's" section: a pull-down card headed by the St Luke's emblem and
-/// the title, showing the first paragraph as a teaser and the rest when
-/// opened (parish request, 2026-10-15; supersedes REQ-F02-010's no-icon
+/// the title, showing the first paragraph as a teaser and the rest, then
+/// the Pastoral Plan, when opened (parish request, 2026-10-15; supersedes REQ-F02-010's no-icon
 /// rule).
 class AboutStLukesSection extends StatelessWidget {
   const AboutStLukesSection({super.key});
@@ -97,6 +98,7 @@ class AboutStLukesSection extends StatelessWidget {
                     const SizedBox(height: 10),
                     Text(paragraph, style: bodyStyle),
                   ],
+                  const PastoralPlanPanel(),
                 ],
               ),
             ),

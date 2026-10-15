@@ -102,7 +102,7 @@ const List<ParishActivity> regularActivities = [
   ParishActivity(
     title: "Children's Liturgy",
     kind: ParishActivityKind.childrensLiturgy,
-    when: 'During school term, at Saturday Vigil & Sunday Mass',
+    when: 'During school term, at Saturday Vigil & Sunday 10am Mass',
     who: 'Ages 5-10',
     description:
         'Children are invited out during Mass to hear and explore the '
@@ -163,8 +163,7 @@ const List<ParishActivity> regularActivities = [
   ParishActivity(
     title: 'Parish Cuppa',
     kind: ParishActivityKind.cuppa,
-    when: 'Every 2nd weekend',
-    where: 'After Mass',
+    when: 'Every 2nd weekend after Mass (Sat 5:30pm | Sun 10am & 5:30pm)',
     description:
         'Stay after Mass for a cup of tea or coffee and a chat. It is a '
         'great way to meet fellow parishioners and welcome newcomers to '
