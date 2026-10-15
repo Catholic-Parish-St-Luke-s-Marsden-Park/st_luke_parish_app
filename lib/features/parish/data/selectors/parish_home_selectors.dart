@@ -33,6 +33,14 @@ class LabelledLinkSelector {
 /// Selectors for the parish home page (`https://stlukesmarsdenpark.org.au/`).
 /// See `.claude/context/selector-registry.md`.
 abstract final class ParishHomeSelectors {
+  /// The home page's "Parish Pastoral Plan 2026-2028" button.
+  static const pastoralPlanUrl = LabelledLinkSelector(
+    key: 'pastoral_plan_url',
+    selector: 'a[href]',
+    labelContains: ['pastoral plan'],
+    fallbackValue: PastoralPlanConfig.pdfUrl,
+  );
+
   /// The home page's "Parish Pastoral Council Meeting Minutes" button,
   /// which the parish points at the latest minutes after each meeting.
   static const pastoralCouncilMinutesUrl = LabelledLinkSelector(

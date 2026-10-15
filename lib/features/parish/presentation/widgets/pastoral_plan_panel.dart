@@ -10,19 +10,24 @@ import '../providers/parish_documents_provider.dart';
 /// The Pastoral Plan at the end of the "About St Luke's" card: the four
 /// pillars in words and as the parish's graphic, then buttons that open
 /// the full plan and the latest Parish Pastoral Council minutes (PDFs) in
-/// the device's browser. The minutes link is read from the parish home
-/// page each time, so it follows the parish's monthly updates.
+/// the device's browser. Both links are read from the parish home page
+/// each time, so they follow the parish's updates; the pillars text and
+/// graphic stay as shipped.
 class PastoralPlanPanel extends ConsumerWidget {
   const PastoralPlanPanel({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final minutesUrl = switch (ref.watch(latestCouncilMinutesUrlProvider)) {
+    final links = switch (ref.watch(parishDocumentLinksProvider)) {
       AsyncData(:final value) => value,
-      // Still loading, or the home page couldn't be read: open the minutes
-      // known when this build was made, so the button always works.
-      _ => PastoralPlanConfig.councilMinutesUrl,
+      // Still loading, or the home page couldn't be read.
+      _ => null,
     };
+    // Any link not (yet) read from the home page falls back to the one
+    // known when this build was made, so both buttons always work.
+    final planUrl = links?.pastoralPlanUrl ?? PastoralPlanConfig.pdfUrl;
+    final minutesUrl =
+        links?.councilMinutesUrl ?? PastoralPlanConfig.councilMinutesUrl;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -59,9 +64,8 @@ class PastoralPlanPanel extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         FilledButton.icon(
-          onPressed: () => ref
-              .read(urlLauncherServiceProvider)
-              .launchExternal(PastoralPlanConfig.pdfUrl),
+          onPressed: () =>
+              ref.read(urlLauncherServiceProvider).launchExternal(planUrl),
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.primaryNavy,
             foregroundColor: Colors.white,

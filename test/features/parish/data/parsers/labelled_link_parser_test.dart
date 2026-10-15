@@ -21,10 +21,27 @@ const _latestMinutes =
     'https://stlukesmarsdenpark.org.au/wp-content/uploads/2026/10/'
     '17-October-2026-Parish-Pastoral-Council-Meeting-Minutes.pdf';
 
+const _plan =
+    'https://stlukesmarsdenpark.org.au/wp-content/uploads/2026/09/'
+    'Parish-Pastoral-Plan-2026-2028.pdf';
+
 final _base = Uri.parse('https://stlukesmarsdenpark.org.au/');
 const _minutes = ParishHomeSelectors.pastoralCouncilMinutesUrl;
 
 void main() {
+  group('parseLabelledLink — Pastoral Plan', () {
+    test('returns the plan link, not the minutes link', () {
+      expect(
+        parseLabelledLink(
+          _homePage,
+          ParishHomeSelectors.pastoralPlanUrl,
+          baseUri: _base,
+        ),
+        _plan,
+      );
+    });
+  });
+
   group('parseLabelledLink — Pastoral Council minutes', () {
     test('returns the minutes link, not the Pastoral Plan link', () {
       expect(

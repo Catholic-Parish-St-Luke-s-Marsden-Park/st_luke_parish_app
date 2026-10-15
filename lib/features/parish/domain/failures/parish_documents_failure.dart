@@ -16,7 +16,7 @@ final class ParishDocumentsNetworkFailure extends ParishDocumentsFailure {
   const ParishDocumentsNetworkFailure(super.message);
 }
 
-/// The page loaded, but the expected link was missing or not a valid URL.
+/// The page loaded, but none of the expected links were found.
 final class ParishDocumentsParsingFailure extends ParishDocumentsFailure {
   const ParishDocumentsParsingFailure(super.message);
 }

@@ -16,6 +16,9 @@ abstract final class PastoralPlanConfig {
       'Enrichment, Serving God and Others, Stronger Community Connection '
       'and Vibrant Worship Experience';
 
+  /// The plan PDF known when this build was made. The app reads the
+  /// current link from the parish home page; this one is used until that
+  /// has loaded, or if it can't be read.
   static const pdfUrl =
       'https://stlukesmarsdenpark.org.au/wp-content/uploads/2026/09/'
       'Parish-Pastoral-Plan-2026-2028.pdf';

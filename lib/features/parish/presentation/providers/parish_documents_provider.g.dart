@@ -61,47 +61,55 @@ final class ParishDocumentsRepositoryProvider
 String _$parishDocumentsRepositoryHash() =>
     r'8db8136bd12055d40e509eacaff7defac734442c';
 
-/// The latest Pastoral Council minutes URL from the parish home page.
-/// Auto-disposed, so it is read afresh each time the Pastoral Plan is
-/// opened.
+/// The current Pastoral Plan and Pastoral Council minutes links from the
+/// parish home page. Auto-disposed, so they are read afresh each time the
+/// Pastoral Plan is opened.
 
-@ProviderFor(latestCouncilMinutesUrl)
-final latestCouncilMinutesUrlProvider = LatestCouncilMinutesUrlProvider._();
+@ProviderFor(parishDocumentLinks)
+final parishDocumentLinksProvider = ParishDocumentLinksProvider._();
 
-/// The latest Pastoral Council minutes URL from the parish home page.
-/// Auto-disposed, so it is read afresh each time the Pastoral Plan is
-/// opened.
+/// The current Pastoral Plan and Pastoral Council minutes links from the
+/// parish home page. Auto-disposed, so they are read afresh each time the
+/// Pastoral Plan is opened.
 
-final class LatestCouncilMinutesUrlProvider
-    extends $FunctionalProvider<AsyncValue<String>, String, FutureOr<String>>
-    with $FutureModifier<String>, $FutureProvider<String> {
-  /// The latest Pastoral Council minutes URL from the parish home page.
-  /// Auto-disposed, so it is read afresh each time the Pastoral Plan is
-  /// opened.
-  LatestCouncilMinutesUrlProvider._()
+final class ParishDocumentLinksProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<ParishDocumentLinks>,
+          ParishDocumentLinks,
+          FutureOr<ParishDocumentLinks>
+        >
+    with
+        $FutureModifier<ParishDocumentLinks>,
+        $FutureProvider<ParishDocumentLinks> {
+  /// The current Pastoral Plan and Pastoral Council minutes links from the
+  /// parish home page. Auto-disposed, so they are read afresh each time the
+  /// Pastoral Plan is opened.
+  ParishDocumentLinksProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'latestCouncilMinutesUrlProvider',
+        name: r'parishDocumentLinksProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$latestCouncilMinutesUrlHash();
+  String debugGetCreateSourceHash() => _$parishDocumentLinksHash();
 
   @$internal
   @override
-  $FutureProviderElement<String> $createElement($ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
+  $FutureProviderElement<ParishDocumentLinks> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<String> create(Ref ref) {
-    return latestCouncilMinutesUrl(ref);
+  FutureOr<ParishDocumentLinks> create(Ref ref) {
+    return parishDocumentLinks(ref);
   }
 }
 
-String _$latestCouncilMinutesUrlHash() =>
-    r'706f845073ec846ddb07b109f3449f71ec94165d';
+String _$parishDocumentLinksHash() =>
+    r'59d1d93c6779b4a5007bf84a508c1c104bd95a29';
