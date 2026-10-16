@@ -76,16 +76,6 @@ class _MinistryDetailView extends StatelessWidget {
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      ministry.tagline,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -97,20 +87,6 @@ class _MinistryDetailView extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      _StatChip(label: 'When', value: ministry.time),
-                      const SizedBox(width: 8),
-                      _StatChip(label: 'Where', value: ministry.location),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      _StatChip(label: 'Open to', value: ministry.open),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
                   Text(
                     'ABOUT THIS MINISTRY',
                     style: AppTypography.display(fontSize: 12),
@@ -238,43 +214,6 @@ class _DetailCard extends StatelessWidget {
         boxShadow: AppShapes.cardShadow,
       ),
       child: child,
-    );
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  const _StatChip({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: AppColors.cream,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 9,
-                letterSpacing: 0.12,
-                color: AppColors.textMuted,
-              ),
-            ),
-            Text(
-              value,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

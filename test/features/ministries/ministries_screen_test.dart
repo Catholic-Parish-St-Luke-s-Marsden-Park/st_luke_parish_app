@@ -18,7 +18,7 @@ void main() {
   final fallback = loadFallbackMinistries();
 
   Future<void> pumpMinistriesScreen(WidgetTester tester) async {
-    // MinistriesScreen renders 16 rows across 4 category sections, well
+    // MinistriesScreen renders 25 rows across 4 category sections, well
     // taller than the default 800x600 test surface — use a tall surface so
     // every row/category header is built and findable without needing to
     // scroll mid-test.
@@ -73,14 +73,14 @@ void main() {
       }
     });
 
-    testWidgets('all 16 ministry rows are reachable, in order', (tester) async {
+    testWidgets('all 25 ministry rows are reachable, in order', (tester) async {
       await pumpMinistriesScreen(tester);
 
       final rowIds = tester
           .widgetList<MinistryRow>(find.byType(MinistryRow))
           .map((row) => row.ministry.id)
           .toList();
-      expect(rowIds, hasLength(16));
+      expect(rowIds, hasLength(25));
       expect(
         rowIds,
         fallback
@@ -91,13 +91,13 @@ void main() {
     });
   });
 
-  group('REQ-F03-003: ministry row renders name and "members · day"', () {
-    testWidgets('a row shows its ministry name and members · day line', (
+  group('REQ-F03-003: ministry row renders the name only', () {
+    testWidgets('a row shows its name, with no members/day line', (
       tester,
     ) async {
       await pumpMinistriesScreen(tester);
 
-      final music = fallbackMinistry('music');
+      final music = fallbackMinistry('music-ministry');
       final rowFinder = find.ancestor(
         of: find.text(music.name),
         matching: find.byType(MinistryRow),
@@ -108,24 +108,32 @@ void main() {
           of: rowFinder,
           matching: find.text('${music.membersLine} · ${music.dayLine}'),
         ),
-        findsOneWidget,
+        findsNothing,
       );
+    });
+
+    testWidgets('the pastoral-plan line is gone from the header', (
+      tester,
+    ) async {
+      await pumpMinistriesScreen(tester);
+
+      expect(find.textContaining('Our pastoral plan'), findsNothing);
     });
   });
 
   group('REQ-F03-004: tapping a ministry row navigates to its detail '
       'screen', () {
-    testWidgets('tapping the Music Ministry row opens its detail screen', (
+    testWidgets('tapping the Music row opens its detail screen', (
       tester,
     ) async {
       await pumpMinistriesScreen(tester);
 
-      await tester.tap(find.text('Music Ministry'));
+      await tester.tap(find.text('Music'));
       await tester.pumpAndSettle();
 
       expect(find.byType(MinistryDetailScreen), findsOneWidget);
       // The detail screen's hero shows the ministry's name.
-      expect(find.text('Music Ministry'), findsOneWidget);
+      expect(find.text('Music'), findsOneWidget);
     });
   });
 }

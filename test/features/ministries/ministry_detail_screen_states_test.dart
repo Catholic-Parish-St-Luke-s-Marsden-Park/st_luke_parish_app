@@ -65,7 +65,7 @@ void main() {
     await pumpDetail(
       tester,
       FakeMinistriesRepository(watch: () => controller.stream),
-      ministryId: 'music',
+      ministryId: 'music-ministry',
       settle: false,
     );
 
@@ -74,16 +74,16 @@ void main() {
 
     controller.add(loadFallbackMinistries());
     await tester.pumpAndSettle();
-    expect(find.text('Music Ministry'), findsOneWidget);
+    expect(find.text('Music'), findsOneWidget);
   });
 
   testWidgets('REQ-F08-015: a ministry in the loaded list is shown without '
       'a fetch', (tester) async {
     final repository = FakeMinistriesRepository();
 
-    await pumpDetail(tester, repository, ministryId: 'sre');
+    await pumpDetail(tester, repository, ministryId: 'sre-ministry');
 
-    expect(find.text('SRE Ministry'), findsOneWidget);
+    expect(find.text('SRE'), findsOneWidget);
     expect(repository.byIdRequests, isEmpty);
   });
 
