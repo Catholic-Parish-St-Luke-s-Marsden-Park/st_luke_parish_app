@@ -10,9 +10,7 @@ enum ResourceKind {
   readings,
   video,
   podcast,
-  children,
   prayers,
-  saints,
   renewal,
   reflections,
 }

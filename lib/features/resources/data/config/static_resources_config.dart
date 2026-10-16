@@ -90,24 +90,12 @@ const List<ResourceGroup> faithFormationGroups = [
         destination: WebDestination('https://www.wordonfire.org'),
       ),
       ResourceLink(
-        title: 'Catholic Sprout',
-        subtitle: 'catholicsprout.com',
-        kind: ResourceKind.children,
-        destination: WebDestination('https://www.catholicsprout.com'),
-      ),
-      ResourceLink(
         title: 'Catholic Prayers',
         subtitle: 'usccb.org',
         kind: ResourceKind.prayers,
         destination: WebDestination(
           'https://www.usccb.org/prayer-and-worship/prayers-and-devotions',
         ),
-      ),
-      ResourceLink(
-        title: 'Saints Directory',
-        subtitle: 'catholic.org',
-        kind: ResourceKind.saints,
-        destination: WebDestination('https://www.catholic.org/saints/'),
       ),
       ResourceLink(
         title: 'CHARIS',

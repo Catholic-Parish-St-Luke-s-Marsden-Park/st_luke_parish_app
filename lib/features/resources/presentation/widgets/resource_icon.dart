@@ -13,9 +13,7 @@ IconData resourceIcon(ResourceKind kind) => switch (kind) {
   ResourceKind.readings => Icons.auto_stories_outlined,
   ResourceKind.video => Icons.play_circle_outline,
   ResourceKind.podcast => Icons.local_fire_department_outlined,
-  ResourceKind.children => Icons.child_care_outlined,
   ResourceKind.prayers => Icons.self_improvement,
-  ResourceKind.saints => Icons.star_outline,
   // The rushing wind of Pentecost.
   ResourceKind.renewal => Icons.air,
   ResourceKind.reflections => Icons.wb_twilight_outlined,

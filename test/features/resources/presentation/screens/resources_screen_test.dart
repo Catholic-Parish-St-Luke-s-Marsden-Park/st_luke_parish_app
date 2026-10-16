@@ -102,14 +102,27 @@ void main() {
   });
 
   testWidgets(
-    'the Faith Formation page shows its seven links, CHARIS just before On Our Knees',
+    'the Faith Formation page shows its five links, CHARIS just before On Our Knees',
     (tester) async {
       await pumpResources(tester, faithFormation: true);
 
       expect(find.widgetWithText(AppBar, 'Faith Formation'), findsOneWidget);
       final links = faithFormationGroups.expand((g) => g.links).toList();
-      expect(links, hasLength(7));
-      expect(links.map((l) => l.title).skip(5), ['CHARIS', 'On Our Knees']);
+      expect(links, hasLength(5));
+      expect(links.map((l) => l.title), [
+        'FORMED',
+        'Word on Fire',
+        'Catholic Prayers',
+        'CHARIS',
+        'On Our Knees',
+      ]);
+      for (final gone in [
+        'Encounter Ministries',
+        'Catholic Sprout',
+        'Saints Directory',
+      ]) {
+        expect(find.text(gone), findsNothing, reason: gone);
+      }
       for (final link in links) {
         expect(find.text(link.title), findsOneWidget, reason: link.title);
       }
