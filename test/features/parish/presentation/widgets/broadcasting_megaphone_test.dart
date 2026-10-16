@@ -9,12 +9,15 @@ void main() {
     return tester.pumpWidget(
       MediaQuery(
         data: MediaQueryData(disableAnimations: reduceMotion),
-        child: const Center(child: BroadcastingMegaphone(color: Colors.black)),
+        child: const Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(child: BroadcastingMegaphone(color: Colors.black)),
+        ),
       ),
     );
   }
 
-  testWidgets('the sound waves keep moving', (tester) async {
+  testWidgets('the sound lines keep bursting out', (tester) async {
     BroadcastingMegaphone.disableForTesting = false;
     await pump(tester);
 
