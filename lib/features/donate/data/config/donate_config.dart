@@ -35,9 +35,7 @@ abstract final class DonateConfig {
       title: 'Personnel & Staffing',
       kind: GivingAreaKind.staffing,
       description:
-          'Salaries and health benefits for our priests, office staff, music '
-          'ministers, and facility maintenance team who keep our community '
-          'running every day.',
+          'Salaries and health benefits for our priests and office staff.',
     ),
     GivingArea(
       title: 'Facilities & Operations',
