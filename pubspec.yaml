@@ -59,6 +59,9 @@ dependencies:
   rrule: ^0.2.18
   timezone: ^0.11.1
   add_2_calendar: ^3.1.1
+  # Parish home page HTML parsing with CSS selectors (dart-lang's own
+  # parser), used to find the latest Pastoral Council minutes link.
+  html: ^0.15.7
 
 dev_dependencies:
   flutter_test:

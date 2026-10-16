@@ -16,13 +16,16 @@ abstract final class PastoralPlanConfig {
       'Enrichment, Serving God and Others, Stronger Community Connection '
       'and Vibrant Worship Experience';
 
+  /// The plan PDF known when this build was made. The app reads the
+  /// current link from the parish home page; this one is used until that
+  /// has loaded, or if it can't be read.
   static const pdfUrl =
       'https://stlukesmarsdenpark.org.au/wp-content/uploads/2026/09/'
       'Parish-Pastoral-Plan-2026-2028.pdf';
 
-  /// The latest Parish Pastoral Council minutes, as linked from the parish
-  /// home page. The parish uploads new minutes after each meeting, so this
-  /// link needs updating when they do.
+  /// Pastoral Council minutes known when this build was made. The app reads
+  /// the current link from the parish home page; this one is used until
+  /// that has loaded, or if it can't be read.
   static const councilMinutesUrl =
       'https://stlukesmarsdenpark.org.au/wp-content/uploads/2026/09/'
       '19-September-2026-Parish-Pastoral-Council-Meeting-Minutes.pdf';

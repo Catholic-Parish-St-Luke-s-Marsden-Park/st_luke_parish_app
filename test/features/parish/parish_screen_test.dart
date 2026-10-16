@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
 import 'package:st_luke_parish_app/features/parish/data/config/church_leadership_config.dart';
+import 'package:st_luke_parish_app/features/parish/presentation/providers/parish_documents_provider.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/screens/parish_screen.dart';
 import 'package:st_luke_parish_app/features/parish/data/config/pastoral_plan_config.dart';
+import 'package:st_luke_parish_app/features/parish/domain/entities/parish_document_links.dart';
+import 'package:st_luke_parish_app/features/parish/domain/failures/parish_documents_failure.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/widgets/about_st_lukes_section.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/widgets/new_to_marsden_park_section.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/widgets/parish_prayer_section.dart';
@@ -27,6 +30,7 @@ void main() {
   Future<void> pumpParishScreen(
     WidgetTester tester, {
     required _FakeUrlLauncherService fakeLauncher,
+    Future<ParishDocumentLinks> Function()? documentLinks,
   }) async {
     // ParishScreen is a lazily built ListView, so a tall surface is needed
     // for every section (Church Leadership sits below the About copy) to be
@@ -36,7 +40,20 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [urlLauncherServiceProvider.overrideWithValue(fakeLauncher)],
+        overrides: [
+          urlLauncherServiceProvider.overrideWithValue(fakeLauncher),
+          // Never read the real parish home page from a widget test.
+          parishDocumentLinksProvider.overrideWith(
+            (ref) =>
+                documentLinks?.call() ??
+                Future.value(
+                  const ParishDocumentLinks(
+                    pastoralPlanUrl: PastoralPlanConfig.pdfUrl,
+                    councilMinutesUrl: PastoralPlanConfig.councilMinutesUrl,
+                  ),
+                ),
+          ),
+        ],
         child: const MaterialApp(home: Scaffold(body: ParishScreen())),
       ),
     );
@@ -451,6 +468,83 @@ void main() {
         greaterThanOrEqualTo(48),
       );
       await tester.tap(minutes);
+      expect(launcher.launchedUrls, [
+        PastoralPlanConfig.pdfUrl,
+        PastoralPlanConfig.councilMinutesUrl,
+      ]);
+    });
+
+    Future<void> openAndTapBothButtons(WidgetTester tester) async {
+      await tester.tap(find.text("About St Luke's"));
+      await tester.pumpAndSettle();
+      for (final label in [
+        'Read our Pastoral Plan',
+        'Pastoral Council Meeting Minutes',
+      ]) {
+        final button = find.text(label);
+        await tester.ensureVisible(button);
+        await tester.pumpAndSettle();
+        await tester.tap(button);
+      }
+    }
+
+    testWidgets('both buttons open the links found on the parish home page', (
+      tester,
+    ) async {
+      const plan =
+          'https://stlukesmarsdenpark.org.au/wp-content/uploads/'
+          '2029/01/Parish-Pastoral-Plan-2029-2031.pdf';
+      const minutes =
+          'https://stlukesmarsdenpark.org.au/wp-content/uploads/'
+          '2026/10/17-October-2026-Parish-Pastoral-Council-Meeting-Minutes.pdf';
+      final launcher = _FakeUrlLauncherService();
+      await pumpParishScreen(
+        tester,
+        fakeLauncher: launcher,
+        documentLinks: () async => const ParishDocumentLinks(
+          pastoralPlanUrl: plan,
+          councilMinutesUrl: minutes,
+        ),
+      );
+
+      await openAndTapBothButtons(tester);
+
+      expect(launcher.launchedUrls, [plan, minutes]);
+      // The pillars text and graphic stay as shipped.
+      expect(find.text(PastoralPlanConfig.title), findsOneWidget);
+      expect(find.text(PastoralPlanConfig.summary), findsOneWidget);
+    });
+
+    testWidgets('a link missing from the home page falls back to the one '
+        'shipped with the app; the other still updates', (tester) async {
+      const minutes =
+          'https://stlukesmarsdenpark.org.au/wp-content/uploads/'
+          '2026/10/17-October-2026-Parish-Pastoral-Council-Meeting-Minutes.pdf';
+      final launcher = _FakeUrlLauncherService();
+      await pumpParishScreen(
+        tester,
+        fakeLauncher: launcher,
+        documentLinks: () async =>
+            const ParishDocumentLinks(councilMinutesUrl: minutes),
+      );
+
+      await openAndTapBothButtons(tester);
+
+      expect(launcher.launchedUrls, [PastoralPlanConfig.pdfUrl, minutes]);
+    });
+
+    testWidgets('if the home page cannot be read, both buttons open the '
+        'links shipped with the app', (tester) async {
+      final launcher = _FakeUrlLauncherService();
+      await pumpParishScreen(
+        tester,
+        fakeLauncher: launcher,
+        documentLinks: () async =>
+            throw const ParishDocumentsNetworkFailure('offline'),
+      );
+
+      await openAndTapBothButtons(tester);
+
       expect(launcher.launchedUrls, [
         PastoralPlanConfig.pdfUrl,
         PastoralPlanConfig.councilMinutesUrl,
