@@ -54,12 +54,23 @@ const List<ChurchLeadershipSection> churchLeadershipSections = [
         role: 'Parish Priest',
         assetPath: 'assets/images/leadership/fr_gayan_thamel.png',
         linkUrl: 'https://stlukesmarsdenpark.org.au',
+        linkLabel: 'Visit the parish website',
+        about:
+            "Fr Gayan Thamel was appointed St Luke's first Parish Priest in "
+            '2025, a milestone in the life of our young parish. He celebrates '
+            'the sacraments with our community and warmly welcomes everyone '
+            'to Mass and parish life.',
       ),
       ChurchLeadershipEntry(
         name: 'Gerald "Ged" Oblea',
         role: 'Parish Secretary',
         assetPath: 'assets/images/leadership/ged_oblea.jpg',
-        // No link — confirmed by user, not tappable for navigation.
+        linkUrl: 'mailto:marsdenpark@parracatholic.org',
+        linkLabel: 'Email the parish office',
+        about:
+            'Ged is our Parish Secretary and looks after the parish office. '
+            'He is happy to help with enquiries about the sacraments, Mass '
+            'intentions and parish activities.',
       ),
     ],
   ),
