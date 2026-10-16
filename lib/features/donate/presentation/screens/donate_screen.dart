@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/services/url_launcher_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../data/config/donate_config.dart';
 import '../widgets/bank_detail_row.dart';
 import '../widgets/donate_card.dart';
 import '../widgets/donate_hero_banner.dart';
+import '../widgets/giving_area_row.dart';
 
 /// Donate destination: the parish's message and two ways to give — card
 /// (BPOINT, opened in the device's browser) and bank transfer (EFT details
@@ -30,9 +32,12 @@ class DonateScreen extends ConsumerWidget {
       children: [
         const DonateHeroBanner(),
         const SizedBox(height: 7),
+        // Fr Gayan's letter and what a gift supports both pull down, so the
+        // page opens short (parish request, 2026-10-16).
         DonateCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: _PullDownSection(
+            title: DonateConfig.messageTitle,
+            icon: Icons.mail_outline_rounded,
             children: [
               for (final (i, paragraph) in DonateConfig.letter.indexed) ...[
                 if (i > 0) const SizedBox(height: 10),
@@ -50,30 +55,14 @@ class DonateScreen extends ConsumerWidget {
           ),
         ),
         DonateCard(
-          title: 'Your gift supports',
-          icon: Icons.volunteer_activism_outlined,
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
+          child: _PullDownSection(
+            title: 'Your gift supports',
+            icon: Icons.volunteer_activism_outlined,
             children: [
-              for (final item in DonateConfig.givingFor)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.paleGold,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    item,
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: AppColors.primaryNavy,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+              for (final area in DonateConfig.givingAreas)
+                GivingAreaRow(area: area),
+              const SizedBox(height: 8),
+              Text(DonateConfig.alsoPayFor, style: textTheme.bodySmall),
             ],
           ),
         ),
@@ -152,6 +141,57 @@ class DonateScreen extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// A Donate-card heading (icon and display title) that pulls down to show
+/// [children].
+class _PullDownSection extends StatelessWidget {
+  const _PullDownSection({
+    required this.title,
+    required this.icon,
+    required this.children,
+  });
+
+  final String title;
+  final IconData icon;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    // Transparent Material so the ripple shows on the white card; the Theme
+    // drops ExpansionTile's divider lines.
+    return Material(
+      type: MaterialType.transparency,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          expandedCrossAxisAlignment: CrossAxisAlignment.start,
+          iconColor: AppColors.gold,
+          collapsedIconColor: AppColors.primaryNavy,
+          leading: ExcludeSemantics(
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: AppColors.paleGold,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AppColors.primaryNavy, size: 22),
+            ),
+          ),
+          title: Text(
+            title,
+            style: AppTypography.display(
+              fontSize: 19,
+              color: AppColors.primaryNavy,
+            ),
+          ),
+          children: children,
+        ),
+      ),
     );
   }
 }

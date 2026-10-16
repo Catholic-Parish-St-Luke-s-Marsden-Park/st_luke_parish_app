@@ -70,13 +70,58 @@ void main() {
     await pumpDonate(tester);
 
     expect(find.text(DonateConfig.heading), findsOneWidget);
+
+    // The letter is a pull-down headed "Message from Fr Gayan".
+    expect(find.text('Message from Fr Gayan'), findsOneWidget);
+    expect(find.text(DonateConfig.letter.last), findsNothing);
+    expect(find.text('Fr Gayan Thamel'), findsNothing);
+    await tester.tap(find.text('Message from Fr Gayan'));
+    await tester.pumpAndSettle();
     for (final paragraph in DonateConfig.letter) {
       expect(find.text(paragraph), findsOneWidget);
     }
     expect(find.text('Fr Gayan Thamel'), findsOneWidget);
-    for (final item in DonateConfig.givingFor) {
-      expect(find.text(item), findsOneWidget, reason: item);
+    await tester.tap(find.text('Message from Fr Gayan'));
+    await tester.pumpAndSettle();
+    expect(DonateConfig.givingAreas.map((a) => a.title), [
+      'Personnel & Staffing',
+      'Facilities & Operations',
+      'Sacramental & Altar Supplies',
+      'Faith Formation & Education',
+      'Community Outreach & Charity',
+      'Capital Improvements (Building Fund)',
+    ]);
+    // "Your gift supports" is itself a pull-down: closed, no areas show.
+    expect(find.text('Your gift supports'), findsOneWidget);
+    expect(find.text(DonateConfig.givingAreas.first.title), findsNothing);
+    expect(find.text(DonateConfig.alsoPayFor), findsNothing);
+    await tester.ensureVisible(find.text('Your gift supports'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Your gift supports'));
+    await tester.pumpAndSettle();
+
+    // Open, only the area titles show; each pulls down its description.
+    for (final area in DonateConfig.givingAreas) {
+      expect(find.text(area.title), findsOneWidget, reason: area.title);
+      expect(find.text(area.description), findsNothing, reason: area.title);
     }
+    for (final area in DonateConfig.givingAreas) {
+      final title = find.text(area.title);
+      await tester.ensureVisible(title);
+      await tester.pumpAndSettle();
+      await tester.tap(title);
+      await tester.pumpAndSettle();
+      expect(find.text(area.description), findsOneWidget, reason: area.title);
+      await tester.tap(title);
+      await tester.pumpAndSettle();
+      expect(find.text(area.description), findsNothing, reason: area.title);
+    }
+    expect(find.text(DonateConfig.alsoPayFor), findsOneWidget);
+    // No permanent church yet: the Building Fund saves towards one.
+    expect(
+      DonateConfig.givingAreas.last.description,
+      contains("first permanent church"),
+    );
   });
 
   testWidgets('no longer embeds the website in a WebView', (tester) async {
@@ -159,6 +204,38 @@ void main() {
           size: size,
           textScaler: TextScaler.linear(scale),
         );
+        expect(tester.takeException(), isNull);
+        // Open the message and every area so the longest layout is checked.
+        final message = find.text(DonateConfig.messageTitle);
+        await tester.scrollUntilVisible(
+          message,
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(message);
+        await tester.pumpAndSettle();
+        final gifts = find.text('Your gift supports');
+        await tester.scrollUntilVisible(
+          gifts,
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(gifts);
+        await tester.pumpAndSettle();
+        for (final area in DonateConfig.givingAreas) {
+          final title = find.text(area.title);
+          // The list builds lazily, so scroll each title into view first.
+          await tester.scrollUntilVisible(
+            title,
+            200,
+            scrollable: find.byType(Scrollable).first,
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(title);
+          await tester.pumpAndSettle();
+        }
         expect(tester.takeException(), isNull);
         await tester.drag(find.byType(ListView), const Offset(0, -6000));
         await tester.pumpAndSettle();
