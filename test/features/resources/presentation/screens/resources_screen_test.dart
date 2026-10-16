@@ -155,8 +155,8 @@ void main() {
     }
   });
 
-  test('Scripture & Readings: Daily Mass Readings (USCCB), then Catholic '
-      'Bible Readings (Bible Gateway); no Universalis', () {
+  test('Scripture & Readings: Bible (Bible Gateway), then Daily Mass '
+      'Readings (USCCB); no Universalis', () {
     final group = resourceGroups.singleWhere(
       (g) => g.title == 'Scripture & Readings',
     );
@@ -166,8 +166,8 @@ void main() {
           (link.title, (link.destination as WebDestination).url),
       ],
       [
+        ('Bible', 'https://www.biblegateway.com/'),
         ('Daily Mass Readings', 'https://bible.usccb.org'),
-        ('Catholic Bible Readings', 'https://www.biblegateway.com/'),
       ],
     );
   });

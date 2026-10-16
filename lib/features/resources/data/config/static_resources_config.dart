@@ -55,16 +55,16 @@ const List<ResourceGroup> resourceGroups = [
       // Parish request, 2026-10-16: the USCCB link is now the daily
       // readings (replacing Universalis), plus Bible Gateway.
       ResourceLink(
+        title: 'Bible',
+        subtitle: 'biblegateway.com',
+        kind: ResourceKind.bible,
+        destination: WebDestination('https://www.biblegateway.com/'),
+      ),
+      ResourceLink(
         title: 'Daily Mass Readings',
         subtitle: 'bible.usccb.org',
         kind: ResourceKind.readings,
         destination: WebDestination('https://bible.usccb.org'),
-      ),
-      ResourceLink(
-        title: 'Catholic Bible Readings',
-        subtitle: 'biblegateway.com',
-        kind: ResourceKind.bible,
-        destination: WebDestination('https://www.biblegateway.com/'),
       ),
     ],
   ),
