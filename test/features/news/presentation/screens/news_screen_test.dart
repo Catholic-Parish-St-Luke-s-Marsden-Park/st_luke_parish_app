@@ -7,7 +7,6 @@ import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
 import 'package:st_luke_parish_app/features/events/domain/entities/parish_event.dart';
 import 'package:st_luke_parish_app/features/events/domain/repositories/events_repository.dart';
 import 'package:st_luke_parish_app/features/events/presentation/providers/events_provider.dart';
-import 'package:st_luke_parish_app/features/news/data/config/static_announcements_config.dart';
 import 'package:st_luke_parish_app/features/news/domain/entities/bulletin.dart';
 import 'package:st_luke_parish_app/features/news/domain/failures/bulletins_failure.dart';
 import 'package:st_luke_parish_app/features/news/domain/repositories/bulletins_repository.dart';
@@ -84,8 +83,8 @@ void main() {
   }
 
   group('REQ-F05-031: 3 sections render, in order, no PlaceholderScreen', () {
-    testWidgets('renders "Latest Bulletins", "Parish News", "Submit a '
-        'Prayer Request" in order', (tester) async {
+    testWidgets('renders "Latest Bulletins" then "Submit a Prayer Request", '
+        'with no "Parish News" section', (tester) async {
       await pumpNewsScreen(
         tester,
         fakeRepository: _FakeBulletinsRepository.returning([
@@ -96,11 +95,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('News & Bulletins'), findsOneWidget);
 
-      const titles = [
-        'Latest Bulletins',
-        'Parish News',
-        'Submit a Prayer Request',
-      ];
+      const titles = ['Latest Bulletins', 'Submit a Prayer Request'];
       for (final title in titles) {
         expect(find.text(title), findsOneWidget);
       }
@@ -108,6 +103,11 @@ void main() {
           .map((t) => tester.getTopLeft(find.text(t)).dy)
           .toList();
       expect(positions, orderedEquals(List.of(positions)..sort()));
+
+      // Removed at the parish's request (2026-10-16).
+      expect(find.text('Parish News'), findsNothing);
+      expect(find.text('New Parish Building Now Open'), findsNothing);
+      expect(find.text('New to Marsden Park?'), findsNothing);
     });
   });
 
@@ -263,41 +263,6 @@ void main() {
         find.textContaining('View bulletins on the parish website'),
         findsOneWidget,
       );
-    });
-  });
-
-  group('REQ-F05-023/024/025: the static announcement, exact content', () {
-    testWidgets('renders the announcement with exact badge/title/body/date; '
-        '"New to Marsden Park?" has moved to the Parish tab', (tester) async {
-      await pumpNewsScreen(
-        tester,
-        fakeRepository: _FakeBulletinsRepository.returning([
-          _bulletin('30th August 2026'),
-        ]),
-      );
-
-      expect(staticAnnouncements, hasLength(1));
-
-      expect(find.text('MILESTONE'), findsOneWidget);
-      expect(find.text('New Parish Building Now Open'), findsOneWidget);
-      expect(
-        find.text(
-          'Our purpose-built parish building was opened and blessed on '
-          'the Feast of St Luke in October 2025. All Masses and parish '
-          'events are now held at the corner of Frontier Avenue and '
-          'Northbourne Drive.',
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('October 2025'), findsOneWidget);
-
-      // Moved to the Parish tab (parish request, 2026-10-16).
-      expect(find.text('NEW TO THE AREA?'), findsNothing);
-      expect(find.text('New to Marsden Park?'), findsNothing);
-      expect(find.text('Ongoing'), findsNothing);
-
-      // REQ-F05-025: the reference app's third entry must not appear.
-      expect(find.text('Sacramental Programme 2026'), findsNothing);
     });
   });
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
 import 'package:st_luke_parish_app/core/theme/app_colors.dart';
 import 'package:st_luke_parish_app/features/masses/data/config/static_mass_schedule_config.dart';
 import 'package:st_luke_parish_app/features/masses/domain/entities/mass_schedule.dart';
@@ -13,6 +14,7 @@ import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_s
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/activity_ribbon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_symbol_icon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_card.dart';
+import 'package:st_luke_parish_app/features/masses/presentation/widgets/rosary_icon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_row.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_section_header.dart';
 
@@ -23,6 +25,16 @@ import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_sec
 /// "missing selector result", and "invalid URL result" states are all
 /// intentionally not applicable/not covered here (matches REQ-F04-024's own
 /// note and the BA plan's Acceptance Criteria).
+class _RecordingUrlLauncher implements UrlLauncherService {
+  final List<String> launchedUrls = [];
+
+  @override
+  Future<bool> launchExternal(String url) async {
+    launchedUrls.add(url);
+    return true;
+  }
+}
+
 void main() {
   Future<void> pumpMassesScreen(WidgetTester tester) async {
     // MassesScreen's content (hero + What's On + Regular Activities) is far
@@ -406,6 +418,68 @@ void main() {
       ];
       expect(contacts, isNotEmpty);
       expect(contacts, everyElement('marsdenpark@parracatholic.org'));
+    });
+
+    testWidgets('the last ribbon is "Holy Rosary before Mass", with a '
+        'rosary icon; the Diocese of Parramatta ribbon is gone', (
+      tester,
+    ) async {
+      await pumpMassesScreen(tester);
+
+      expect(regularActivities.last.title, 'Holy Rosary before Mass');
+      expect(
+        regularActivities.last.when,
+        'Saturday 5:00pm & Sunday 5:00pm, before the 5:30pm Mass',
+      );
+      expect(
+        regularActivities.any((a) => a.title == 'Diocese of Parramatta'),
+        isFalse,
+      );
+
+      final ribbon = find.ancestor(
+        of: ribbonTitle(regularActivities.last),
+        matching: find.byType(ActivityRibbon),
+      );
+      await tester.ensureVisible(ribbon);
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: ribbon, matching: find.byType(RosaryIcon)),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the Holy Rosary ribbon links to the Rosary prayer card', (
+      tester,
+    ) async {
+      final launcher = _RecordingUrlLauncher();
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [urlLauncherServiceProvider.overrideWithValue(launcher)],
+          child: const MaterialApp(home: Scaffold(body: MassesScreen())),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final rosary = regularActivities.last;
+      await tester.ensureVisible(ribbonTitle(rosary));
+      await tester.pumpAndSettle();
+      await tester.tap(ribbonTitle(rosary));
+      await tester.pumpAndSettle();
+
+      final button = find.text('Open the Rosary Prayer Card');
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSize(find.byType(FilledButton)).height,
+        greaterThanOrEqualTo(48),
+      );
+      await tester.tap(button);
+      expect(launcher.launchedUrls, [
+        'https://www.marysrosarychain.org/prayers/FullRosaryCard.pdf',
+      ]);
     });
 
     test('each activity kind is used once, so every ribbon has its own '
