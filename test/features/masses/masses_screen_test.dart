@@ -434,7 +434,7 @@ void main() {
       );
       expect(
         regularActivities.last.when,
-        'During October: Saturday & Sunday at 5:00pm, before the 5:30pm Mass',
+        'During October: Saturday at 5:00pm, before the 5:30pm Vigil Mass',
       );
       expect(
         regularActivities.any((a) => a.title == 'Diocese of Parramatta'),
