@@ -88,9 +88,17 @@ const List<ChurchLeadershipSection> churchLeadershipSections = [
         linkUrl: 'mailto:marsdenpark@parracatholic.org',
         linkLabel: 'Email the parish office',
         about:
-            'Ged is our Parish Secretary and looks after the parish office. '
-            'He is happy to help with enquiries about the sacraments, Mass '
-            'intentions and parish activities.',
+            'Gerald "Ged" Oblea was made in the Philippines and born in '
+            'Australia. He and his wife Samantha are proud parents to '
+            'Kayelani, Zane, Calen, Ethan and Gianna. Following marketing '
+            'studies and over 13 years in retail product management, Ged '
+            'embraced parish ministry. His 13 years of fulltime ministry '
+            "include serving St Andrew's Marayong, Mary Immaculate Quakers "
+            "Hill and Mary Queen of the Family Blacktown. Now at St Luke's, "
+            'Ged shares his gifts to help continually attract people and '
+            'nurture a community where everyone deepens their relationship '
+            'with Jesus and experiences transformation in every area of life, '
+            'growing together in faith, hope and love daily.',
       ),
     ],
   ),
