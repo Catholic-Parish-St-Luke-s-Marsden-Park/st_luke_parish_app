@@ -7,6 +7,7 @@ import 'package:st_luke_parish_app/app/shell/nav_index_provider.dart';
 import 'package:st_luke_parish_app/app/shell/widgets/app_bar_logo.dart';
 import 'package:st_luke_parish_app/app/shell/widgets/ask_luke_pill.dart';
 import 'package:st_luke_parish_app/app/shell/widgets/saint_of_the_day_pill.dart';
+import 'package:st_luke_parish_app/core/theme/app_shapes.dart';
 import 'package:st_luke_parish_app/core/theme/app_theme.dart';
 import 'package:st_luke_parish_app/features/ask_luke/presentation/screens/ask_luke_screen.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/providers/ministries_providers.dart';
@@ -53,6 +54,22 @@ void main() {
         (image.image as AssetImage).assetName,
         'assets/images/branding/st_lukes_wordmark.jpg',
       );
+    });
+
+    testWidgets('logo sits on a white pill-rounded chip', (tester) async {
+      await pumpShell(tester);
+
+      final chip = tester.widget<DecoratedBox>(
+        find
+            .descendant(
+              of: find.byType(AppBarLogo),
+              matching: find.byType(DecoratedBox),
+            )
+            .first,
+      );
+      final decoration = chip.decoration as BoxDecoration;
+      expect(decoration.color, Colors.white);
+      expect(decoration.borderRadius, AppShapes.pillBorderRadius);
     });
   });
 
