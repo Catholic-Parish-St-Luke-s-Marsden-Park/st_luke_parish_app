@@ -41,9 +41,9 @@ abstract final class DonateConfig {
       title: 'Facilities & Operations',
       kind: GivingAreaKind.facilities,
       description:
-          'Everyday utility bills (heating, cooling, electricity), '
-          'insurance, and standard upkeep for our parish building and '
-          'grounds.',
+          'Everyday utility bills (heating, cooling, electricity), council '
+          'rates, insurance, and standard upkeep for our parish building '
+          'and grounds.',
     ),
     GivingArea(
       title: 'Sacramental & Altar Supplies',
