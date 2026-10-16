@@ -227,9 +227,7 @@ const List<ParishActivity> regularActivities = [
     title: 'Holy Rosary',
     kind: ParishActivityKind.prayRosary,
     // Prayed together only in October (parish request, 2026-10-16).
-    when:
-        'During October: Saturday & Sunday at 5:00pm, before the 5:30pm '
-        'Mass',
+    when: 'During October: Saturday at 5:00pm, before the 5:30pm Vigil Mass',
     description:
         '"Where two or three are gathered in my name, there am I among '
         'them" (Matthew 18:20). In the Rosary we walk with Mary through the '
@@ -237,9 +235,9 @@ const List<ParishActivity> regularActivities = [
         'care, and we especially entrust our children to her prayers, '
         'asking her to lead them ever closer to Jesus.\n\n'
         'October is the Month of the Holy Rosary. Throughout October our '
-        'parish gathers at 5:00pm to pray the Rosary together before the '
-        'Saturday Vigil and Sunday 5:30pm Masses. Please come a little '
-        'early and join us in prayer. All are welcome.',
+        'parish gathers on Saturdays at 5:00pm to pray the Rosary together '
+        'before the 5:30pm Vigil Mass. Please come a little early and join '
+        'us in prayer. All are welcome.',
     link: ActivityLink(
       label: 'Open the Rosary Prayer Card',
       // Mary's Rosary Chain's full Rosary card (parish request,
