@@ -87,9 +87,12 @@ void main() {
     const groups = [
       'Parish Resources',
       'Universal & Local Church',
-      'Bible & Liturgy',
+      'Scripture & Readings',
     ];
     expect(resourceGroups.map((g) => g.title), groups);
+    // Renamed from "Bible & Liturgy", with no caption under it.
+    expect(find.text('Bible & Liturgy'), findsNothing);
+    expect(find.text('SCRIPTURE & READINGS'), findsNothing);
     final tops = [
       for (final title in groups) tester.getTopLeft(find.text(title)).dy,
     ];
@@ -152,10 +155,10 @@ void main() {
     }
   });
 
-  test('Bible & Liturgy: Daily Mass Readings (USCCB), then Catholic Bible '
-      'Readings (Bible Gateway); no Universalis', () {
+  test('Scripture & Readings: Daily Mass Readings (USCCB), then Catholic '
+      'Bible Readings (Bible Gateway); no Universalis', () {
     final group = resourceGroups.singleWhere(
-      (g) => g.title == 'Bible & Liturgy',
+      (g) => g.title == 'Scripture & Readings',
     );
     expect(
       [
