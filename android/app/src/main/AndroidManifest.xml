@@ -5,7 +5,7 @@
     <!-- Permission for Notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
-        android:label="st_luke_parish_app"
+        android:label="St Luke's Parish"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
