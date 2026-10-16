@@ -420,16 +420,20 @@ void main() {
       expect(contacts, everyElement('marsdenpark@parracatholic.org'));
     });
 
-    testWidgets('the last ribbon is "Holy Rosary before Mass", with a '
+    testWidgets('the last ribbon is "Holy Rosary", with a '
         'rosary icon; the Diocese of Parramatta ribbon is gone', (
       tester,
     ) async {
       await pumpMassesScreen(tester);
 
-      expect(regularActivities.last.title, 'Holy Rosary before Mass');
+      expect(regularActivities.last.title, 'Holy Rosary');
+      expect(
+        regularActivities.last.description,
+        contains('October is the Month of the Holy Rosary'),
+      );
       expect(
         regularActivities.last.when,
-        'Saturday 5:00pm & Sunday 5:00pm, before the 5:30pm Mass',
+        'During October: Saturday & Sunday at 5:00pm, before the 5:30pm Mass',
       );
       expect(
         regularActivities.any((a) => a.title == 'Diocese of Parramatta'),
@@ -490,7 +494,10 @@ void main() {
     });
 
     test('drops one-off bulletin dates and the old placeholder rows', () {
+      // The Holy Rosary is an October devotion by design (parish request,
+      // 2026-10-16), so it is left out of this check.
       final allText = regularActivities
+          .where((a) => a.kind != ParishActivityKind.prayRosary)
           .expand((a) => [a.title, ...a.details])
           .join('\n');
       for (final stale in [
