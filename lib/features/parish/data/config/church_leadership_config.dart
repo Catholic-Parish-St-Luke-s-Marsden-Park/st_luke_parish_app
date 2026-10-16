@@ -12,11 +12,19 @@ const List<ChurchLeadershipSection> churchLeadershipSections = [
   ChurchLeadershipSection(
     title: 'Universal Church',
     entries: [
+      // Photo and pull-down added at the parish's request (2026-10-16).
       ChurchLeadershipEntry(
         name: 'Pope Leo XIV',
         role: 'Bishop of Rome',
-        assetPath: 'assets/images/leadership/pope_leo_xiv.jpeg',
-        linkUrl: 'https://www.vaticannews.va/en.html',
+        assetPath: 'assets/images/leadership/pope_leo_xiv_portrait.jpg',
+        linkUrl: 'https://www.vatican.va',
+        linkLabel: 'Visit the Vatican website',
+        about:
+            'Pope Leo XIV (Robert Francis Prevost) was elected the 267th '
+            'successor of St Peter on 8 May 2025. Born in Chicago, he is an '
+            'Augustinian who served for many years as a missionary and '
+            'bishop in Peru. Let us keep our Holy Father in our prayers.',
+        photoCredit: 'Photo: Edgar Beltrán, The Pillar · CC BY-SA 4.0',
       ),
     ],
   ),
@@ -26,8 +34,15 @@ const List<ChurchLeadershipSection> churchLeadershipSections = [
       ChurchLeadershipEntry(
         name: 'Bishop Vincent Long',
         role: 'Bishop of Parramatta',
-        assetPath: 'assets/images/leadership/diocese_of_parramatta.jpg',
+        assetPath: 'assets/images/leadership/bishop_vincent_long_portrait.jpg',
         linkUrl: 'https://parracatholic.org',
+        linkLabel: 'Visit the Diocese of Parramatta',
+        about:
+            'Bishop Vincent Long Van Nguyen OFM Conv has shepherded the '
+            "Diocese of Parramatta, to which St Luke's belongs, since 2016. "
+            'Born in Vietnam, he came to Australia as a refugee and is a '
+            'Conventual Franciscan friar. Let us pray for our Bishop.',
+        photoCredit: 'Photo: BaBaBa91 · CC BY-SA 4.0',
       ),
     ],
   ),
