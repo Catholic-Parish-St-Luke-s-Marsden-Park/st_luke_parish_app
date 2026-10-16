@@ -224,13 +224,22 @@ const List<ParishActivity> regularActivities = [
     contact: _parishEmail,
   ),
   ParishActivity(
-    title: 'Diocese of Parramatta',
-    kind: ParishActivityKind.safeguarding,
+    title: 'Holy Rosary before Mass',
+    kind: ParishActivityKind.prayRosary,
+    when: 'Saturday 5:00pm & Sunday 5:00pm, before the 5:30pm Mass',
     description:
-        'The Diocese of Parramatta is committed to synodality where all '
-        'people, including adults at risk are involved in discussions and '
-        'communications about safeguarding practices to ensure we are a '
-        'humble and healing church.',
+        '"Where two or three are gathered in my name, there am I among '
+        'them" (Matthew 18:20). Join us as we pray the Rosary together '
+        'before Mass, walking with Mary through the life of her Son. Our '
+        'Blessed Mother holds each of us in her loving care, and we '
+        'especially entrust our children to her prayers, asking her to '
+        'lead them ever closer to Jesus. All are welcome.',
+    link: ActivityLink(
+      label: 'Open the Rosary Prayer Card',
+      // Mary's Rosary Chain's full Rosary card (parish request,
+      // 2026-10-16), linked directly rather than via the Google share link.
+      url: 'https://www.marysrosarychain.org/prayers/FullRosaryCard.pdf',
+    ),
   ),
 ];
 

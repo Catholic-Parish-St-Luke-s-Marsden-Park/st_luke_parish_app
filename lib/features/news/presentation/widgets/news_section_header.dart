@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
-/// Top-level section title ("Latest Bulletins" / "Parish News" / "Submit a
+/// Top-level section title ("Latest Bulletins" / "Submit a
 /// Prayer Request" — REQ-F05-031). Kept local to the News feature rather
 /// than reusing another feature's section-label widget, matching the
 /// feature-isolation precedent set by `MassSectionHeader`.
