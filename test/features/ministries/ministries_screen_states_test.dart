@@ -133,7 +133,7 @@ void main() {
 
       expect(repository.watchCalls, 2);
       expect(find.text(errorMessage), findsNothing);
-      expect(find.byType(MinistryRow), findsNWidgets(16));
+      expect(find.byType(MinistryRow), findsNWidgets(25));
     });
 
     testWidgets('empty shows a message and no rows', (tester) async {
@@ -165,7 +165,7 @@ void main() {
       controller.add(loadFallbackMinistries());
       await tester.pumpAndSettle();
       expect(find.text('CACHED'), findsNothing);
-      expect(find.byType(MinistryRow), findsNWidgets(16));
+      expect(find.byType(MinistryRow), findsNWidgets(25));
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
   });
@@ -180,7 +180,7 @@ void main() {
 
       expect(repository.refreshCalls, 1);
       expect(find.text('Name c1'), findsNothing);
-      expect(find.text('Music Ministry'), findsOneWidget);
+      expect(find.text('Music'), findsOneWidget);
       expect(find.text(refreshFailedMessage), findsNothing);
     });
 
@@ -206,7 +206,7 @@ void main() {
 
       expect(repository.refreshCalls, 1);
       expect(find.text(emptyMessage), findsNothing);
-      expect(find.text('Music Ministry'), findsOneWidget);
+      expect(find.text('Music'), findsOneWidget);
     });
 
     testWidgets('works from the error state too', (tester) async {
@@ -220,7 +220,7 @@ void main() {
 
       expect(repository.refreshCalls, 1);
       expect(find.text(errorMessage), findsNothing);
-      expect(find.text('Music Ministry'), findsOneWidget);
+      expect(find.text('Music'), findsOneWidget);
     });
   });
 
@@ -235,7 +235,7 @@ void main() {
       'loading': (pending, false),
       'error': (failing, true),
       'empty': (() => FakeMinistriesRepository(categories: const []), true),
-      // All 16 ministries from the fallback asset, including the longest
+      // All 25 ministries from the fallback asset, including the longest
       // name ("Extraordinary Ministers of Holy Communion").
       'data': (FakeMinistriesRepository.new, true),
     };

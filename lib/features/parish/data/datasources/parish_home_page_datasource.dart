@@ -1,6 +1,7 @@
 import 'package:http/http.dart' as http;
 
 import '../../../../core/constants/external_links.dart';
+import '../../../../core/network/http_user_agent.dart';
 import '../../domain/failures/parish_documents_failure.dart';
 
 /// Fetches the parish home page HTML. Follows `BulletinsFeedDatasource`'s
@@ -13,8 +14,6 @@ class ParishHomePageDatasource {
   final http.Client _client;
 
   static const _timeout = Duration(seconds: 10);
-  static const _userAgent =
-      'StLukesParishApp/1.0 (+https://stlukesmarsdenpark.org.au)';
 
   Future<String> fetchHomePageHtml() async {
     final http.Response response;
@@ -22,7 +21,7 @@ class ParishHomePageDatasource {
       response = await _client
           .get(
             Uri.parse(ExternalLinks.parishHomePage),
-            headers: const {'User-Agent': _userAgent},
+            headers: const {'User-Agent': parishAppUserAgent},
           )
           .timeout(_timeout);
     } catch (e) {

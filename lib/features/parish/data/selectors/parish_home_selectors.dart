@@ -1,5 +1,3 @@
-import '../config/pastoral_plan_config.dart';
-
 /// How to find one labelled link on a page: the first element matching the
 /// CSS [selector] whose visible text contains every phrase in
 /// [labelContains] (case-insensitive), reading its [attribute].
@@ -12,7 +10,6 @@ class LabelledLinkSelector {
     required this.selector,
     required this.labelContains,
     this.attribute = 'href',
-    this.fallbackValue,
   });
 
   /// Stable app-level name, e.g. `pastoral_council_minutes_url`.
@@ -25,9 +22,6 @@ class LabelledLinkSelector {
   final List<String> labelContains;
 
   final String attribute;
-
-  /// Used by the app when the link can't be found.
-  final String? fallbackValue;
 }
 
 /// Selectors for the parish home page (`https://stlukesmarsdenpark.org.au/`).
@@ -38,7 +32,6 @@ abstract final class ParishHomeSelectors {
     key: 'pastoral_plan_url',
     selector: 'a[href]',
     labelContains: ['pastoral plan'],
-    fallbackValue: PastoralPlanConfig.pdfUrl,
   );
 
   /// The home page's "Parish Pastoral Council Meeting Minutes" button,
@@ -47,6 +40,5 @@ abstract final class ParishHomeSelectors {
     key: 'pastoral_council_minutes_url',
     selector: 'a[href]',
     labelContains: ['pastoral council', 'minutes'],
-    fallbackValue: PastoralPlanConfig.councilMinutesUrl,
   );
 }
