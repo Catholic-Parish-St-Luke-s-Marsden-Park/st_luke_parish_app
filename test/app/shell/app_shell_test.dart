@@ -316,6 +316,30 @@ void main() {
       );
       expect(container.read(selectedNavIndexProvider), 2);
       expect(find.byType(NewsScreen), findsOneWidget);
+      // The side menu is closed too, not left open over the tab.
+      expect(find.byType(Drawer), findsNothing);
+    });
+
+    testWidgets('Donate Online in Resources opens the Donate tab with the '
+        'menu closed', (tester) async {
+      await _pumpShell(tester);
+
+      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Resources'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Donate Online'));
+      // Fixed pumps: the Donate tab may show an endless loading spinner.
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(AppShell)),
+      );
+      expect(container.read(selectedNavIndexProvider), 5);
+      expect(find.byType(Drawer), findsNothing);
+      expect(find.widgetWithText(AppBar, 'Resources'), findsNothing);
     });
 
     testWidgets('tapping Faith Formation opens its own page of links', (

@@ -30,7 +30,10 @@ class SideDrawer extends ConsumerWidget {
     // Read now: the drawer (and its ref) is gone by the time a link
     // switches tabs.
     final navIndex = ref.read(selectedNavIndexProvider.notifier);
-    navigator.pop();
+    final scaffold = Scaffold.maybeOf(context);
+    // closeDrawer (not a plain pop) so the drawer is really shut, and not
+    // shown again when Resources is closed.
+    scaffold?.closeDrawer();
     navigator.push(
       MaterialPageRoute(
         builder: (_) => ResourcesScreen(
@@ -38,6 +41,7 @@ class SideDrawer extends ConsumerWidget {
           groups: groups,
           onOpenTab: (tab) {
             navigator.popUntil((route) => route.isFirst);
+            scaffold?.closeDrawer();
             navIndex.select(_tabIndex[tab]!);
           },
         ),
