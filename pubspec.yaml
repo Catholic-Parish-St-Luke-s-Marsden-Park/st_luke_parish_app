@@ -84,6 +84,22 @@ dev_dependencies:
   # substitutes a recording `SharedPreferencesStorePlatform`, so it
   # references this interface package directly rather than transitively.
   shared_preferences_platform_interface: ^2.4.2
+  # Build-time only: generates every Android/iOS launcher icon size from the
+  # source image in assets/icon/ (see the flutter_launcher_icons block below).
+  flutter_launcher_icons: ^0.14.4
+
+# Re-run `dart run flutter_launcher_icons` after changing assets/icon/*.
+# The source is the St Luke's emblem cropped from the wordmark at native
+# resolution (about 1,000px wide) onto a white 1024px canvas. iOS icons cannot
+# be transparent. The tool insets the Android adaptive foreground by 16%, so
+# the same image stays inside the adaptive-icon safe zone.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  image_path: assets/icon/app_icon.png
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/icon/app_icon.png
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
