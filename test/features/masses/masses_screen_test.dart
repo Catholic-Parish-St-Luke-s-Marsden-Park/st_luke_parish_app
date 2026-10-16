@@ -14,6 +14,7 @@ import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_s
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/activity_ribbon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_symbol_icon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_card.dart';
+import 'package:st_luke_parish_app/features/masses/presentation/widgets/draped_rosary_icon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/rosary_icon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_row.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_section_header.dart';
@@ -484,6 +485,29 @@ void main() {
       expect(launcher.launchedUrls, [
         'https://www.marysrosarychain.org/prayers/FullRosaryCard.pdf',
       ]);
+    });
+
+    testWidgets('the Rosary Block has its own draped rosary icon, different '
+        "from the Holy Rosary's", (tester) async {
+      await pumpMassesScreen(tester);
+
+      final block = regularActivities.singleWhere(
+        (a) => a.title == 'Rosary Block',
+      );
+      final ribbon = find.ancestor(
+        of: ribbonTitle(block),
+        matching: find.byType(ActivityRibbon),
+      );
+      await tester.ensureVisible(ribbon);
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: ribbon, matching: find.byType(DrapedRosaryIcon)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: ribbon, matching: find.byType(RosaryIcon)),
+        findsNothing,
+      );
     });
 
     test('each activity kind is used once, so every ribbon has its own '
