@@ -581,12 +581,12 @@ void main() {
     ) async {
       await pumpMassesScreen(tester);
 
-      // A chalice and the host for the Vigil and Sunday Masses; a calendar for
-      // weekdays. No sun or moon.
+      // The same chalice and host on all three cards; no sun, moon or
+      // calendar.
       final expected = {
         'Saturday Vigil Mass': find.byType(MassSymbolIcon),
         'Sunday Mass Times': find.byType(MassSymbolIcon),
-        'Weekday Mass Times': find.byIcon(Icons.calendar_today_outlined),
+        'Weekday Mass Times': find.byType(MassSymbolIcon),
       };
       for (final MapEntry(key: title, value: icon) in expected.entries) {
         final card = find.ancestor(
@@ -603,6 +603,7 @@ void main() {
       }
       expect(find.byIcon(Icons.nights_stay_outlined), findsNothing);
       expect(find.byIcon(Icons.wb_sunny_outlined), findsNothing);
+      expect(find.byIcon(Icons.calendar_today_outlined), findsNothing);
     });
 
     testWidgets('Mass row text is navy, matching the times', (tester) async {
