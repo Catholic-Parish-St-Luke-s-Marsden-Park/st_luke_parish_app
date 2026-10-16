@@ -13,6 +13,7 @@ import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_s
 import 'package:st_luke_parish_app/features/ministries/presentation/screens/ministries_screen.dart';
 import 'package:st_luke_parish_app/features/news/presentation/screens/news_screen.dart';
 import 'package:st_luke_parish_app/features/parish/domain/entities/parish_notice.dart';
+import 'package:st_luke_parish_app/features/parish/domain/failures/parish_documents_failure.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/providers/parish_notice_provider.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/screens/parish_screen.dart';
 import 'package:st_luke_parish_app/features/resources/domain/failures/reflections_failure.dart';
@@ -263,14 +264,7 @@ void main() {
           matching: find.byType(ListTile),
         ),
       );
-      expect(listTiles.length, 4);
-      expect(
-        find.descendant(
-          of: find.byType(Drawer),
-          matching: find.text('Special Announcements'),
-        ),
-        findsOneWidget,
-      );
+      expect(listTiles.length, 3);
       expect(
         find.descendant(
           of: find.byType(Drawer),
@@ -358,23 +352,6 @@ void main() {
       expect(find.widgetWithText(AppBar, 'Resources'), findsNothing);
     });
 
-    testWidgets('Special Announcements is hidden when the parish website has '
-        'no pop-up', (tester) async {
-      await _pumpShell(tester, notice: null);
-
-      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
-      await tester.pumpAndSettle();
-
-      expect(find.text('Special Announcements'), findsNothing);
-      final listTiles = tester.widgetList<ListTile>(
-        find.descendant(
-          of: find.byType(Drawer),
-          matching: find.byType(ListTile),
-        ),
-      );
-      expect(listTiles.length, 3);
-    });
-
     testWidgets('tapping Faith Formation opens its own page of links', (
       tester,
     ) async {
@@ -402,6 +379,68 @@ void main() {
 
       expect(launcher.launchedUrls, [ExternalLinks.prayerRequests]);
       expect(find.byType(Drawer), findsNothing);
+    });
+  });
+
+  group('Floating announcement button', () {
+    testWidgets('shows a megaphone button while the website has a pop-up; '
+        'tapping it opens the announcement', (tester) async {
+      await _pumpShell(tester);
+
+      final button = find.byType(FloatingActionButton);
+      expect(button, findsOneWidget);
+      expect(
+        find.descendant(
+          of: button,
+          matching: find.byIcon(Icons.campaign_rounded),
+        ),
+        findsOneWidget,
+      );
+      expect(tester.getSize(button).height, greaterThanOrEqualTo(48));
+
+      await tester.tap(button);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Special Announcement'), findsOneWidget);
+      final image = tester.widget<Image>(
+        find.descendant(of: find.byType(Dialog), matching: find.byType(Image)),
+      );
+      expect(
+        (image.image as NetworkImage).url,
+        'https://stlukesmarsdenpark.org.au/notice.jpg',
+      );
+
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(Dialog), findsNothing);
+    });
+
+    testWidgets('no button at all when the website has no pop-up', (
+      tester,
+    ) async {
+      await _pumpShell(tester, notice: null);
+
+      expect(find.byType(FloatingActionButton), findsNothing);
+    });
+
+    testWidgets('no button when the website cannot be reached', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            latestReflectionProvider.overrideWith(
+              (ref) => Future.error(const ReflectionsNetworkFailure('offline')),
+            ),
+            currentParishNoticeProvider.overrideWith(
+              (ref) => Future.error(const ParishDocumentsNetworkFailure('x')),
+            ),
+          ],
+          child: MaterialApp(theme: AppTheme.light(), home: const AppShell()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(FloatingActionButton), findsNothing);
     });
   });
 

@@ -4,16 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/external_links.dart';
 import '../../core/services/url_launcher_service.dart';
 import '../../core/theme/app_colors.dart';
-import '../../features/parish/presentation/providers/parish_notice_provider.dart';
-import '../../features/parish/presentation/screens/parish_notices_screen.dart';
 import '../../features/resources/data/config/static_resources_config.dart';
 import '../../features/resources/domain/entities/resource_link.dart';
 import '../../features/resources/presentation/screens/resources_screen.dart';
 import 'nav_index_provider.dart';
 
-/// Side drawer chrome hosting the secondary destinations: the Resources and
-/// Faith Formation pages, Special Announcements (only while the parish
-/// website has a pop-up announcement), and Prayer Request,
+/// Side drawer chrome hosting the 3 secondary destinations: the Resources
+/// and Faith Formation pages, and Prayer Request,
 /// which opens the parish's prayer-request form in the browser (the same
 /// page as the News tab's button).
 class SideDrawer extends ConsumerWidget {
@@ -107,22 +104,6 @@ class SideDrawer extends ConsumerWidget {
                 groups: faithFormationGroups,
               ),
             ),
-            // Only offered while the parish website has a pop-up to show
-            // (parish request, 2026-10-16).
-            if (ref.watch(currentParishNoticeProvider).value != null)
-              ListTile(
-                leading: const Icon(Icons.campaign_outlined),
-                title: const Text('Special Announcements'),
-                onTap: () {
-                  final navigator = Navigator.of(context);
-                  Scaffold.maybeOf(context)?.closeDrawer();
-                  navigator.push(
-                    MaterialPageRoute(
-                      builder: (_) => const ParishNoticesScreen(),
-                    ),
-                  );
-                },
-              ),
             ListTile(
               leading: const Icon(Icons.favorite_border_rounded),
               title: const Text('Prayer Request'),

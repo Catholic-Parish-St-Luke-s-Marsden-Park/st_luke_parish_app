@@ -8,8 +8,8 @@ import '../datasources/parish_home_page_datasource.dart';
 import '../parsers/popup_image_parser.dart';
 import '../selectors/parish_home_selectors.dart';
 
-/// Reads the parish home page's pop-up, so the app's Special Announcements
-/// page shows whatever the parish currently has there.
+/// Reads the parish home page's pop-up, so the app's floating announcement
+/// button shows whatever the parish currently has there.
 class WebsiteParishNoticeRepository implements ParishNoticeRepository {
   WebsiteParishNoticeRepository(this._datasource);
 

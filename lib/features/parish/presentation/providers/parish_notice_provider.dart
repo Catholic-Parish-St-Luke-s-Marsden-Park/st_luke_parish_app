@@ -16,9 +16,9 @@ ParishNoticeRepository parishNoticeRepository(Ref ref) {
   );
 }
 
-/// The home page's current pop-up notice (`null` when there is none).
-/// Auto-disposed, so it is read afresh each time Special Announcements
-/// opens.
+/// The home page's current pop-up notice (`null` when there is none),
+/// read when the app opens; the floating announcement button shows only
+/// while there is one.
 @riverpod
 Future<ParishNotice?> currentParishNotice(Ref ref) {
   return ref.watch(parishNoticeRepositoryProvider).getCurrentNotice();

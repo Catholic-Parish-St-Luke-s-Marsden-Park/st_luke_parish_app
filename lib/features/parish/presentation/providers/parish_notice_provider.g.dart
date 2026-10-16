@@ -61,16 +61,16 @@ final class ParishNoticeRepositoryProvider
 String _$parishNoticeRepositoryHash() =>
     r'9cf12ed338a89a35aa3fcde8c0e0b85ae18c8dd2';
 
-/// The home page's current pop-up notice (`null` when there is none).
-/// Auto-disposed, so it is read afresh each time Special Announcements
-/// opens.
+/// The home page's current pop-up notice (`null` when there is none),
+/// read when the app opens; the floating announcement button shows only
+/// while there is one.
 
 @ProviderFor(currentParishNotice)
 final currentParishNoticeProvider = CurrentParishNoticeProvider._();
 
-/// The home page's current pop-up notice (`null` when there is none).
-/// Auto-disposed, so it is read afresh each time Special Announcements
-/// opens.
+/// The home page's current pop-up notice (`null` when there is none),
+/// read when the app opens; the floating announcement button shows only
+/// while there is one.
 
 final class CurrentParishNoticeProvider
     extends
@@ -80,9 +80,9 @@ final class CurrentParishNoticeProvider
           FutureOr<ParishNotice?>
         >
     with $FutureModifier<ParishNotice?>, $FutureProvider<ParishNotice?> {
-  /// The home page's current pop-up notice (`null` when there is none).
-  /// Auto-disposed, so it is read afresh each time Special Announcements
-  /// opens.
+  /// The home page's current pop-up notice (`null` when there is none),
+  /// read when the app opens; the floating announcement button shows only
+  /// while there is one.
   CurrentParishNoticeProvider._()
     : super(
         from: null,
