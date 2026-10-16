@@ -4,6 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
 import 'package:st_luke_parish_app/features/parish/data/config/church_leadership_config.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/screens/parish_screen.dart';
+import 'package:st_luke_parish_app/features/parish/data/config/pastoral_plan_config.dart';
+import 'package:st_luke_parish_app/features/parish/presentation/widgets/about_st_lukes_section.dart';
+import 'package:st_luke_parish_app/features/parish/presentation/widgets/new_to_marsden_park_section.dart';
+import 'package:st_luke_parish_app/features/parish/presentation/widgets/parish_prayer_section.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/widgets/leadership_entry_tile.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/widgets/parish_hero_banner.dart';
 
@@ -24,6 +28,12 @@ void main() {
     WidgetTester tester, {
     required _FakeUrlLauncherService fakeLauncher,
   }) async {
+    // ParishScreen is a lazily built ListView, so a tall surface is needed
+    // for every section (Church Leadership sits below the About copy) to be
+    // built and findable. Scrolling itself isn't under test here.
+    tester.view.physicalSize = const Size(800, 4000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [urlLauncherServiceProvider.overrideWithValue(fakeLauncher)],
@@ -58,9 +68,16 @@ void main() {
     ) async {
       await pumpParishScreen(tester, fakeLauncher: _FakeUrlLauncherService());
 
-      // Search the full widget tree's Text values for a case-insensitive
-      // match of the retired eyebrow copy.
-      final textWidgets = tester.widgetList<Text>(find.byType(Text));
+      // Search the hero banner's Text values for a case-insensitive match of
+      // the retired eyebrow copy. Scoped to the banner because the
+      // parish-supplied About St Luke's copy (2026-10-15) opens with the
+      // same phrase, which is fine there; it is only retired as an eyebrow.
+      final textWidgets = tester.widgetList<Text>(
+        find.descendant(
+          of: find.byType(ParishHeroBanner),
+          matching: find.byType(Text),
+        ),
+      );
       final hasOldEyebrow = textWidgets.any(
         (t) => (t.data ?? '').toLowerCase().contains(
           "australia's newest catholic parish",
@@ -254,11 +271,18 @@ void main() {
       expect(allNames.length, 4);
     });
 
-    testWidgets('no rendered text mentions Deacon Tony Hoban', (tester) async {
+    // The About St Luke's history names Deacon Tony Hoban as founding
+    // Pastoral Director (parish-supplied copy, 2026-10-15). REQ-F02-008 is
+    // about the leadership list, so only the leadership rows are checked.
+    testWidgets('no leadership row mentions Deacon Tony Hoban', (tester) async {
       await pumpParishScreen(tester, fakeLauncher: _FakeUrlLauncherService());
 
-      final textWidgets = tester.widgetList<Text>(find.byType(Text));
-      final mentionsDeacon = textWidgets.any(
+      final tiles = find.byType(LeadershipEntryTile);
+      expect(tiles, findsNWidgets(4));
+      final leadershipText = tester.widgetList<Text>(
+        find.descendant(of: tiles, matching: find.byType(Text)),
+      );
+      final mentionsDeacon = leadershipText.any(
         (t) => (t.data ?? '').toLowerCase().contains('tony hoban'),
       );
       expect(mentionsDeacon, isFalse);
@@ -280,7 +304,11 @@ void main() {
         for (final avatar in avatars) {
           expect(avatar.backgroundImage, isA<AssetImage>());
         }
-        expect(find.byType(Image), findsNothing);
+        // The About St Luke's emblem (and the Pastoral Plan graphic, once
+        // opened) are local assets too: nothing loads from the network.
+        for (final image in tester.widgetList<Image>(find.byType(Image))) {
+          expect(image.image, isA<AssetImage>());
+        }
       },
     );
 
@@ -295,43 +323,189 @@ void main() {
   });
 
   group('REQ-F02-010/011: About St Luke\'s section', () {
-    testWidgets('no icon row is rendered directly above/near the section', (
+    testWidgets("the About St Luke's ribbon shows the St Luke's emblem", (
       tester,
     ) async {
       await pumpParishScreen(tester, fakeLauncher: _FakeUrlLauncherService());
 
-      // No Icon widgets should exist between the hero banner and the
-      // Church Leadership label — the only icons in the tree belong to
-      // leadership rows (chevrons), which render below/after About St
-      // Luke's, so a global search for any Icon before the leadership
-      // section content is a reasonable proxy. Simpler and more direct:
-      // assert zero Icon widgets exist at all in ParishScreen except the
-      // leadership chevrons (which appear only after "About St Luke's").
-      final aboutFinder = find.text("About St Luke's");
-      expect(aboutFinder, findsOneWidget);
-
-      // Directly assert no Icon widget is a descendant of the section
-      // containing the About St Luke's heading and body (i.e. the
-      // Column/Container that wraps it).
-      final columnAncestor = find
-          .ancestor(of: aboutFinder, matching: find.byType(Column))
-          .first;
+      final ribbon = find.ancestor(
+        of: find.text("About St Luke's"),
+        matching: find.byType(ExpansionTile),
+      );
+      expect(ribbon, findsOneWidget);
+      final image = tester.widget<Image>(
+        find.descendant(of: ribbon, matching: find.byType(Image)),
+      );
       expect(
-        find.descendant(of: columnAncestor, matching: find.byType(Icon)),
+        (image.image as AssetImage).assetName,
+        AboutStLukesSection.emblemAsset,
+      );
+      expect(
+        find.descendant(
+          of: ribbon,
+          matching: find.byIcon(Icons.church_outlined),
+        ),
         findsNothing,
       );
     });
 
-    testWidgets('About St Luke\'s heading and body copy are present', (
+    testWidgets('section order: hero, Our Story, then Church Leadership', (
       tester,
     ) async {
       await pumpParishScreen(tester, fakeLauncher: _FakeUrlLauncherService());
 
+      double top(Finder finder) => tester.getTopLeft(finder).dy;
+      final heroY = top(find.byType(ParishHeroBanner));
+      final storyY = top(find.text('OUR STORY'));
+      final leadershipY = top(find.text('CHURCH LEADERSHIP'));
+      expect(heroY, lessThan(storyY));
+      expect(storyY, lessThan(leadershipY));
+      // Every leadership row comes after the story.
+      for (final tileY
+          in tester
+              .widgetList(find.byType(LeadershipEntryTile))
+              .map((w) => top(find.byWidget(w)))) {
+        expect(tileY, greaterThan(storyY));
+      }
+    });
+
+    testWidgets('collapsed, only the first paragraph shows; pulling down '
+        'reveals the rest', (tester) async {
+      await pumpParishScreen(tester, fakeLauncher: _FakeUrlLauncherService());
+
+      const paragraphs = AboutStLukesSection.paragraphs;
       expect(find.text("About St Luke's"), findsOneWidget);
+      expect(find.text(paragraphs.first), findsOneWidget);
       expect(
-        find.textContaining('St Luke\'s was formed on 1 January 2018'),
-        findsOneWidget,
+        paragraphs.first,
+        endsWith(
+          "Australia's newest Catholic Parish within the Diocese of "
+          'Parramatta.',
+        ),
       );
+      for (final paragraph in paragraphs.skip(1)) {
+        expect(find.text(paragraph), findsNothing);
+      }
+
+      await tester.tap(find.text("About St Luke's"));
+      await tester.pumpAndSettle();
+      for (final paragraph in paragraphs) {
+        expect(find.text(paragraph), findsOneWidget);
+      }
+
+      await tester.tap(find.text("About St Luke's"));
+      await tester.pumpAndSettle();
+      expect(find.text(paragraphs.last), findsNothing);
+    });
+  });
+
+  group("Pastoral Plan, inside About St Luke's", () {
+    testWidgets("hidden until About St Luke's is opened, then shows the "
+        'pillars, the graphic and the PDF button', (tester) async {
+      final launcher = _FakeUrlLauncherService();
+      await pumpParishScreen(tester, fakeLauncher: launcher);
+
+      expect(find.text(PastoralPlanConfig.title), findsNothing);
+
+      await tester.tap(find.text("About St Luke's"));
+      await tester.pumpAndSettle();
+
+      expect(find.text(PastoralPlanConfig.title), findsOneWidget);
+      expect(find.text(PastoralPlanConfig.summary), findsOneWidget);
+      for (final pillar in [
+        'Faith Enrichment',
+        'Serving God and Others',
+        'Stronger Community Connection',
+        'A Vibrant Worship Experience',
+      ]) {
+        expect(PastoralPlanConfig.summary, contains(pillar));
+      }
+      final graphic = find.byWidgetPredicate(
+        (w) =>
+            w is Image &&
+            w.image is AssetImage &&
+            (w.image as AssetImage).assetName ==
+                PastoralPlanConfig.pillarsAsset,
+      );
+      expect(graphic, findsOneWidget);
+      expect(
+        tester.widget<Image>(graphic).semanticLabel,
+        PastoralPlanConfig.pillarsImageLabel,
+      );
+
+      final button = find.text('Read our Pastoral Plan');
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSize(find.byType(FilledButton)).height,
+        greaterThanOrEqualTo(48),
+      );
+      await tester.tap(button);
+      expect(launcher.launchedUrls, [PastoralPlanConfig.pdfUrl]);
+
+      final minutes = find.text('Pastoral Council Meeting Minutes');
+      await tester.ensureVisible(minutes);
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSize(find.byType(OutlinedButton)).height,
+        greaterThanOrEqualTo(48),
+      );
+      await tester.tap(minutes);
+      expect(launcher.launchedUrls, [
+        PastoralPlanConfig.pdfUrl,
+        PastoralPlanConfig.councilMinutesUrl,
+      ]);
+    });
+  });
+
+  group('Our Parish Prayer', () {
+    testWidgets('the prayer and its invocations show at the bottom, after '
+        'Church Leadership', (tester) async {
+      await pumpParishScreen(tester, fakeLauncher: _FakeUrlLauncherService());
+
+      expect(find.text('OUR PARISH PRAYER'), findsOneWidget);
+      expect(find.text(ParishPrayerSection.prayer), findsOneWidget);
+      for (final invocation in ParishPrayerSection.invocations) {
+        expect(find.text(invocation), findsOneWidget);
+      }
+
+      double top(Finder finder) => tester.getTopLeft(finder).dy;
+      final prayerY = top(find.text('OUR PARISH PRAYER'));
+      expect(prayerY, greaterThan(top(find.text('CHURCH LEADERSHIP'))));
+      for (final tile in tester.widgetList(find.byType(LeadershipEntryTile))) {
+        expect(prayerY, greaterThan(top(find.byWidget(tile))));
+      }
+    });
+
+    testWidgets('"New to Marsden Park?" sits after Church Leadership and '
+        'before the parish prayer', (tester) async {
+      await pumpParishScreen(tester, fakeLauncher: _FakeUrlLauncherService());
+
+      expect(find.text(NewToMarsdenParkSection.title), findsOneWidget);
+      expect(find.text(NewToMarsdenParkSection.body), findsOneWidget);
+      expect(
+        NewToMarsdenParkSection.body,
+        contains('marsdenpark@parracatholic.org'),
+      );
+
+      double top(Finder finder) => tester.getTopLeft(finder).dy;
+      final welcomeY = top(find.text(NewToMarsdenParkSection.title));
+      for (final tile in tester.widgetList(find.byType(LeadershipEntryTile))) {
+        expect(welcomeY, greaterThan(top(find.byWidget(tile))));
+      }
+      expect(welcomeY, lessThan(top(find.text('OUR PARISH PRAYER'))));
+    });
+
+    test('the prayer text matches the parish web app', () {
+      expect(
+        ParishPrayerSection.prayer,
+        startsWith('O God, You show us in St Luke, our patron,'),
+      );
+      expect(
+        ParishPrayerSection.prayer,
+        endsWith('We ask this through Christ our Lord. Amen.'),
+      );
+      expect(ParishPrayerSection.invocations, hasLength(4));
     });
   });
 }

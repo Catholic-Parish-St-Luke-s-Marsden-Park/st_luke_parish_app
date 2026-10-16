@@ -12,9 +12,18 @@ import '../../domain/entities/mass_time.dart';
 /// text scale reflow instead of overflowing (CLAUDE.md accessibility
 /// rules; REQ-F04-020).
 class MassRow extends StatelessWidget {
-  const MassRow({super.key, required this.massTime});
+  const MassRow({super.key, required this.massTime, this.listTimes = false});
 
   final MassTime massTime;
+
+  /// Lay out the day (if any) and each time as separate text, e.g.
+  /// "Wednesday   7:30 AM" or "8:00 AM · 10:00 AM · 5:30 PM", rather than
+  /// "Day: time".
+  final bool listTimes;
+
+  /// Mass times are the main thing people look for, so they are set larger
+  /// than the surrounding text (parish request, 2026-10-16).
+  static const double _timeFontSize = 19;
 
   @override
   Widget build(BuildContext context) {
@@ -30,14 +39,58 @@ class MassRow extends StatelessWidget {
             spacing: 10,
             runSpacing: 2,
             children: [
-              Text(
-                massTime.time,
-                style: textTheme.titleSmall?.copyWith(
-                  color: AppColors.primaryNavy,
-                  fontWeight: FontWeight.w700,
+              if (listTimes) ...[
+                if (massTime.label case final day?)
+                  // A minimum (not fixed) width lines the times up under
+                  // each other, but still grows with large system text.
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 104),
+                    child: Text(
+                      day,
+                      style: textTheme.titleMedium?.copyWith(
+                        color: AppColors.primaryNavy,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                for (final (i, time) in massTime.allTimes.indexed) ...[
+                  if (i > 0)
+                    const ExcludeSemantics(
+                      child: Text(
+                        '·',
+                        style: TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: _timeFontSize,
+                        ),
+                      ),
+                    ),
+                  Text(
+                    time,
+                    style: textTheme.titleMedium?.copyWith(
+                      color: AppColors.primaryNavy,
+                      fontSize: _timeFontSize,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ] else
+                Text(
+                  massTime.label == null
+                      ? massTime.time
+                      : '${massTime.label}: ${massTime.time}',
+                  style: textTheme.titleMedium?.copyWith(
+                    color: AppColors.primaryNavy,
+                    fontSize: _timeFontSize,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              Text(massTime.name, style: textTheme.bodyLarge),
+              if (massTime.name != null)
+                Text(
+                  massTime.name!,
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: AppColors.primaryNavy,
+                  ),
+                ),
             ],
           ),
           if (massTime.note != null)

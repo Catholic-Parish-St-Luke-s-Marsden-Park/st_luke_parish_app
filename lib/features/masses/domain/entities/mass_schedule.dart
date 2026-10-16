@@ -1,15 +1,21 @@
 import 'mass_sub_group.dart';
-import 'mass_time.dart';
+import 'mass_times_card.dart';
+import 'parish_activity.dart';
 
-/// The full static Mass-schedule content shown on the Masses tab: the
-/// "What's On" section's three labeled sub-groups, and the
-/// "Reconciliation & Sacraments" section's flat row list.
+/// The full static content shown on the Masses tab: the "What's On"
+/// section's Mass times cards, and the "Regular Parish Activities"
+/// section's entries.
 class MassSchedule {
   const MassSchedule({
-    required this.whatsOnSubGroups,
-    required this.reconciliationAndSacraments,
+    required this.whatsOnCards,
+    required this.regularActivities,
   });
 
-  final List<MassSubGroup> whatsOnSubGroups;
-  final List<MassTime> reconciliationAndSacraments;
+  final List<MassTimesCard> whatsOnCards;
+  final List<ParishActivity> regularActivities;
+
+  /// Every sub-group across the cards, in display order.
+  List<MassSubGroup> get whatsOnSubGroups => [
+    for (final card in whatsOnCards) ...card.subGroups,
+  ];
 }

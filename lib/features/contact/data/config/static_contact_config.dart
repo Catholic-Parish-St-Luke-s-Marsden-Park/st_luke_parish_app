@@ -11,9 +11,9 @@ const List<ContactItem> staticContactItems = [
   ContactItem(
     icon: '📞',
     label: 'Phone',
-    value: '(02) 8530 0173',
+    value: '(02) 7261 0246',
     action: ContactAction.call,
-    actionTarget: 'tel:0285300173',
+    actionTarget: 'tel:0272610246',
   ),
   ContactItem(
     icon: '📱',
