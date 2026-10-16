@@ -12,6 +12,8 @@ import 'package:st_luke_parish_app/core/theme/app_theme.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_screen.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/screens/ministries_screen.dart';
 import 'package:st_luke_parish_app/features/news/presentation/screens/news_screen.dart';
+import 'package:st_luke_parish_app/features/parish/domain/entities/parish_notice.dart';
+import 'package:st_luke_parish_app/features/parish/presentation/providers/parish_notice_provider.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/screens/parish_screen.dart';
 import 'package:st_luke_parish_app/features/resources/domain/failures/reflections_failure.dart';
 import 'package:st_luke_parish_app/features/resources/presentation/providers/reflections_provider.dart';
@@ -30,7 +32,12 @@ class _FakeUrlLauncher implements UrlLauncherService {
   }
 }
 
-Future<_FakeUrlLauncher> _pumpShell(WidgetTester tester) async {
+Future<_FakeUrlLauncher> _pumpShell(
+  WidgetTester tester, {
+  ParishNotice? notice = const ParishNotice(
+    imageUrl: 'https://stlukesmarsdenpark.org.au/notice.jpg',
+  ),
+}) async {
   final launcher = _FakeUrlLauncher();
   await tester.pumpWidget(
     ProviderScope(
@@ -40,6 +47,8 @@ Future<_FakeUrlLauncher> _pumpShell(WidgetTester tester) async {
         latestReflectionProvider.overrideWith(
           (ref) => Future.error(const ReflectionsNetworkFailure('offline')),
         ),
+        // Nor the parish home page's pop-up.
+        currentParishNoticeProvider.overrideWith((ref) async => notice),
       ],
       child: MaterialApp(theme: AppTheme.light(), home: const AppShell()),
     ),
@@ -347,6 +356,23 @@ void main() {
       expect(container.read(selectedNavIndexProvider), 5);
       expect(find.byType(Drawer), findsNothing);
       expect(find.widgetWithText(AppBar, 'Resources'), findsNothing);
+    });
+
+    testWidgets('Special Announcements is hidden when the parish website has '
+        'no pop-up', (tester) async {
+      await _pumpShell(tester, notice: null);
+
+      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Special Announcements'), findsNothing);
+      final listTiles = tester.widgetList<ListTile>(
+        find.descendant(
+          of: find.byType(Drawer),
+          matching: find.byType(ListTile),
+        ),
+      );
+      expect(listTiles.length, 3);
     });
 
     testWidgets('tapping Faith Formation opens its own page of links', (

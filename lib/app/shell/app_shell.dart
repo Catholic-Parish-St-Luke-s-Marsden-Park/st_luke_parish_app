@@ -7,6 +7,7 @@ import '../../features/masses/presentation/screens/masses_screen.dart';
 import '../../features/ministries/presentation/screens/ministries_screen.dart';
 import '../../features/news/presentation/screens/news_screen.dart';
 import '../../features/parish/presentation/screens/parish_screen.dart';
+import '../../features/parish/presentation/providers/parish_notice_provider.dart';
 import 'bottom_nav.dart';
 import 'nav_index_provider.dart';
 import 'side_drawer.dart';
@@ -36,6 +37,11 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(selectedNavIndexProvider);
+    // Check the parish home page for a pop-up announcement once, when the
+    // app opens, so the side menu already knows whether to offer Special
+    // Announcements. Listening (not watching) keeps it loaded without
+    // rebuilding the shell.
+    ref.listen(currentParishNoticeProvider, (_, _) {});
 
     return _AppShellBody(
       selectedIndex: selectedIndex,
