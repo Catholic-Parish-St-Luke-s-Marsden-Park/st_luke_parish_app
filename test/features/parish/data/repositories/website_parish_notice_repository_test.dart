@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:st_luke_parish_app/features/parish/data/datasources/parish_home_page_datasource.dart';
@@ -32,7 +34,8 @@ class _FakeDatasource extends ParishHomePageDatasource {
   Future<String> fetchHomePageHtml() => _result();
 
   @override
-  Future<bool> isImageAvailable(String url) async => imageAvailable;
+  Future<Uint8List?> fetchImage(String url) async =>
+      imageAvailable ? Uint8List.fromList([1, 2, 3]) : null;
 }
 
 void main() {
@@ -41,6 +44,7 @@ void main() {
       _FakeDatasource(() async => _popupPage),
     ).getCurrentNotice();
     expect(notice?.imageUrl, _poster);
+    expect(notice?.imageBytes, [1, 2, 3]);
   });
 
   test('returns null when the pop-up image no longer loads', () async {

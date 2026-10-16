@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,6 +21,13 @@ const _poster =
     'https://stlukesmarsdenpark.org.au/wp-content/uploads/2026/09/'
     'STD-LS-SLMP-1024x724.jpg';
 
+final _notice = ParishNotice(
+  imageUrl: _poster,
+  imageBytes: base64Decode(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+  ),
+);
+
 void main() {
   testWidgets('shows the poster, zoomable, with Open full size and a 48dp '
       'Close button', (tester) async {
@@ -26,10 +35,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [urlLauncherServiceProvider.overrideWithValue(launcher)],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: AnnouncementDialog(notice: ParishNotice(imageUrl: _poster)),
-          ),
+        child: MaterialApp(
+          home: Scaffold(body: AnnouncementDialog(notice: _notice)),
         ),
       ),
     );
@@ -38,7 +45,8 @@ void main() {
     expect(find.text('Special Announcement'), findsOneWidget);
     expect(find.byType(InteractiveViewer), findsOneWidget);
     final image = tester.widget<Image>(find.byType(Image));
-    expect((image.image as NetworkImage).url, _poster);
+    // Shown from the already-downloaded bytes, not fetched again.
+    expect((image.image as MemoryImage).bytes, _notice.imageBytes);
 
     final close = find.ancestor(
       of: find.byIcon(Icons.close_rounded),

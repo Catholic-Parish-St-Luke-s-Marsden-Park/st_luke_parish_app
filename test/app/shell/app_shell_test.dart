@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +26,13 @@ import 'package:st_luke_parish_app/features/resources/presentation/providers/ref
 /// IndexedStack tab-state preservation), REQ-F01-003 (side drawer: exactly
 /// 2 entries), and REQ-F01-005 (generated Riverpod provider drives the
 /// selected tab).
+final _notice = ParishNotice(
+  imageUrl: 'https://stlukesmarsdenpark.org.au/notice.jpg',
+  imageBytes: base64Decode(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+  ),
+);
+
 class _FakeUrlLauncher implements UrlLauncherService {
   final List<String> launchedUrls = [];
 
@@ -36,10 +45,9 @@ class _FakeUrlLauncher implements UrlLauncherService {
 
 Future<_FakeUrlLauncher> _pumpShell(
   WidgetTester tester, {
-  ParishNotice? notice = const ParishNotice(
-    imageUrl: 'https://stlukesmarsdenpark.org.au/notice.jpg',
-  ),
+  bool withNotice = true,
 }) async {
+  final notice = withNotice ? _notice : null;
   final launcher = _FakeUrlLauncher();
   await tester.pumpWidget(
     ProviderScope(
@@ -406,10 +414,7 @@ void main() {
       final image = tester.widget<Image>(
         find.descendant(of: find.byType(Dialog), matching: find.byType(Image)),
       );
-      expect(
-        (image.image as NetworkImage).url,
-        'https://stlukesmarsdenpark.org.au/notice.jpg',
-      );
+      expect((image.image as MemoryImage).bytes, _notice.imageBytes);
 
       await tester.tap(find.byTooltip('Close'));
       await tester.pump();
@@ -453,7 +458,7 @@ void main() {
     testWidgets('no button at all when the website has no pop-up', (
       tester,
     ) async {
-      await _pumpShell(tester, notice: null);
+      await _pumpShell(tester, withNotice: false);
 
       expect(find.byType(FloatingActionButton), findsNothing);
     });

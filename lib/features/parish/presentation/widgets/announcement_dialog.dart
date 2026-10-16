@@ -60,21 +60,13 @@ class AnnouncementDialog extends ConsumerWidget {
             // Pinch to zoom in on the poster's small print.
             InteractiveViewer(
               maxScale: 5,
-              child: Image.network(
-                notice.imageUrl,
+              // Already downloaded when the app opened, so no wait here.
+              child: Image.memory(
+                notice.imageBytes,
+                gaplessPlayback: true,
                 semanticLabel:
                     'Special announcement from the parish website. Use '
                     '"Open full size" for a larger view.',
-                loadingBuilder: (context, child, progress) => progress == null
-                    ? child
-                    : const AspectRatio(
-                        aspectRatio: 1.4,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primaryNavy,
-                          ),
-                        ),
-                      ),
                 errorBuilder: (context, error, stackTrace) => const AspectRatio(
                   aspectRatio: 1.4,
                   child: Center(

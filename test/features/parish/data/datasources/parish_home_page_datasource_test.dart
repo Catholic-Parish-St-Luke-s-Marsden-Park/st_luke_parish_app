@@ -43,47 +43,42 @@ void main() {
     );
   });
 
-  group('isImageAvailable', () {
+  group('fetchImage', () {
     ParishHomePageDatasource withResponse(int status, String type) =>
         ParishHomePageDatasource(
           MockClient((request) async {
-            expect(request.method, 'HEAD');
-            return http.Response('', status, headers: {'content-type': type});
+            expect(request.method, 'GET');
+            return http.Response.bytes(
+              [1, 2, 3],
+              status,
+              headers: {'content-type': type},
+            );
           }),
         );
 
-    test('true for an image that loads', () async {
+    test('returns the bytes of an image that loads', () async {
       expect(
-        await withResponse(
-          200,
-          'image/jpeg',
-        ).isImageAvailable('https://x/a.jpg'),
-        isTrue,
+        await withResponse(200, 'image/jpeg').fetchImage('https://x/a.jpg'),
+        [1, 2, 3],
       );
     });
 
-    test('false for a missing file or a page that is not an image', () async {
+    test('null for a missing file or a page that is not an image', () async {
       expect(
-        await withResponse(
-          404,
-          'text/html',
-        ).isImageAvailable('https://x/a.jpg'),
-        isFalse,
+        await withResponse(404, 'text/html').fetchImage('https://x/a.jpg'),
+        isNull,
       );
       expect(
-        await withResponse(
-          200,
-          'text/html',
-        ).isImageAvailable('https://x/a.jpg'),
-        isFalse,
+        await withResponse(200, 'text/html').fetchImage('https://x/a.jpg'),
+        isNull,
       );
     });
 
-    test('false when offline', () async {
+    test('null when offline', () async {
       final datasource = ParishHomePageDatasource(
         MockClient((_) async => throw http.ClientException('offline')),
       );
-      expect(await datasource.isImageAvailable('https://x/a.jpg'), isFalse);
+      expect(await datasource.fetchImage('https://x/a.jpg'), isNull);
     });
   });
 }
