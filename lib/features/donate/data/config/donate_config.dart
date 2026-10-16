@@ -50,7 +50,8 @@ abstract final class DonateConfig {
       kind: GivingAreaKind.sacramental,
       description:
           'Essential items for Mass and holy sacraments, including altar '
-          'bread, wine, candles, vestments, hymnals, and missalettes.',
+          'bread, wine, candles, vestments, missalettes, and copyright '
+          'licences.',
     ),
     GivingArea(
       title: 'Faith Formation & Education',
