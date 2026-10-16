@@ -236,12 +236,13 @@ void main() {
       expect(fakeLauncher.launchedUrls, ['https://parracatholic.org']);
     });
 
-    test('the introductions stay short', () {
+    test('the introductions stay to a paragraph', () {
       for (final entry
           in churchLeadershipSections
               .expand((s) => s.entries)
               .where((e) => e.about != null)) {
-        expect(entry.about!.length, lessThan(320), reason: entry.name);
+        // Parish-supplied introductions run to a paragraph each.
+        expect(entry.about!.length, lessThan(700), reason: entry.name);
       }
     });
   });
