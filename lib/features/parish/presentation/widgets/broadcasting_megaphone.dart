@@ -79,14 +79,14 @@ class _BroadcastingMegaphoneState extends State<BroadcastingMegaphone>
   }
 }
 
-/// Keeps the megaphone body of [Icons.campaign_rounded] (the left ~71% of
+/// Keeps the megaphone body of [Icons.campaign_rounded] (the left ~62% of
 /// the glyph) and drops its drawn sound lines.
 class _MegaphoneOnly extends CustomClipper<Rect> {
   const _MegaphoneOnly();
 
   @override
   Rect getClip(Size size) =>
-      Rect.fromLTWH(0, 0, size.width * 0.71, size.height);
+      Rect.fromLTWH(0, 0, size.width * 0.62, size.height);
 
   @override
   bool shouldReclip(_MegaphoneOnly oldClipper) => false;
@@ -124,7 +124,7 @@ class _SoundLinesPainter extends CustomPainter {
       ..strokeWidth = w * 0.085
       ..strokeCap = StrokeCap.round;
     // Where the lines start: just outside the horn's mouth.
-    final origin = Offset(w * 0.68, size.height * 0.5);
+    final origin = Offset(w * 0.64, size.height * 0.5);
     final start = w * (0.07 + 0.2 * progress);
     final length = w * 0.12;
     for (final degrees in const [-35.0, 0.0, 35.0]) {
