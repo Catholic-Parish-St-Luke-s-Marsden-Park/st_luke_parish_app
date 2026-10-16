@@ -4,15 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/external_links.dart';
 import '../../core/services/url_launcher_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../features/parish/presentation/screens/parish_notices_screen.dart';
 import '../../features/resources/data/config/static_resources_config.dart';
 import '../../features/resources/domain/entities/resource_link.dart';
 import '../../features/resources/presentation/screens/resources_screen.dart';
 import 'nav_index_provider.dart';
 
-/// Side drawer chrome hosting the 3 secondary destinations: the Resources
-/// and Faith Formation pages, and Prayer Request, which opens the parish's
-/// prayer-request form in the browser (the same page as the News tab's
-/// button).
+/// Side drawer chrome hosting the 4 secondary destinations: the Resources,
+/// Faith Formation and Special Announcements pages, and Prayer Request,
+/// which opens the parish's prayer-request form in the browser (the same
+/// page as the News tab's button).
 class SideDrawer extends ConsumerWidget {
   const SideDrawer({super.key});
 
@@ -103,6 +104,19 @@ class SideDrawer extends ConsumerWidget {
                 title: 'Faith Formation',
                 groups: faithFormationGroups,
               ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.campaign_outlined),
+              title: const Text('Special Announcements'),
+              onTap: () {
+                final navigator = Navigator.of(context);
+                Scaffold.maybeOf(context)?.closeDrawer();
+                navigator.push(
+                  MaterialPageRoute(
+                    builder: (_) => const ParishNoticesScreen(),
+                  ),
+                );
+              },
             ),
             ListTile(
               leading: const Icon(Icons.favorite_border_rounded),

@@ -254,7 +254,14 @@ void main() {
           matching: find.byType(ListTile),
         ),
       );
-      expect(listTiles.length, 3);
+      expect(listTiles.length, 4);
+      expect(
+        find.descendant(
+          of: find.byType(Drawer),
+          matching: find.text('Special Announcements'),
+        ),
+        findsOneWidget,
+      );
       expect(
         find.descendant(
           of: find.byType(Drawer),
