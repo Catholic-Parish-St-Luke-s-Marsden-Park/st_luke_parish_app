@@ -224,16 +224,22 @@ const List<ParishActivity> regularActivities = [
     contact: _parishEmail,
   ),
   ParishActivity(
-    title: 'Holy Rosary before Mass',
+    title: 'Holy Rosary',
     kind: ParishActivityKind.prayRosary,
-    when: 'Saturday 5:00pm & Sunday 5:00pm, before the 5:30pm Mass',
+    // Prayed together only in October (parish request, 2026-10-16).
+    when:
+        'During October: Saturday & Sunday at 5:00pm, before the 5:30pm '
+        'Mass',
     description:
         '"Where two or three are gathered in my name, there am I among '
-        'them" (Matthew 18:20). Join us as we pray the Rosary together '
-        'before Mass, walking with Mary through the life of her Son. Our '
-        'Blessed Mother holds each of us in her loving care, and we '
-        'especially entrust our children to her prayers, asking her to '
-        'lead them ever closer to Jesus. All are welcome.',
+        'them" (Matthew 18:20). In the Rosary we walk with Mary through the '
+        'life of her Son. Our Blessed Mother holds each of us in her loving '
+        'care, and we especially entrust our children to her prayers, '
+        'asking her to lead them ever closer to Jesus.\n\n'
+        'October is the Month of the Holy Rosary. Throughout October our '
+        'parish gathers at 5:00pm to pray the Rosary together before the '
+        'Saturday Vigil and Sunday 5:30pm Masses. Please come a little '
+        'early and join us in prayer. All are welcome.',
     link: ActivityLink(
       label: 'Open the Rosary Prayer Card',
       // Mary's Rosary Chain's full Rosary card (parish request,
