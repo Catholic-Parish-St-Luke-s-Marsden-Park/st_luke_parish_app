@@ -54,13 +54,17 @@ class CtaPillButton extends StatelessWidget {
                 Icon(icon, size: 16, color: textColor),
                 const SizedBox(width: 6),
               ],
-              Text(
-                label,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.04,
+              // Flexible, so a long label wraps on a narrow screen or at a
+              // large text size instead of overflowing.
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.04,
+                  ),
                 ),
               ),
             ],

@@ -15,7 +15,15 @@ enum ParishActivityKind {
   careCommunity,
   rosary,
   faithGroup,
-  safeguarding,
+  prayRosary,
+}
+
+/// A web link shown as a button on an activity, e.g. a prayer card.
+class ActivityLink {
+  const ActivityLink({required this.label, required this.url});
+
+  final String label;
+  final String url;
 }
 
 /// One entry in the Masses tab's "Regular Activities" section, e.g.
@@ -30,6 +38,7 @@ class ParishActivity {
     this.who,
     this.description,
     this.contact,
+    this.link,
   });
 
   final String title;
@@ -39,7 +48,15 @@ class ParishActivity {
   final String? who;
   final String? description;
   final String? contact;
+  final ActivityLink? link;
 
   /// Every detail that has a value, in display order.
-  List<String> get details => [?when, ?where, ?who, ?description, ?contact];
+  List<String> get details => [
+    ?when,
+    ?where,
+    ?who,
+    ?description,
+    ?contact,
+    ?link?.label,
+  ];
 }
