@@ -25,6 +25,9 @@ import 'widgets/saint_of_the_day_pill.dart';
 class AppShell extends ConsumerWidget {
   const AppShell({super.key});
 
+  /// Largest text scale the AppBar buttons honour (see the AppBar actions).
+  static const double appBarPillMaxTextScale = 1.3;
+
   static const _tabBuilders = <Widget Function()>[
     ParishScreen.new,
     MassesScreen.new,
@@ -70,22 +73,51 @@ class _AppShellBodyState extends State<_AppShellBody> {
     _visited.add(widget.selectedIndex);
   }
 
+  /// Screen width minus the menu button, the title spacing (applied on both
+  /// sides of the title) and the logo chip.
+  double _pillsMaxWidth(BuildContext context) =>
+      (MediaQuery.sizeOf(context).width -
+              kToolbarHeight -
+              2 * _titleSpacing -
+              AppBarLogo.chipWidth)
+          .clamp(0.0, double.infinity);
+
+  static const double _titleSpacing = 4;
+
+  Widget _cappedPill(Widget pill) => MediaQuery.withClampedTextScaling(
+    maxScaleFactor: AppShell.appBarPillMaxTextScale,
+    child: pill,
+  );
+
   @override
   Widget build(BuildContext context) {
     final tabBuilders = AppShell._tabBuilders;
 
     return Scaffold(
       appBar: AppBar(
-        titleSpacing: 4,
+        titleSpacing: _titleSpacing,
         title: const AppBarLogo(),
-        // Both pills are Flexible so they share whatever width the logo
-        // leaves and ellipsize their labels, rather than overflowing the
-        // toolbar on a narrow phone or at an increased text scale.
-        actions: const [
-          Flexible(child: SaintOfTheDayPill()),
-          SizedBox(width: 8),
-          Flexible(child: AskLukePill()),
-          SizedBox(width: 8),
+        // The two pills share whatever width the logo leaves and ellipsize
+        // their labels, rather than overflowing the toolbar on a narrow phone
+        // or at an increased text scale. Their total width is capped so the
+        // logo always keeps its full chip width, and their text scale is
+        // capped so a huge system text size can't crowd it either; the rest
+        // of the app still scales fully.
+        actions: [
+          Flexible(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: _pillsMaxWidth(context)),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(child: _cappedPill(const SaintOfTheDayPill())),
+                  const SizedBox(width: 8),
+                  Flexible(child: _cappedPill(const AskLukePill())),
+                  const SizedBox(width: 8),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
       drawer: const SideDrawer(),
