@@ -84,7 +84,11 @@ void main() {
     await pumpResources(tester);
 
     expect(find.widgetWithText(AppBar, 'Resources'), findsOneWidget);
-    const groups = ['Parish Resources', 'Vatican & Diocese', 'Bible & Liturgy'];
+    const groups = [
+      'Parish Resources',
+      'Universal & Local Church',
+      'Bible & Liturgy',
+    ];
     expect(resourceGroups.map((g) => g.title), groups);
     final tops = [
       for (final title in groups) tester.getTopLeft(find.text(title)).dy,
@@ -109,18 +113,40 @@ void main() {
       for (final link in links) {
         expect(find.text(link.title), findsOneWidget, reason: link.title);
       }
-      expect(find.text('Vatican Website'), findsNothing);
+      expect(find.text('Vatican News'), findsNothing);
     },
   );
+
+  testWidgets('"Universal & Local Church" has only Catholic Church '
+      'Australia and Vatican News, with no caption', (tester) async {
+    await pumpResources(tester);
+
+    final group = resourceGroups.singleWhere(
+      (g) => g.title == 'Universal & Local Church',
+    );
+    expect(group.links.map((l) => l.title), [
+      'Catholic Church Australia',
+      'Vatican News',
+    ]);
+    expect(group.subtitle, isNull);
+    for (final gone in [
+      'Vatican & Diocese',
+      'OFFICIAL CHURCH',
+      'Vatican Website',
+      'Diocese of Parramatta',
+    ]) {
+      expect(find.text(gone), findsNothing, reason: gone);
+    }
+  });
 
   testWidgets('a web link opens its site in the browser', (tester) async {
     await pumpResources(tester);
 
-    await tapRow(tester, 'Vatican Website');
+    await tapRow(tester, 'Vatican News');
     await tapRow(tester, 'Daily Mass Readings');
 
     expect(launcher.launchedUrls, [
-      'https://www.vatican.va',
+      'https://www.vaticannews.va/en.html',
       'https://www.universalis.com/australia.htm',
     ]);
   });
