@@ -36,4 +36,22 @@ class ParishHomePageDatasource {
     }
     return response.body;
   }
+
+  /// Whether [url] currently serves an image, checked with a light `HEAD`
+  /// request. Any failure (offline, removed file, not an image) counts as
+  /// "no", so callers can simply hide what would show it.
+  Future<bool> isImageAvailable(String url) async {
+    try {
+      final response = await _client
+          .head(
+            Uri.parse(url),
+            headers: const {'User-Agent': parishAppUserAgent},
+          )
+          .timeout(_timeout);
+      final type = response.headers['content-type'] ?? '';
+      return response.statusCode == 200 && type.startsWith('image/');
+    } catch (_) {
+      return false;
+    }
+  }
 }

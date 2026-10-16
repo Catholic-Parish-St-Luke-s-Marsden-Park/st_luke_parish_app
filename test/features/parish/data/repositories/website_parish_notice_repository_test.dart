@@ -22,12 +22,17 @@ const _poster =
     'STD-LS-SLMP-1024x724.jpg';
 
 class _FakeDatasource extends ParishHomePageDatasource {
-  _FakeDatasource(this._result) : super(http.Client());
+  _FakeDatasource(this._result, {this.imageAvailable = true})
+    : super(http.Client());
 
   final Future<String> Function() _result;
+  final bool imageAvailable;
 
   @override
   Future<String> fetchHomePageHtml() => _result();
+
+  @override
+  Future<bool> isImageAvailable(String url) async => imageAvailable;
 }
 
 void main() {
@@ -36,6 +41,13 @@ void main() {
       _FakeDatasource(() async => _popupPage),
     ).getCurrentNotice();
     expect(notice?.imageUrl, _poster);
+  });
+
+  test('returns null when the pop-up image no longer loads', () async {
+    final notice = await WebsiteParishNoticeRepository(
+      _FakeDatasource(() async => _popupPage, imageAvailable: false),
+    ).getCurrentNotice();
+    expect(notice, isNull);
   });
 
   test('returns null when the home page has no pop-up', () async {

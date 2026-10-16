@@ -42,4 +42,48 @@ void main() {
       throwsA(isA<ParishDocumentsNetworkFailure>()),
     );
   });
+
+  group('isImageAvailable', () {
+    ParishHomePageDatasource withResponse(int status, String type) =>
+        ParishHomePageDatasource(
+          MockClient((request) async {
+            expect(request.method, 'HEAD');
+            return http.Response('', status, headers: {'content-type': type});
+          }),
+        );
+
+    test('true for an image that loads', () async {
+      expect(
+        await withResponse(
+          200,
+          'image/jpeg',
+        ).isImageAvailable('https://x/a.jpg'),
+        isTrue,
+      );
+    });
+
+    test('false for a missing file or a page that is not an image', () async {
+      expect(
+        await withResponse(
+          404,
+          'text/html',
+        ).isImageAvailable('https://x/a.jpg'),
+        isFalse,
+      );
+      expect(
+        await withResponse(
+          200,
+          'text/html',
+        ).isImageAvailable('https://x/a.jpg'),
+        isFalse,
+      );
+    });
+
+    test('false when offline', () async {
+      final datasource = ParishHomePageDatasource(
+        MockClient((_) async => throw http.ClientException('offline')),
+      );
+      expect(await datasource.isImageAvailable('https://x/a.jpg'), isFalse);
+    });
+  });
 }

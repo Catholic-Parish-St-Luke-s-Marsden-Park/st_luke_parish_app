@@ -89,8 +89,11 @@ class _AppShellBodyState extends State<_AppShellBody> {
         ],
       ),
       drawer: const SideDrawer(),
-      // Only appears while the parish website has a pop-up announcement.
-      floatingActionButton: const AnnouncementButton(),
+      // Only on the Parish tab, and only while the parish website has a
+      // pop-up announcement (parish request, 2026-10-16).
+      floatingActionButton: widget.selectedIndex == 0
+          ? const AnnouncementButton()
+          : null,
       body: IndexedStack(
         index: widget.selectedIndex,
         children: [

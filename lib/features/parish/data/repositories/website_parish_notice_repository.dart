@@ -35,6 +35,12 @@ class WebsiteParishNoticeRepository implements ParishNoticeRepository {
           'Pop-up image is not a valid web link: $url',
         );
       }
+      // Only offer the announcement if its image really loads, e.g. not
+      // after the parish deletes the picture but leaves the pop-up.
+      if (!await _datasource.isImageAvailable(url)) {
+        _log('Pop-up image is not available: $url');
+        return null;
+      }
       return ParishNotice(imageUrl: url);
     } on ParishDocumentsFailure catch (e) {
       _log('$e');

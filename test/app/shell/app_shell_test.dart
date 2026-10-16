@@ -416,6 +416,39 @@ void main() {
       expect(find.byType(Dialog), findsNothing);
     });
 
+    testWidgets('the button is only on the Parish tab', (tester) async {
+      await _pumpShell(tester);
+      expect(find.byType(FloatingActionButton), findsOneWidget);
+
+      // Frame-by-frame pumps: some tabs show endless loading spinners, and
+      // the button animates out.
+      Future<void> settle() async {
+        for (var i = 0; i < 10; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      for (final label in ['Masses', 'News', 'Ministries', 'Contact']) {
+        await tester.tap(
+          find.descendant(
+            of: find.byType(NavigationBar),
+            matching: find.text(label),
+          ),
+        );
+        await settle();
+        expect(find.byType(FloatingActionButton), findsNothing, reason: label);
+      }
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Parish'),
+        ),
+      );
+      await settle();
+      expect(find.byType(FloatingActionButton), findsOneWidget);
+    });
+
     testWidgets('no button at all when the website has no pop-up', (
       tester,
     ) async {
