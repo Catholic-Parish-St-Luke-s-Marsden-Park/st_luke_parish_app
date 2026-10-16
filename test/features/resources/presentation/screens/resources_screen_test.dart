@@ -125,8 +125,8 @@ void main() {
       (g) => g.title == 'Universal & Local Church',
     );
     expect(group.links.map((l) => l.title), [
-      'Catholic Church Australia',
       'Vatican News',
+      'Catholic Church Australia',
     ]);
     expect(group.subtitle, isNull);
     for (final gone in [
@@ -139,6 +139,23 @@ void main() {
     }
   });
 
+  test('Bible & Liturgy: Daily Mass Readings (USCCB), then Catholic Bible '
+      'Readings (Bible Gateway); no Universalis', () {
+    final group = resourceGroups.singleWhere(
+      (g) => g.title == 'Bible & Liturgy',
+    );
+    expect(
+      [
+        for (final link in group.links)
+          (link.title, (link.destination as WebDestination).url),
+      ],
+      [
+        ('Daily Mass Readings', 'https://bible.usccb.org'),
+        ('Catholic Bible Readings', 'https://www.biblegateway.com/'),
+      ],
+    );
+  });
+
   testWidgets('a web link opens its site in the browser', (tester) async {
     await pumpResources(tester);
 
@@ -147,7 +164,7 @@ void main() {
 
     expect(launcher.launchedUrls, [
       'https://www.vaticannews.va/en.html',
-      'https://www.universalis.com/australia.htm',
+      'https://bible.usccb.org',
     ]);
   });
 

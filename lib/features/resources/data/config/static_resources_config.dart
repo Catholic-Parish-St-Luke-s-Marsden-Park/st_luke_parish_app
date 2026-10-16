@@ -35,16 +35,16 @@ const List<ResourceGroup> resourceGroups = [
     title: 'Universal & Local Church',
     links: [
       ResourceLink(
-        title: 'Catholic Church Australia',
-        subtitle: 'catholic.org.au',
-        kind: ResourceKind.church,
-        destination: WebDestination('https://www.catholic.org.au'),
-      ),
-      ResourceLink(
         title: 'Vatican News',
         subtitle: 'vaticannews.va',
         kind: ResourceKind.news,
         destination: WebDestination('https://www.vaticannews.va/en.html'),
+      ),
+      ResourceLink(
+        title: 'Catholic Church Australia',
+        subtitle: 'catholic.org.au',
+        kind: ResourceKind.church,
+        destination: WebDestination('https://www.catholic.org.au'),
       ),
     ],
   ),
@@ -52,19 +52,19 @@ const List<ResourceGroup> resourceGroups = [
     title: 'Bible & Liturgy',
     subtitle: 'Scripture & Readings',
     links: [
+      // Parish request, 2026-10-16: the USCCB link is now the daily
+      // readings (replacing Universalis), plus Bible Gateway.
       ResourceLink(
-        title: 'Catholic Bible Online',
+        title: 'Daily Mass Readings',
         subtitle: 'bible.usccb.org',
-        kind: ResourceKind.bible,
+        kind: ResourceKind.readings,
         destination: WebDestination('https://bible.usccb.org'),
       ),
       ResourceLink(
-        title: 'Daily Mass Readings',
-        subtitle: 'universalis.com (Australia)',
-        kind: ResourceKind.readings,
-        destination: WebDestination(
-          'https://www.universalis.com/australia.htm',
-        ),
+        title: 'Catholic Bible Readings',
+        subtitle: 'biblegateway.com',
+        kind: ResourceKind.bible,
+        destination: WebDestination('https://www.biblegateway.com/'),
       ),
     ],
   ),
