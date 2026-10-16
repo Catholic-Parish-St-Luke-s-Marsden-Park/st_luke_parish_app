@@ -8,7 +8,6 @@ import '../../domain/entities/resource_link.dart';
 const List<ResourceGroup> resourceGroups = [
   ResourceGroup(
     title: 'Parish Resources',
-    subtitle: "St Luke's",
     links: [
       ResourceLink(
         title: 'Weekly Bulletins',

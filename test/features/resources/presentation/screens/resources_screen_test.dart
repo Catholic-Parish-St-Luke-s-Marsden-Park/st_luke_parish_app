@@ -93,6 +93,8 @@ void main() {
     // Renamed from "Bible & Liturgy", with no caption under it.
     expect(find.text('Bible & Liturgy'), findsNothing);
     expect(find.text('SCRIPTURE & READINGS'), findsNothing);
+    // No "St Luke's" caption under Parish Resources (2026-10-17).
+    expect(find.text("ST LUKE'S"), findsNothing);
     final tops = [
       for (final title in groups) tester.getTopLeft(find.text(title)).dy,
     ];
