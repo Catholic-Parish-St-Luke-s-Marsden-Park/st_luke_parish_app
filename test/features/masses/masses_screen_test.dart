@@ -14,6 +14,7 @@ import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_s
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/activity_ribbon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_symbol_icon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_card.dart';
+import 'package:st_luke_parish_app/features/masses/presentation/widgets/draped_rosary_icon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/rosary_icon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_row.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_section_header.dart';
@@ -420,16 +421,20 @@ void main() {
       expect(contacts, everyElement('marsdenpark@parracatholic.org'));
     });
 
-    testWidgets('the last ribbon is "Holy Rosary before Mass", with a '
+    testWidgets('the last ribbon is "Holy Rosary", with a '
         'rosary icon; the Diocese of Parramatta ribbon is gone', (
       tester,
     ) async {
       await pumpMassesScreen(tester);
 
-      expect(regularActivities.last.title, 'Holy Rosary before Mass');
+      expect(regularActivities.last.title, 'Holy Rosary');
+      expect(
+        regularActivities.last.description,
+        contains('October is the Month of the Holy Rosary'),
+      );
       expect(
         regularActivities.last.when,
-        'Saturday 5:00pm & Sunday 5:00pm, before the 5:30pm Mass',
+        'During October: Saturday at 5:00pm, before the 5:30pm Vigil Mass',
       );
       expect(
         regularActivities.any((a) => a.title == 'Diocese of Parramatta'),
@@ -482,6 +487,29 @@ void main() {
       ]);
     });
 
+    testWidgets('the Rosary Block has its own draped rosary icon, different '
+        "from the Holy Rosary's", (tester) async {
+      await pumpMassesScreen(tester);
+
+      final block = regularActivities.singleWhere(
+        (a) => a.title == 'Rosary Block',
+      );
+      final ribbon = find.ancestor(
+        of: ribbonTitle(block),
+        matching: find.byType(ActivityRibbon),
+      );
+      await tester.ensureVisible(ribbon);
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: ribbon, matching: find.byType(DrapedRosaryIcon)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: ribbon, matching: find.byType(RosaryIcon)),
+        findsNothing,
+      );
+    });
+
     test('each activity kind is used once, so every ribbon has its own '
         'icon', () {
       final kinds = regularActivities.map((a) => a.kind).toList();
@@ -490,7 +518,10 @@ void main() {
     });
 
     test('drops one-off bulletin dates and the old placeholder rows', () {
+      // The Holy Rosary is an October devotion by design (parish request,
+      // 2026-10-16), so it is left out of this check.
       final allText = regularActivities
+          .where((a) => a.kind != ParishActivityKind.prayRosary)
           .expand((a) => [a.title, ...a.details])
           .join('\n');
       for (final stale in [
@@ -550,12 +581,12 @@ void main() {
     ) async {
       await pumpMassesScreen(tester);
 
-      // A chalice and the host for the Vigil and Sunday Masses; a calendar for
-      // weekdays. No sun or moon.
+      // The same chalice and host on all three cards; no sun, moon or
+      // calendar.
       final expected = {
         'Saturday Vigil Mass': find.byType(MassSymbolIcon),
         'Sunday Mass Times': find.byType(MassSymbolIcon),
-        'Weekday Mass Times': find.byIcon(Icons.calendar_today_outlined),
+        'Weekday Mass Times': find.byType(MassSymbolIcon),
       };
       for (final MapEntry(key: title, value: icon) in expected.entries) {
         final card = find.ancestor(
@@ -572,6 +603,7 @@ void main() {
       }
       expect(find.byIcon(Icons.nights_stay_outlined), findsNothing);
       expect(find.byIcon(Icons.wb_sunny_outlined), findsNothing);
+      expect(find.byIcon(Icons.calendar_today_outlined), findsNothing);
     });
 
     testWidgets('Mass row text is navy, matching the times', (tester) async {

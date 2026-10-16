@@ -1,0 +1,11 @@
+- **Decision ID:** ADR-0009
+- **Title:** Read the Risen Lord Community "On Our Knees" page for the monthly Daily Readings & Reflections link
+- **Feature:** resources-page
+- **Date:** 2026-10-16
+- **Status:** accepted
+- **Context:** The parish asked for the Risen Lord Community's "Daily Readings & Reflections" booklet in the Resources page's Faith Formation group. Each month is a separate PDF with an unpredictable file name, so a fixed link goes stale monthly. Root `CLAUDE.md` limits the app to reading the parish website and parish API.
+- **Decision:** With the parish's explicit approval (limited to this site and this purpose), the app reads `https://www.risenlordcommunity.com/onyourknees`, which lists every booklet as a link labelled "Month YYYY", and opens the current month's PDF — or the newest listed if this month isn't up yet. If the page can't be read, the button opens the page itself.
+- **Alternatives Considered:**
+  - Link to the "On Our Knees" page only — no third-party read, but one extra tap and the user must pick the month.
+  - Parish staff set the link monthly through the parish API — needs an API change first.
+- **Consequences:** The app depends on a site the parish doesn't control; a layout change there falls back to opening the page. The selector is registered in `.claude/context/selector-registry.md`. No other third-party site may be read without a new decision.

@@ -148,21 +148,32 @@ void main() {
       final entry = section.entries.single;
       expect(entry.name, 'Pope Leo XIV');
       expect(entry.assetPath, startsWith('assets/images/leadership/'));
-      expect(entry.linkUrl, 'https://www.vaticannews.va/en.html');
+      expect(entry.linkUrl, 'https://www.vatican.va');
+      expect(entry.photoCredit, contains('CC BY-SA 4.0'));
     });
 
-    testWidgets('tapping the Pope Leo XIV row launches its URL externally', (
-      tester,
-    ) async {
+    testWidgets('the Pope Leo XIV row pulls down to a short introduction and '
+        'a button to the Vatican website', (tester) async {
       final fakeLauncher = _FakeUrlLauncherService();
       await pumpParishScreen(tester, fakeLauncher: fakeLauncher);
+      final entry = churchLeadershipSections[0].entries.single;
 
+      expect(find.text(entry.about!), findsNothing);
       await tester.ensureVisible(find.text('Pope Leo XIV'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Pope Leo XIV'));
       await tester.pumpAndSettle();
 
-      expect(fakeLauncher.launchedUrls, ['https://www.vaticannews.va/en.html']);
+      // Opening the row doesn't leave the app.
+      expect(fakeLauncher.launchedUrls, isEmpty);
+      expect(find.text(entry.about!), findsOneWidget);
+      expect(find.text(entry.photoCredit!), findsOneWidget);
+
+      final button = find.text('Visit the Vatican website');
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      await tester.tap(button);
+      expect(fakeLauncher.launchedUrls, ['https://www.vatican.va']);
     });
 
     testWidgets('renders the entry image via Image.asset / AssetImage, not '
@@ -196,25 +207,47 @@ void main() {
       expect(entry.role, contains('Bishop of Parramatta'));
       expect(entry.assetPath, startsWith('assets/images/leadership/'));
       expect(entry.linkUrl, 'https://parracatholic.org');
+      expect(entry.photoCredit, contains('CC BY-SA 4.0'));
     });
 
-    testWidgets('tapping the Bishop Vincent Long row launches its URL', (
-      tester,
-    ) async {
+    testWidgets('the Bishop Vincent Long row pulls down to a short '
+        'introduction and a button to the diocese website', (tester) async {
       final fakeLauncher = _FakeUrlLauncherService();
       await pumpParishScreen(tester, fakeLauncher: fakeLauncher);
+      final entry = churchLeadershipSections[1].entries.single;
 
+      expect(find.text(entry.about!), findsNothing);
       await tester.ensureVisible(find.text('Bishop Vincent Long'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Bishop Vincent Long'));
       await tester.pumpAndSettle();
 
+      expect(fakeLauncher.launchedUrls, isEmpty);
+      expect(find.text(entry.about!), findsOneWidget);
+
+      final button = find.text('Visit the Diocese of Parramatta');
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSize(find.byType(FilledButton)).height,
+        greaterThanOrEqualTo(48),
+      );
+      await tester.tap(button);
       expect(fakeLauncher.launchedUrls, ['https://parracatholic.org']);
+    });
+
+    test('the introductions stay short', () {
+      for (final entry
+          in churchLeadershipSections
+              .expand((s) => s.entries)
+              .where((e) => e.about != null)) {
+        expect(entry.about!.length, lessThan(320), reason: entry.name);
+      }
     });
   });
 
-  group('REQ-F02-007: Parish part — exactly 2 rows, Fr Gayan linked, Ged '
-      'Oblea not linked', () {
+  group('REQ-F02-007: Parish part — exactly 2 rows, Fr Gayan and Ged, each '
+      'pulling down to an introduction and a button', () {
     test('config has exactly 2 entries in the correct order', () {
       final section = churchLeadershipSections[2];
       expect(section.entries.length, 2);
@@ -223,55 +256,51 @@ void main() {
       expect(section.entries[0].linkUrl, 'https://stlukesmarsdenpark.org.au');
       expect(section.entries[1].name, 'Gerald "Ged" Oblea');
       expect(section.entries[1].role, 'Parish Secretary');
-      expect(section.entries[1].linkUrl, isNull);
+      expect(
+        section.entries[1].linkUrl,
+        'mailto:marsdenpark@parracatholic.org',
+      );
+      // The parish's own photos need no credit line.
+      expect(section.entries.map((e) => e.photoCredit), everyElement(isNull));
     });
 
-    testWidgets('tapping Fr Gayan Thamel launches the parish website URL', (
-      tester,
-    ) async {
-      final fakeLauncher = _FakeUrlLauncherService();
-      await pumpParishScreen(tester, fakeLauncher: fakeLauncher);
-
-      await tester.ensureVisible(find.text('Fr Gayan Thamel'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Fr Gayan Thamel'));
-      await tester.pumpAndSettle();
-
-      expect(fakeLauncher.launchedUrls, ['https://stlukesmarsdenpark.org.au']);
-    });
-
-    testWidgets(
-      'tapping Ged Oblea\'s row does not launch anything and no chevron '
-      'is shown for that row',
-      (tester) async {
+    for (final (name, label, url) in [
+      (
+        'Fr Gayan Thamel',
+        'Visit the parish website',
+        'https://stlukesmarsdenpark.org.au',
+      ),
+      (
+        'Gerald "Ged" Oblea',
+        'Email the parish office',
+        'mailto:marsdenpark@parracatholic.org',
+      ),
+    ]) {
+      testWidgets('$name pulls down to an introduction and "$label"', (
+        tester,
+      ) async {
         final fakeLauncher = _FakeUrlLauncherService();
         await pumpParishScreen(tester, fakeLauncher: fakeLauncher);
-
-        final gedTileFinder = find
-            .ancestor(
-              of: find.text('Gerald "Ged" Oblea'),
-              matching: find.byType(LeadershipEntryTile),
-            )
-            .first;
-        final gedTile = tester.widget<LeadershipEntryTile>(gedTileFinder);
-        expect(gedTile.entry.linkUrl, isNull);
-
-        expect(
-          find.descendant(
-            of: gedTileFinder,
-            matching: find.byIcon(Icons.chevron_right_rounded),
-          ),
-          findsNothing,
+        final entry = churchLeadershipSections[2].entries.singleWhere(
+          (e) => e.name == name,
         );
 
-        await tester.ensureVisible(find.text('Gerald "Ged" Oblea'));
+        expect(find.text(entry.about!), findsNothing);
+        await tester.ensureVisible(find.text(name));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Gerald "Ged" Oblea'));
+        await tester.tap(find.text(name));
         await tester.pumpAndSettle();
 
         expect(fakeLauncher.launchedUrls, isEmpty);
-      },
-    );
+        expect(find.text(entry.about!), findsOneWidget);
+
+        final button = find.text(label);
+        await tester.ensureVisible(button);
+        await tester.pumpAndSettle();
+        await tester.tap(button);
+        expect(fakeLauncher.launchedUrls, [url]);
+      });
+    }
   });
 
   group('REQ-F02-008: no Deacon Tony Hoban entry anywhere', () {

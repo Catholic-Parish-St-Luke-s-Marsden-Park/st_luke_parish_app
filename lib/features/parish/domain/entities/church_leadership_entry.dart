@@ -10,6 +10,9 @@ class ChurchLeadershipEntry {
     required this.role,
     required this.assetPath,
     this.linkUrl,
+    this.about,
+    this.linkLabel,
+    this.photoCredit,
   });
 
   /// Display name, e.g. "Fr Gayan Thamel".
@@ -24,4 +27,14 @@ class ChurchLeadershipEntry {
   /// External URL to launch when this entry is tapped. `null` means the
   /// entry is not tappable/linked (e.g. the Parish Secretary row).
   final String? linkUrl;
+
+  /// A short introduction. When set, the row pulls down to show it, with a
+  /// [linkLabel] button to [linkUrl], instead of opening the link on tap.
+  final String? about;
+
+  /// The pull-down's button text, e.g. "Visit the Vatican website".
+  final String? linkLabel;
+
+  /// Attribution the photo's licence requires, shown under [about].
+  final String? photoCredit;
 }
