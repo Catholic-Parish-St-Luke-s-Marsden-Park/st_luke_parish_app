@@ -51,14 +51,15 @@ class ResourceGroupCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Text(
-                    group.subtitle.toUpperCase(),
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: AppColors.darkGold,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.0,
+                  if (group.subtitle case final subtitle?)
+                    Text(
+                      subtitle.toUpperCase(),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppColors.darkGold,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

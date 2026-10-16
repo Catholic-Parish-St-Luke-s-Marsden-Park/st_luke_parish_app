@@ -31,21 +31,9 @@ const List<ResourceGroup> resourceGroups = [
     ],
   ),
   ResourceGroup(
-    title: 'Vatican & Diocese',
-    subtitle: 'Official Church',
+    // Renamed and trimmed to two links (parish request, 2026-10-16).
+    title: 'Universal & Local Church',
     links: [
-      ResourceLink(
-        title: 'Vatican Website',
-        subtitle: 'vatican.va',
-        kind: ResourceKind.vatican,
-        destination: WebDestination('https://www.vatican.va'),
-      ),
-      ResourceLink(
-        title: 'Diocese of Parramatta',
-        subtitle: 'parracatholic.org',
-        kind: ResourceKind.diocese,
-        destination: WebDestination('https://www.parracatholic.org'),
-      ),
       ResourceLink(
         title: 'Catholic Church Australia',
         subtitle: 'catholic.org.au',

@@ -4,8 +4,6 @@ enum ResourceKind {
   bulletin,
   prayerRequest,
   donate,
-  vatican,
-  diocese,
   church,
   news,
   bible,
@@ -68,11 +66,13 @@ class ResourceLink {
 class ResourceGroup {
   const ResourceGroup({
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.links,
   });
 
   final String title;
-  final String subtitle;
+
+  /// Optional small caption under the title.
+  final String? subtitle;
   final List<ResourceLink> links;
 }

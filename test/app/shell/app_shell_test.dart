@@ -331,7 +331,7 @@ void main() {
       expect(find.widgetWithText(AppBar, 'Faith Formation'), findsOneWidget);
       expect(find.text('FORMED'), findsOneWidget);
       expect(find.text('On Our Knees'), findsOneWidget);
-      expect(find.text('Vatican Website'), findsNothing);
+      expect(find.text('Vatican News'), findsNothing);
     });
 
     testWidgets('tapping Prayer Request opens the parish prayer-request page '
