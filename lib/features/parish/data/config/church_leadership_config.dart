@@ -60,7 +60,7 @@ const List<ChurchLeadershipSection> churchLeadershipSections = [
     ],
   ),
   ChurchLeadershipSection(
-    title: 'Parish',
+    title: 'Parish Team',
     entries: [
       ChurchLeadershipEntry(
         name: 'Fr Gayan Thamel',
