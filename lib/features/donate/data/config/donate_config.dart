@@ -58,16 +58,8 @@ abstract final class DonateConfig {
       kind: GivingAreaKind.formation,
       description:
           "Workbooks, materials, and resources for children's religious "
-          'education (CCD/PREP), Youth Ministry, and Adult Faith Formation '
+          'education (SRE), Youth Ministry, and Adult Faith Formation '
           '(OCIA).',
-    ),
-    GivingArea(
-      title: 'Community Outreach & Charity',
-      kind: GivingAreaKind.outreach,
-      description:
-          'Direct support for our local food pantry, emergency assistance '
-          'for families in crisis, and our mandatory contribution to broader '
-          'diocesan ministries.',
     ),
     GivingArea(
       title: 'Capital Improvements (Building Fund)',
