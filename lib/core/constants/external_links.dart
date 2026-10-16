@@ -40,4 +40,10 @@ abstract final class ExternalLinks {
   /// as a fallback link when the live feed is empty or fails to load/parse
   /// (REQ-F08-016/018/019).
   static const String eventsPage = '$parishSite/calendar-2/';
+
+  /// The Risen Lord Community's "On Our Knees" page, which lists each
+  /// month's "Daily Readings & Reflections" PDF. The only third-party page
+  /// the app reads (ADR-0009).
+  static const String dailyReflectionsPage =
+      'https://www.risenlordcommunity.com/onyourknees';
 }

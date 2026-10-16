@@ -24,6 +24,8 @@ Phase 2 may introduce Supabase for backend-supported capabilities such as notifi
 
 The app must only consume public parish website content and the parish API's public, read-only endpoints (`GET /v1/*`). The only write the app makes is push-token registration (`POST /v1/devices`). Never call the parish API's `/admin` console or any authenticated endpoint. Do not assume other private APIs, admin endpoints, or unpublished data sources exist.
 
+One approved exception (2026-10-16, ADR-0009): the Resources page may read the Risen Lord Community's public "On Our Knees" page (`https://www.risenlordcommunity.com/onyourknees`), and only to find the current month's "Daily Readings & Reflections" PDF link. No other third-party site may be read.
+
 ## Tech Stack
 
 - Flutter stable
@@ -447,6 +449,7 @@ Do not mark a feature complete until its code, tests, and UI states are verified
 ## Security and Reliability Rules
 
 - Scrape public content only
+- Read no third-party site, except the approved Risen Lord Community "On Our Knees" page for the monthly reflections link (ADR-0009)
 - Call only the parish API's public, read-only `GET /v1/*` endpoints, plus `POST /v1/devices` for push registration
 - Do not access private, authenticated, or administrative pages or endpoints
 - Do not hardcode secrets, tokens, or credentials in source code

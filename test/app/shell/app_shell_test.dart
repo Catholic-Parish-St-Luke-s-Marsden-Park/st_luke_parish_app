@@ -5,24 +5,47 @@ import 'package:st_luke_parish_app/app/shell/app_shell.dart';
 import 'package:st_luke_parish_app/app/shell/bottom_nav.dart';
 import 'package:st_luke_parish_app/app/shell/nav_index_provider.dart';
 import 'package:st_luke_parish_app/app/shell/widgets/pulsing_nav_icon.dart';
+import 'package:st_luke_parish_app/core/constants/external_links.dart';
+import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
 import 'package:st_luke_parish_app/core/theme/app_colors.dart';
 import 'package:st_luke_parish_app/core/theme/app_theme.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_screen.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/screens/ministries_screen.dart';
 import 'package:st_luke_parish_app/features/news/presentation/screens/news_screen.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/screens/parish_screen.dart';
+import 'package:st_luke_parish_app/features/resources/domain/failures/reflections_failure.dart';
+import 'package:st_luke_parish_app/features/resources/presentation/providers/reflections_provider.dart';
 
 /// Covers REQ-F01-002 (bottom nav: 6 destinations, correct labels/icons,
 /// IndexedStack tab-state preservation), REQ-F01-003 (side drawer: exactly
 /// 2 entries), and REQ-F01-005 (generated Riverpod provider drives the
 /// selected tab).
-Future<void> _pumpShell(WidgetTester tester) async {
+class _FakeUrlLauncher implements UrlLauncherService {
+  final List<String> launchedUrls = [];
+
+  @override
+  Future<bool> launchExternal(String url) async {
+    launchedUrls.add(url);
+    return true;
+  }
+}
+
+Future<_FakeUrlLauncher> _pumpShell(WidgetTester tester) async {
+  final launcher = _FakeUrlLauncher();
   await tester.pumpWidget(
     ProviderScope(
+      overrides: [
+        urlLauncherServiceProvider.overrideWithValue(launcher),
+        // Never read the real reflections page from a widget test.
+        latestReflectionProvider.overrideWith(
+          (ref) => Future.error(const ReflectionsNetworkFailure('offline')),
+        ),
+      ],
       child: MaterialApp(theme: AppTheme.light(), home: const AppShell()),
     ),
   );
   await tester.pumpAndSettle();
+  return launcher;
 }
 
 void main() {
@@ -211,8 +234,8 @@ void main() {
   });
 
   group('REQ-F01-003: side drawer', () {
-    testWidgets('opens and shows exactly 2 entries: Resources and '
-        'Prayer Request', (tester) async {
+    testWidgets('opens and shows exactly 3 entries: Resources, Faith '
+        'Formation and Prayer Request', (tester) async {
       await _pumpShell(tester);
 
       final scaffoldState = tester.state<ScaffoldState>(
@@ -231,7 +254,14 @@ void main() {
           matching: find.byType(ListTile),
         ),
       );
-      expect(listTiles.length, 2);
+      expect(listTiles.length, 3);
+      expect(
+        find.descendant(
+          of: find.byType(Drawer),
+          matching: find.text('Faith Formation'),
+        ),
+        findsOneWidget,
+      );
 
       expect(
         find.descendant(
@@ -266,6 +296,55 @@ void main() {
       // AppBar title 'Resources' should now be showing on the pushed
       // ResourcesScreen (distinct from the drawer entry we just tapped).
       expect(find.widgetWithText(AppBar, 'Resources'), findsOneWidget);
+    });
+
+    testWidgets('a Resources link to an app tab closes Resources and selects '
+        'that tab', (tester) async {
+      await _pumpShell(tester);
+
+      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Resources'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Weekly Bulletins'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(AppBar, 'Resources'), findsNothing);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(AppShell)),
+      );
+      expect(container.read(selectedNavIndexProvider), 2);
+      expect(find.byType(NewsScreen), findsOneWidget);
+    });
+
+    testWidgets('tapping Faith Formation opens its own page of links', (
+      tester,
+    ) async {
+      await _pumpShell(tester);
+
+      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Faith Formation'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(AppBar, 'Faith Formation'), findsOneWidget);
+      expect(find.text('FORMED'), findsOneWidget);
+      expect(find.text('On Our Knees'), findsOneWidget);
+      expect(find.text('Vatican Website'), findsNothing);
+    });
+
+    testWidgets('tapping Prayer Request opens the parish prayer-request page '
+        'in the browser', (tester) async {
+      final launcher = await _pumpShell(tester);
+
+      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Prayer Request'));
+      await tester.pumpAndSettle();
+
+      expect(launcher.launchedUrls, [ExternalLinks.prayerRequests]);
+      expect(find.byType(Drawer), findsNothing);
     });
   });
 
