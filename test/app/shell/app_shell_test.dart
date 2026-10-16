@@ -16,6 +16,7 @@ import 'package:st_luke_parish_app/features/parish/domain/entities/parish_notice
 import 'package:st_luke_parish_app/features/parish/domain/failures/parish_documents_failure.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/providers/parish_notice_provider.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/screens/parish_screen.dart';
+import 'package:st_luke_parish_app/features/parish/presentation/widgets/broadcasting_megaphone.dart';
 import 'package:st_luke_parish_app/features/resources/domain/failures/reflections_failure.dart';
 import 'package:st_luke_parish_app/features/resources/presentation/providers/reflections_provider.dart';
 
@@ -392,7 +393,7 @@ void main() {
       expect(
         find.descendant(
           of: button,
-          matching: find.byIcon(Icons.campaign_rounded),
+          matching: find.byType(BroadcastingMegaphone),
         ),
         findsOneWidget,
       );

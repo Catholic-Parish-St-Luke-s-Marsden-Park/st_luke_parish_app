@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../providers/parish_notice_provider.dart';
 import 'announcement_dialog.dart';
+import 'broadcasting_megaphone.dart';
 
 /// A floating megaphone button, shown only while the parish website's home
 /// page has a pop-up announcement; tapping it opens that announcement
@@ -21,7 +22,7 @@ class AnnouncementButton extends ConsumerWidget {
       tooltip: 'Special announcement',
       backgroundColor: AppColors.gold,
       foregroundColor: AppColors.primaryNavy,
-      child: const Icon(Icons.campaign_rounded, size: 28),
+      child: const BroadcastingMegaphone(color: AppColors.primaryNavy),
     );
   }
 }
