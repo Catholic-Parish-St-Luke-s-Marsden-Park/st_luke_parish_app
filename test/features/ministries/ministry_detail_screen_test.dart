@@ -27,10 +27,10 @@ class _FakeUrlLauncherService implements UrlLauncherService {
 }
 
 void main() {
-  final music = fallbackMinistry('music');
-  final sacramental = fallbackMinistry('sacramental');
+  final music = fallbackMinistry('music-ministry');
+  final sacramental = fallbackMinistry('sacramental-programme');
   const musicMailto =
-      'mailto:marsdenpark@parracatholic.org?subject=Music%20Ministry%20Interest';
+      'mailto:marsdenpark@parracatholic.org?subject=Music%20Interest';
 
   Future<void> pumpDetail(
     WidgetTester tester, {
@@ -61,28 +61,21 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  group('REQ-F03-006: detail screen renders When/Where/Open-to, About, '
-      'leader row, and How to Join', () {
-    testWidgets('renders time/location/open/about/leader/joinInfo', (
-      tester,
-    ) async {
+  group('REQ-F03-006: detail screen renders About, leader row, and How to '
+      'Join, without the old tagline and When/Where/Open-to chips', () {
+    testWidgets('renders about/leader/joinInfo only', (tester) async {
       await pumpDetail(
         tester,
         ministryId: music.id,
         fakeLauncher: _FakeUrlLauncherService(),
       );
 
-      // _StatChip renders its label uppercased (e.g. "WHEN").
       expect(tester.takeException(), isNull);
       expect(find.text(music.name), findsOneWidget);
-      expect(find.text(music.tagline), findsOneWidget);
-
-      expect(find.text('WHEN'), findsOneWidget);
-      expect(find.text('WHERE'), findsOneWidget);
-      expect(find.text('OPEN TO'), findsOneWidget);
-      expect(find.text(music.time), findsOneWidget);
-      expect(find.text(music.location), findsOneWidget);
-      expect(find.text(music.open), findsOneWidget);
+      expect(find.text(music.tagline), findsNothing);
+      expect(find.text('WHEN'), findsNothing);
+      expect(find.text('WHERE'), findsNothing);
+      expect(find.text('OPEN TO'), findsNothing);
 
       expect(find.text('ABOUT THIS MINISTRY'), findsOneWidget);
       expect(find.text(music.about), findsOneWidget);
@@ -151,7 +144,7 @@ void main() {
 
       expect(fakeLauncher.launchedUrls, [
         'mailto:sacraments@stlukesmarsdenpark.org.au'
-            '?subject=Sacramental%20Programme%202026',
+            '?subject=Sacramental%20Programme%20Interest',
       ]);
     });
   });

@@ -6,8 +6,8 @@ import 'package:st_luke_parish_app/features/ministries/data/parsers/ministries_j
 import '../../../helpers/fake_ministries_repository.dart';
 
 /// REQ-F08-011 and REQ-F08-019: the bundled `GET /v1/ministries` snapshot
-/// holds the same 16 ministries in 4 categories, in order, as the static
-/// config it replaced. These replace the old REQ-F03-002 "16 / 4" checks.
+/// holds the 25 ministries in 4 categories, in the order of the parish
+/// ministry list (Ministries.pdf).
 ///
 /// When the snapshot is refreshed at release time (README > Parish API) and
 /// staff have changed ministries, these expectations change with it.
@@ -17,43 +17,52 @@ void main() {
 
   test('exactly 4 categories, in order', () {
     expect(categories.map((c) => c.name), [
-      'Liturgy & Worship',
-      'Children & Youth',
-      'Community & Outreach',
-      'Operations & Governance',
+      'Liturgical Ministries',
+      'Church Ministries',
+      'Community Building & Outreach',
+      'Evangelisation Ministries',
     ]);
   });
 
-  test('exactly 16 ministries with unique ids', () {
-    expect(ministries, hasLength(16));
-    expect(ministries.map((m) => m.id).toSet(), hasLength(16));
+  test('exactly 25 ministries with unique ids', () {
+    expect(ministries, hasLength(25));
+    expect(ministries.map((m) => m.id).toSet(), hasLength(25));
   });
 
   test('exact id/name pairs, in order, under each category', () {
     const expected = {
-      'Liturgy & Worship': {
-        'music': 'Music Ministry',
-        'liturgical': 'Liturgical Ministry',
-        'altar': 'Ministers of the Altar',
-        'emohc': 'Extraordinary Ministers of Holy Communion',
+      'Liturgical Ministries': {
+        'ministers-at-the-altar': 'Ministers at the Altar',
+        'altar-servers': 'Altar Servers',
+        'extraordinary-ministers': 'Extraordinary Ministers of Holy Communion',
+        'readers-commentators': 'Readers & Commentators',
+        'childrens-liturgy': "Children's Liturgy",
+        'collectors': 'Collectors',
+        'music-ministry': 'Music',
+        'prayer-group': 'Prayer Group',
       },
-      'Children & Youth': {
-        'youth': 'Luke-18',
-        'childrens': "Children's Liturgy",
-        'sacramental': 'Sacramental Process',
-        'sre': 'SRE Ministry',
+      'Church Ministries': {
+        'church-cleaning': 'Church Cleaning',
+        'flowers': 'Flowers',
+        'counting': 'Counting',
+        'church-maintenance': 'Church Maintenance',
+        'logistics-ministry': 'Logistics',
+        'ict-ministry': 'Information and Communication Technology (ICT)',
       },
-      'Community & Outreach': {
-        'welcome': 'Welcome Ministry',
-        'hospitality': 'Hospitality Team',
-        'fundraising': 'Fundraising Team',
-        'scripture': 'Walking with Christ',
+      'Community Building & Outreach': {
+        'pastoral-care-of-the-sick': 'Pastoral Care of the Sick',
+        'youth-ministry': 'Youth',
+        'fundraising-ministry': 'Fundraising',
+        'hospitality-ministry': 'Hospitality',
+        'welcome-ministry': 'Welcome',
+        'social-media': 'Social Media',
+        'safeguarding': 'Safeguarding',
       },
-      'Operations & Governance': {
-        'finance': 'Finance Committee',
-        'ict': 'ICT Committee',
-        'logistics': 'Logistics Team',
-        'maintenance': 'Maintenance Ministry',
+      'Evangelisation Ministries': {
+        'ocia-ocic': 'OCIA/OCIC',
+        'sre-ministry': 'SRE',
+        'sacramental-programme': 'Sacramental Programme',
+        'bible-study': 'Bible Study',
       },
     };
 
@@ -66,6 +75,24 @@ void main() {
     }
   });
 
+  test('leads are first names only; ministries with no lead use the parish '
+      'office', () {
+    final byId = {for (final m in ministries) m.id: m};
+
+    expect(byId['music-ministry']!.leaderName, 'Annah');
+    expect(byId['collectors']!.leaderName, 'John and Juanita');
+    expect(
+      byId['fundraising-ministry']!.leaderName,
+      'Cherryll, Christine, Deanne and Christina',
+    );
+    for (final id in ['church-cleaning', 'flowers', 'bible-study']) {
+      expect(byId[id]!.leaderName, 'Parish Office', reason: id);
+    }
+    for (final m in ministries) {
+      expect(m.leaderName.trim(), isNotEmpty, reason: m.id);
+    }
+  });
+
   test("every ministry's category field matches its heading", () {
     for (final category in categories) {
       for (final ministry in category.ministries) {
@@ -75,17 +102,19 @@ void main() {
   });
 
   test('REQ-F03-008: sacramental uses the distinct sacraments@ address', () {
-    final sacramental = fallbackMinistry('sacramental');
+    final sacramental = fallbackMinistry('sacramental-programme');
 
     expect(sacramental.contactEmail, 'sacraments@stlukesmarsdenpark.org.au');
-    expect(sacramental.emailSubject, 'Sacramental Programme 2026');
+    expect(sacramental.emailSubject, 'Sacramental Programme Interest');
   });
 
-  test('the other 15 ministries use marsdenpark@parracatholic.org with a '
+  test('the other 24 ministries use marsdenpark@parracatholic.org with a '
       'subject', () {
-    final others = ministries.where((m) => m.id != 'sacramental').toList();
+    final others = ministries
+        .where((m) => m.id != 'sacramental-programme')
+        .toList();
 
-    expect(others, hasLength(15));
+    expect(others, hasLength(24));
     for (final ministry in others) {
       expect(
         ministry.contactEmail,

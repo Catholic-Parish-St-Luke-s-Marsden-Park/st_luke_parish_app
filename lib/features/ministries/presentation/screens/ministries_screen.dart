@@ -104,16 +104,6 @@ class _MinistriesHero extends StatelessWidget {
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
-            'Our pastoral plan: Faith Enrichment · Serving God & Others · '
-            'Community Connection · Vibrant Worship',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 13.5,
-              height: 1.5,
-            ),
-          ),
         ],
       ),
     );

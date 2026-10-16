@@ -30,31 +30,23 @@ void main() {
     );
   }
 
-  testWidgets('shows the name and a "members · day" line', (tester) async {
+  testWidgets('shows only the name, not members or day', (tester) async {
     await pumpRow(
       tester,
       testMinistry('music', membersLine: '9 choirs', dayLine: 'Weekend Masses'),
     );
 
     expect(find.text('Name music'), findsOneWidget);
-    expect(find.text('9 choirs · Weekend Masses'), findsOneWidget);
-  });
-
-  testWidgets('leaves out the dot when one part is empty', (tester) async {
-    await pumpRow(
-      tester,
-      testMinistry('x', membersLine: '9 choirs', dayLine: ''),
-    );
-
-    expect(find.text('9 choirs'), findsOneWidget);
-    expect(find.textContaining('·'), findsNothing);
+    expect(find.text('9 choirs · Weekend Masses'), findsNothing);
+    expect(find.textContaining('9 choirs'), findsNothing);
+    expect(find.textContaining('Weekend Masses'), findsNothing);
   });
 
   testWidgets('is compact: one short row, not a tall card', (tester) async {
     await pumpRow(tester, testMinistry('music'));
 
     // The old fixed-aspect grid card was ~210pt tall on a phone. A row is
-    // its two lines of text plus padding, and never below a 48pt target.
+    // its name plus padding, and never below a 48pt target.
     final height = tester.getSize(find.byType(MinistryRow)).height;
     expect(height, greaterThanOrEqualTo(48));
     expect(height, lessThan(100));
@@ -69,7 +61,7 @@ void main() {
     expect(taps, 1);
   });
 
-  testWidgets('reads as one button with the name and subtitle', (tester) async {
+  testWidgets('reads as one button labelled with the name', (tester) async {
     final handle = tester.ensureSemantics();
     await pumpRow(
       tester,
@@ -79,7 +71,7 @@ void main() {
     expect(
       tester.getSemantics(find.byType(MinistryRow)),
       matchesSemantics(
-        label: 'Name music\n9 choirs · Weekend Masses',
+        label: 'Name music',
         isButton: true,
         hasTapAction: true,
         isFocusable: true,
@@ -106,7 +98,7 @@ void main() {
           ),
           child: Scaffold(
             body: MinistryRow(
-              ministry: fallbackMinistry('emohc'),
+              ministry: fallbackMinistry('extraordinary-ministers'),
               onTap: () {},
             ),
           ),

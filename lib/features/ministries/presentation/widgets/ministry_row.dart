@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/ministry.dart';
 
-/// One tappable ministry inside a [MinistryGroupCard]: the name, a
-/// "members · day" line and a chevron. The row sizes to its text, so it stays
+/// One tappable ministry inside a [MinistryGroupCard]: the name and a
+/// chevron. The row sizes to its text, so it stays
 /// compact at normal text sizes and reflows rather than overflowing when the
 /// system text size is increased.
 class MinistryRow extends StatelessWidget {
@@ -16,12 +16,8 @@ class MinistryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final subtitle = [
-      ministry.membersLine,
-      ministry.dayLine,
-    ].where((part) => part.trim().isNotEmpty).join(' · ');
 
-    // One button for screen readers, announced as "name, subtitle".
+    // One button for screen readers, announced by the ministry name.
     return MergeSemantics(
       child: Semantics(
         button: true,
@@ -44,18 +40,6 @@ class MinistryRow extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        if (subtitle.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: Text(
-                              subtitle,
-                              // textSecondary rather than bodySmall's
-                              // textMuted, which is under 4.5:1 on white.
-                              style: textTheme.bodySmall?.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ),
