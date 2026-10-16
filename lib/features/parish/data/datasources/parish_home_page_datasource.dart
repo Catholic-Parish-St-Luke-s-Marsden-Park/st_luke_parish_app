@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:http/http.dart' as http;
 
 import '../../../../core/constants/external_links.dart';
@@ -35,5 +37,27 @@ class ParishHomePageDatasource {
       );
     }
     return response.body;
+  }
+
+  /// Downloads the image at [url], or returns `null` if it can't (offline,
+  /// removed file, not an image), so callers can simply hide what would
+  /// show it. Downloading up front also means the image appears instantly
+  /// when it's opened.
+  Future<Uint8List?> fetchImage(String url) async {
+    try {
+      final response = await _client
+          .get(
+            Uri.parse(url),
+            headers: const {'User-Agent': parishAppUserAgent},
+          )
+          .timeout(_timeout);
+      final type = response.headers['content-type'] ?? '';
+      if (response.statusCode != 200 || !type.startsWith('image/')) {
+        return null;
+      }
+      return response.bodyBytes;
+    } catch (_) {
+      return null;
+    }
   }
 }

@@ -7,6 +7,7 @@ import '../../features/masses/presentation/screens/masses_screen.dart';
 import '../../features/ministries/presentation/screens/ministries_screen.dart';
 import '../../features/news/presentation/screens/news_screen.dart';
 import '../../features/parish/presentation/screens/parish_screen.dart';
+import '../../features/parish/presentation/widgets/announcement_button.dart';
 import 'bottom_nav.dart';
 import 'nav_index_provider.dart';
 import 'side_drawer.dart';
@@ -88,6 +89,11 @@ class _AppShellBodyState extends State<_AppShellBody> {
         ],
       ),
       drawer: const SideDrawer(),
+      // Only on the Parish tab, and only while the parish website has a
+      // pop-up announcement (parish request, 2026-10-16).
+      floatingActionButton: widget.selectedIndex == 0
+          ? const AnnouncementButton()
+          : null,
       body: IndexedStack(
         index: widget.selectedIndex,
         children: [

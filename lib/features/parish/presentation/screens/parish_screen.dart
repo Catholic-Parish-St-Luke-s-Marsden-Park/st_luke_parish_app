@@ -17,7 +17,9 @@ class ParishScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
+      // Extra room at the end so the last card can scroll clear of the
+      // floating announcement button.
+      padding: const EdgeInsets.only(bottom: 96),
       children: const [
         ParishHeroBanner(),
         AboutStLukesSection(),

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,7 +14,11 @@ import 'package:st_luke_parish_app/core/theme/app_theme.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_screen.dart';
 import 'package:st_luke_parish_app/features/ministries/presentation/screens/ministries_screen.dart';
 import 'package:st_luke_parish_app/features/news/presentation/screens/news_screen.dart';
+import 'package:st_luke_parish_app/features/parish/domain/entities/parish_notice.dart';
+import 'package:st_luke_parish_app/features/parish/domain/failures/parish_documents_failure.dart';
+import 'package:st_luke_parish_app/features/parish/presentation/providers/parish_notice_provider.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/screens/parish_screen.dart';
+import 'package:st_luke_parish_app/features/parish/presentation/widgets/broadcasting_megaphone.dart';
 import 'package:st_luke_parish_app/features/resources/domain/failures/reflections_failure.dart';
 import 'package:st_luke_parish_app/features/resources/presentation/providers/reflections_provider.dart';
 
@@ -20,6 +26,13 @@ import 'package:st_luke_parish_app/features/resources/presentation/providers/ref
 /// IndexedStack tab-state preservation), REQ-F01-003 (side drawer: exactly
 /// 2 entries), and REQ-F01-005 (generated Riverpod provider drives the
 /// selected tab).
+final _notice = ParishNotice(
+  imageUrl: 'https://stlukesmarsdenpark.org.au/notice.jpg',
+  imageBytes: base64Decode(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+  ),
+);
+
 class _FakeUrlLauncher implements UrlLauncherService {
   final List<String> launchedUrls = [];
 
@@ -30,7 +43,11 @@ class _FakeUrlLauncher implements UrlLauncherService {
   }
 }
 
-Future<_FakeUrlLauncher> _pumpShell(WidgetTester tester) async {
+Future<_FakeUrlLauncher> _pumpShell(
+  WidgetTester tester, {
+  bool withNotice = true,
+}) async {
+  final notice = withNotice ? _notice : null;
   final launcher = _FakeUrlLauncher();
   await tester.pumpWidget(
     ProviderScope(
@@ -40,6 +57,8 @@ Future<_FakeUrlLauncher> _pumpShell(WidgetTester tester) async {
         latestReflectionProvider.overrideWith(
           (ref) => Future.error(const ReflectionsNetworkFailure('offline')),
         ),
+        // Nor the parish home page's pop-up.
+        currentParishNoticeProvider.overrideWith((ref) async => notice),
       ],
       child: MaterialApp(theme: AppTheme.light(), home: const AppShell()),
     ),
@@ -369,6 +388,98 @@ void main() {
 
       expect(launcher.launchedUrls, [ExternalLinks.prayerRequests]);
       expect(find.byType(Drawer), findsNothing);
+    });
+  });
+
+  group('Floating announcement button', () {
+    testWidgets('shows a megaphone button while the website has a pop-up; '
+        'tapping it opens the announcement', (tester) async {
+      await _pumpShell(tester);
+
+      final button = find.byType(FloatingActionButton);
+      expect(button, findsOneWidget);
+      expect(
+        find.descendant(
+          of: button,
+          matching: find.byType(BroadcastingMegaphone),
+        ),
+        findsOneWidget,
+      );
+      expect(tester.getSize(button).height, greaterThanOrEqualTo(48));
+
+      await tester.tap(button);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Special Announcement'), findsOneWidget);
+      final image = tester.widget<Image>(
+        find.descendant(of: find.byType(Dialog), matching: find.byType(Image)),
+      );
+      expect((image.image as MemoryImage).bytes, _notice.imageBytes);
+
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(Dialog), findsNothing);
+    });
+
+    testWidgets('the button is only on the Parish tab', (tester) async {
+      await _pumpShell(tester);
+      expect(find.byType(FloatingActionButton), findsOneWidget);
+
+      // Frame-by-frame pumps: some tabs show endless loading spinners, and
+      // the button animates out.
+      Future<void> settle() async {
+        for (var i = 0; i < 10; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      for (final label in ['Masses', 'News', 'Ministries', 'Contact']) {
+        await tester.tap(
+          find.descendant(
+            of: find.byType(NavigationBar),
+            matching: find.text(label),
+          ),
+        );
+        await settle();
+        expect(find.byType(FloatingActionButton), findsNothing, reason: label);
+      }
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.text('Parish'),
+        ),
+      );
+      await settle();
+      expect(find.byType(FloatingActionButton), findsOneWidget);
+    });
+
+    testWidgets('no button at all when the website has no pop-up', (
+      tester,
+    ) async {
+      await _pumpShell(tester, withNotice: false);
+
+      expect(find.byType(FloatingActionButton), findsNothing);
+    });
+
+    testWidgets('no button when the website cannot be reached', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            latestReflectionProvider.overrideWith(
+              (ref) => Future.error(const ReflectionsNetworkFailure('offline')),
+            ),
+            currentParishNoticeProvider.overrideWith(
+              (ref) => Future.error(const ParishDocumentsNetworkFailure('x')),
+            ),
+          ],
+          child: MaterialApp(theme: AppTheme.light(), home: const AppShell()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(FloatingActionButton), findsNothing);
     });
   });
 

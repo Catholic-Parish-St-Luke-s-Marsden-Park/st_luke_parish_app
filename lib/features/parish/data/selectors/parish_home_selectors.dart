@@ -27,6 +27,13 @@ class LabelledLinkSelector {
 /// Selectors for the parish home page (`https://stlukesmarsdenpark.org.au/`).
 /// See `.claude/context/selector-registry.md`.
 abstract final class ParishHomeSelectors {
+  /// The image in the home page's pop-up (a Beaver Builder / UABB "modal
+  /// popup" module), e.g. the "Save the Date" events poster. Lazy-loaded,
+  /// so the real address is in `data-src`, with a `<noscript>` copy.
+  static const popupImageKey = 'parish_notice_image_url';
+  static const popupImage = '.fl-module-modal-popup img';
+  static const popupImageAttributes = ['data-src', 'src'];
+
   /// The home page's "Parish Pastoral Plan 2026-2028" button.
   static const pastoralPlanUrl = LabelledLinkSelector(
     key: 'pastoral_plan_url',

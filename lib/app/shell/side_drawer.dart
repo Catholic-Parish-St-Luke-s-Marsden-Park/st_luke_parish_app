@@ -10,9 +10,9 @@ import '../../features/resources/presentation/screens/resources_screen.dart';
 import 'nav_index_provider.dart';
 
 /// Side drawer chrome hosting the 3 secondary destinations: the Resources
-/// and Faith Formation pages, and Prayer Request, which opens the parish's
-/// prayer-request form in the browser (the same page as the News tab's
-/// button).
+/// and Faith Formation pages, and Prayer Request,
+/// which opens the parish's prayer-request form in the browser (the same
+/// page as the News tab's button).
 class SideDrawer extends ConsumerWidget {
   const SideDrawer({super.key});
 
