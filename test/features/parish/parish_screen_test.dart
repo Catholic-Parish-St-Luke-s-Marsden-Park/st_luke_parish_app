@@ -125,7 +125,7 @@ void main() {
       expect(churchLeadershipSections.length, 3);
       expect(churchLeadershipSections[0].title, 'Universal Church');
       expect(churchLeadershipSections[1].title, 'Diocese of Parramatta');
-      expect(churchLeadershipSections[2].title, 'Parish');
+      expect(churchLeadershipSections[2].title, 'Parish Team');
     });
 
     testWidgets('renders no separate "Parish Leadership" card distinct from '
@@ -135,8 +135,8 @@ void main() {
       expect(find.text('Parish Leadership'), findsNothing);
       expect(find.text('Universal Church'), findsOneWidget);
       expect(find.text('Diocese of Parramatta'), findsOneWidget);
-      // 'Parish' appears as the 3rd section title.
-      expect(find.text('Parish'), findsOneWidget);
+      // 'Parish Team' appears as the 3rd section title.
+      expect(find.text('Parish Team'), findsOneWidget);
     });
   });
 

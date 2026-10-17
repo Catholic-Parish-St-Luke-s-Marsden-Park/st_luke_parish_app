@@ -8,7 +8,6 @@ import '../../domain/entities/resource_link.dart';
 const List<ResourceGroup> resourceGroups = [
   ResourceGroup(
     title: 'Parish Resources',
-    subtitle: "St Luke's",
     links: [
       ResourceLink(
         title: 'Weekly Bulletins',
@@ -49,22 +48,22 @@ const List<ResourceGroup> resourceGroups = [
     ],
   ),
   ResourceGroup(
-    title: 'Bible & Liturgy',
-    subtitle: 'Scripture & Readings',
+    // Was "Bible & Liturgy" (parish request, 2026-10-17).
+    title: 'Scripture & Readings',
     links: [
       // Parish request, 2026-10-16: the USCCB link is now the daily
       // readings (replacing Universalis), plus Bible Gateway.
+      ResourceLink(
+        title: 'Bible',
+        subtitle: 'biblegateway.com',
+        kind: ResourceKind.bible,
+        destination: WebDestination('https://www.biblegateway.com/'),
+      ),
       ResourceLink(
         title: 'Daily Mass Readings',
         subtitle: 'bible.usccb.org',
         kind: ResourceKind.readings,
         destination: WebDestination('https://bible.usccb.org'),
-      ),
-      ResourceLink(
-        title: 'Catholic Bible Readings',
-        subtitle: 'biblegateway.com',
-        kind: ResourceKind.bible,
-        destination: WebDestination('https://www.biblegateway.com/'),
       ),
     ],
   ),

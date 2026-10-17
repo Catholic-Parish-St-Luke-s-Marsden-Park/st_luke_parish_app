@@ -8,7 +8,6 @@ IconData _icon(GivingAreaKind kind) => switch (kind) {
   GivingAreaKind.facilities => Icons.home_work_outlined,
   GivingAreaKind.sacramental => Icons.wine_bar_outlined,
   GivingAreaKind.formation => Icons.school_outlined,
-  GivingAreaKind.outreach => Icons.handshake_outlined,
   GivingAreaKind.buildingFund => Icons.construction_outlined,
 };
 

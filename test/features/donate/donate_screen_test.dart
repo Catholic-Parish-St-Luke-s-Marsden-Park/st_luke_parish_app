@@ -88,7 +88,6 @@ void main() {
       'Facilities & Operations',
       'Sacramental & Altar Supplies',
       'Faith Formation & Education',
-      'Community Outreach & Charity',
       'Capital Improvements (Building Fund)',
     ]);
     // "Your gift supports" is itself a pull-down: closed, no areas show.
