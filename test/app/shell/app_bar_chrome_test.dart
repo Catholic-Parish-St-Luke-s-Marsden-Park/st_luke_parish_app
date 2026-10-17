@@ -24,11 +24,19 @@ void main() {
   Future<void> pumpShell(
     WidgetTester tester, {
     List<Override> overrides = const [],
+    TextScaler textScaler = TextScaler.noScaling,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: overrides,
-        child: MaterialApp(theme: AppTheme.light(), home: const AppShell()),
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+            child: child!,
+          ),
+          home: const AppShell(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -70,6 +78,50 @@ void main() {
       final decoration = chip.decoration as BoxDecoration;
       expect(decoration.color, Colors.white);
       expect(decoration.borderRadius, AppShapes.pillBorderRadius);
+    });
+  });
+
+  group('AppBar logo keeps its size at large system text sizes', () {
+    Future<double> logoWidthAt(
+      WidgetTester tester,
+      Size size,
+      double scale,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await pumpShell(tester, textScaler: TextScaler.linear(scale));
+      expect(tester.takeException(), isNull);
+      return tester.getSize(find.byType(AppBarLogo)).width;
+    }
+
+    for (final size in const [Size(430, 932), Size(375, 667), Size(360, 740)]) {
+      testWidgets('${size.width.toInt()}dp wide: logo keeps its full width at '
+          '1.0x and 3.0x text', (tester) async {
+        expect(await logoWidthAt(tester, size, 1.0), AppBarLogo.chipWidth);
+        expect(await logoWidthAt(tester, size, 3.0), AppBarLogo.chipWidth);
+      });
+    }
+
+    testWidgets('pill labels stop growing past the cap', (tester) async {
+      Future<double> labelHeightAt(double scale) async {
+        tester.view.physicalSize = const Size(430, 932);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        await pumpShell(tester, textScaler: TextScaler.linear(scale));
+        return tester
+            .getSize(
+              find.descendant(
+                of: find.byType(SaintOfTheDayPill),
+                matching: find.text('Saint of the Day'),
+              ),
+            )
+            .height;
+      }
+
+      final atCap = await labelHeightAt(AppShell.appBarPillMaxTextScale);
+      expect(await labelHeightAt(3.0), atCap);
+      expect(await labelHeightAt(1.0), lessThan(atCap));
     });
   });
 
