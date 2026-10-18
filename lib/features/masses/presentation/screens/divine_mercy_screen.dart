@@ -65,7 +65,30 @@ class DivineMercyScreen extends ConsumerWidget {
                           fontStyle: FontStyle.italic,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 14),
+                      // The Divine Mercy image, as painted under St
+                      // Faustina's direction.
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 360),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.asset(
+                              divineMercyImage,
+                              semanticLabel:
+                                  'The Divine Mercy image: Jesus with red and '
+                                  'pale rays shining from His Heart',
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        divineMercyImageCaption,
+                        textAlign: TextAlign.center,
+                        style: textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 12),
                       Text(
                         divineMercyIntro,
                         style: textTheme.bodyMedium?.copyWith(

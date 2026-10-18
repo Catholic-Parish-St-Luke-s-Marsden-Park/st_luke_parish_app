@@ -107,6 +107,21 @@ void main() {
     expect(find.text('Start again'), findsOneWidget);
   });
 
+  testWidgets('shows the Divine Mercy image with its caption', (tester) async {
+    await pump(tester);
+
+    final image = tester.widget<Image>(
+      find.byWidgetPredicate(
+        (w) =>
+            w is Image &&
+            w.image is AssetImage &&
+            (w.image as AssetImage).assetName == divineMercyImage,
+      ),
+    );
+    expect(image.semanticLabel, contains('Divine Mercy'));
+    expect(find.text(divineMercyImageCaption), findsOneWidget);
+  });
+
   testWidgets('links to the Divine Mercy page for the longer prayers', (
     tester,
   ) async {

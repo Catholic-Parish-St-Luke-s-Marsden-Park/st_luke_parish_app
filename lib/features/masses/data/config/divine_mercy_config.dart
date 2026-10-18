@@ -8,6 +8,12 @@ import '../../domain/entities/rosary_step.dart';
 const divineMercyPageUrl =
     'https://thedivinemercy.org/message/devotions/pray-the-chaplet';
 
+/// The first Divine Mercy image, painted by Eugeniusz Kazimirowski in 1934
+/// under St Faustina's direction (public domain, via Wikimedia Commons).
+const divineMercyImage = 'assets/images/rosary/divine_mercy.jpg';
+const divineMercyImageCaption =
+    'The Divine Mercy, Eugeniusz Kazimirowski, Vilnius, 1934';
+
 const divineMercyIntro =
     'The Chaplet of Divine Mercy is prayed on ordinary rosary beads. It was '
     'given by Jesus to St Faustina, and is especially prayed at 3 o\'clock, '
