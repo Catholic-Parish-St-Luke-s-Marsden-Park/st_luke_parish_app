@@ -74,7 +74,10 @@ class HowToPrayRosaryCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                _RosaryStepper(mysteries: mysteries),
+                PrayerBeadsStepper(
+                  steps: rosaryStepsFor(mysteries),
+                  mysteryAdjective: mysteries.adjective,
+                ),
               ],
             ),
           ),
@@ -84,17 +87,28 @@ class HowToPrayRosaryCard extends StatelessWidget {
   }
 }
 
-class _RosaryStepper extends StatefulWidget {
-  const _RosaryStepper({required this.mysteries});
+/// Walks through prayers said on rosary beads, one bead per tap of Next:
+/// the rosary diagram (prayed beads lit), the step count, Back and Next,
+/// then the step's instruction, Mystery (if any) and prayers. Used for the
+/// Rosary and the Chaplet of Divine Mercy.
+class PrayerBeadsStepper extends StatefulWidget {
+  const PrayerBeadsStepper({
+    super.key,
+    required this.steps,
+    this.mysteryAdjective,
+  });
 
-  final RosaryMysterySet mysteries;
+  final List<RosaryStep> steps;
+
+  /// e.g. "Glorious", for labels like "1st Glorious Mystery".
+  final String? mysteryAdjective;
 
   @override
-  State<_RosaryStepper> createState() => _RosaryStepperState();
+  State<PrayerBeadsStepper> createState() => _PrayerBeadsStepperState();
 }
 
-class _RosaryStepperState extends State<_RosaryStepper> {
-  late final List<RosaryStep> _steps = rosaryStepsFor(widget.mysteries);
+class _PrayerBeadsStepperState extends State<PrayerBeadsStepper> {
+  List<RosaryStep> get _steps => widget.steps;
   int _index = 0;
 
   static const _ordinals = ['1st', '2nd', '3rd', '4th', '5th'];
@@ -121,7 +135,9 @@ class _RosaryStepperState extends State<_RosaryStepper> {
 
   /// e.g. "Hail Mary 3 of 10" on the Hail Mary steps, or "Optional" on the
   /// optional prayers after the Rosary.
-  static String? _countLabel(RosaryStep step) => step.optional
+  static String? _countLabel(RosaryStep step) => step.countLabel != null
+      ? step.countLabel!
+      : step.optional
       ? 'Optional'
       : switch (step.beads.kind) {
           RosaryBeadKind.introHailMary =>
@@ -256,7 +272,7 @@ class _RosaryStepperState extends State<_RosaryStepper> {
                 _MysteryPanel(
                   mystery: mystery,
                   label:
-                      '${_ordinals[decade!]} ${widget.mysteries.adjective} '
+                      '${_ordinals[decade!]} ${widget.mysteryAdjective ?? ''} '
                       'Mystery',
                   // Announcing shows the whole Mystery; while praying the
                   // decade, a reminder of what to meditate on.

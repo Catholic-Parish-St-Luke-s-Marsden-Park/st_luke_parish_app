@@ -253,8 +253,10 @@ void main() {
   });
 
   group('REQ-F01-003: side drawer', () {
-    testWidgets('opens and shows exactly 4 entries: Resources, Faith '
-        'Formation, The Rosary and Prayer Request', (tester) async {
+    testWidgets('opens and shows exactly 5 entries: Resources, Faith '
+        'Formation, The Rosary, Divine Mercy Chaplet and Prayer Request', (
+      tester,
+    ) async {
       await _pumpShell(tester);
 
       final scaffoldState = tester.state<ScaffoldState>(
@@ -273,7 +275,14 @@ void main() {
           matching: find.byType(ListTile),
         ),
       );
-      expect(listTiles.length, 4);
+      expect(listTiles.length, 5);
+      expect(
+        find.descendant(
+          of: find.byType(Drawer),
+          matching: find.text('Divine Mercy Chaplet'),
+        ),
+        findsOneWidget,
+      );
       expect(
         find.descendant(
           of: find.byType(Drawer),

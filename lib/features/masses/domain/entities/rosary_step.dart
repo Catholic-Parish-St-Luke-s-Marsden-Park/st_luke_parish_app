@@ -50,6 +50,7 @@ class RosaryStep {
     this.prayers = const [],
     this.mystery,
     this.optional = false,
+    this.countLabel,
   });
 
   final String instruction;
@@ -61,6 +62,10 @@ class RosaryStep {
 
   /// An optional prayer after the Rosary, e.g. the Memorare.
   final bool optional;
+
+  /// Shown as the step's count, e.g. "Bead 3 of 10"; when null the stepper
+  /// works one out for Hail Mary beads.
+  final String? countLabel;
 
   /// The decade (0 to 4) when this step belongs to one.
   int? get decade => switch (beads.kind) {
