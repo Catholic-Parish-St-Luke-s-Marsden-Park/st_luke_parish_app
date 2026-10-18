@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_shapes.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../data/config/rosary_how_to_config.dart';
+import '../../data/config/rosary_mysteries_config.dart';
 import '../../domain/entities/rosary_mystery.dart';
 import '../../domain/entities/rosary_step.dart';
 import 'rosary_diagram.dart';
@@ -77,6 +78,8 @@ class HowToPrayRosaryCard extends StatelessWidget {
                 PrayerBeadsStepper(
                   steps: rosaryStepsFor(mysteries),
                   mysteryAdjective: mysteries.adjective,
+                  // Our Lady at prayer, in the middle of the rosary.
+                  centreImage: virginInPrayerImage,
                 ),
               ],
             ),
@@ -96,9 +99,13 @@ class PrayerBeadsStepper extends StatefulWidget {
     super.key,
     required this.steps,
     this.mysteryAdjective,
+    this.centreImage,
   });
 
   final List<RosaryStep> steps;
+
+  /// Shown inside the rosary's loop of beads.
+  final String? centreImage;
 
   /// e.g. "Glorious", for labels like "1st Glorious Mystery".
   final String? mysteryAdjective;
@@ -167,6 +174,7 @@ class _PrayerBeadsStepperState extends State<PrayerBeadsStepper> {
                   '${_index + 1}',
               child: ExcludeSemantics(
                 child: RosaryDiagram(
+                  centreImage: widget.centreImage,
                   path: [
                     for (final earlier in _steps.take(_index + 1))
                       earlier.beads,

@@ -9,6 +9,10 @@ const rosaryMysteriesSource =
     "Mary's Rosary Chain Inc. Imprimatur: Most Rev. Bishop Terence Brady, "
     'DD, VG, 29 June 2009.';
 
+/// "The Virgin in Prayer" by Sassoferrato, 1640s (public domain, via
+/// Wikimedia Commons), shown in the middle of the rosary.
+const virginInPrayerImage = 'assets/images/rosary/virgin_in_prayer.jpg';
+
 /// From the card: when the sets are optionally prayed on Sundays.
 const rosaryMysteriesSeasonNote =
     'As a general rule, depending on the season, the Joyful Mysteries are '

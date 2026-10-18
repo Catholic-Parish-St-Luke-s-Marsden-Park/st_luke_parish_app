@@ -8,6 +8,7 @@ import 'package:st_luke_parish_app/features/masses/data/config/rosary_mysteries_
 import 'package:st_luke_parish_app/features/masses/domain/entities/rosary_step.dart';
 import 'package:st_luke_parish_app/features/masses/domain/entities/rosary_mystery.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/screens/rosary_screen.dart';
+import 'package:st_luke_parish_app/features/masses/presentation/widgets/rosary_diagram.dart';
 
 void main() {
   test('four sets of five mysteries, covering every day of the week once', () {
@@ -213,6 +214,25 @@ void main() {
       );
       expect(find.text("Apostles' Creed"), findsOneWidget);
       expect(find.bySemanticsLabel(RegExp('Rosary diagram')), findsOneWidget);
+    });
+
+    testWidgets('Our Lady at prayer sits inside the rosary', (tester) async {
+      await pumpScreen(tester, DateTime(2026, 10, 18));
+
+      final diagram = find.byType(RosaryDiagram);
+      final picture = find.descendant(
+        of: diagram,
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is Image &&
+              (w.image as AssetImage).assetName == virginInPrayerImage,
+        ),
+      );
+      expect(picture, findsOneWidget);
+      expect(
+        find.ancestor(of: picture, matching: find.byType(ClipOval)),
+        findsOneWidget,
+      );
     });
 
     testWidgets('Next sits just under the rosary, above the prayers', (

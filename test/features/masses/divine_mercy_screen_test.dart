@@ -110,15 +110,18 @@ void main() {
   testWidgets('shows the Divine Mercy image with its caption', (tester) async {
     await pump(tester);
 
-    final image = tester.widget<Image>(
-      find.byWidgetPredicate(
-        (w) =>
-            w is Image &&
-            w.image is AssetImage &&
-            (w.image as AssetImage).assetName == divineMercyImage,
-      ),
+    // Once at the top, and again inside the rosary's loop of beads.
+    final images = find.byWidgetPredicate(
+      (w) =>
+          w is Image &&
+          w.image is AssetImage &&
+          (w.image as AssetImage).assetName == divineMercyImage,
     );
-    expect(image.semanticLabel, contains('Divine Mercy'));
+    expect(images, findsNWidgets(2));
+    expect(
+      tester.widget<Image>(images.first).semanticLabel,
+      contains('Divine Mercy'),
+    );
     expect(find.text(divineMercyImageCaption), findsOneWidget);
   });
 

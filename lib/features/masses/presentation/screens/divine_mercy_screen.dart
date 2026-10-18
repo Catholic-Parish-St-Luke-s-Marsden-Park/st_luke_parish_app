@@ -97,7 +97,10 @@ class DivineMercyScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      PrayerBeadsStepper(steps: divineMercySteps),
+                      PrayerBeadsStepper(
+                        steps: divineMercySteps,
+                        centreImage: divineMercyImage,
+                      ),
                     ],
                   ),
                 ),

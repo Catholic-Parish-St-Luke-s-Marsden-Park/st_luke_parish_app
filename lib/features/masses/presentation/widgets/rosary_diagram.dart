@@ -11,9 +11,12 @@ import '../../domain/entities/rosary_step.dart';
 /// changes (when the user taps Next). Nothing moves on its own. The glow is
 /// skipped when the system asks for reduced motion, and in widget tests.
 class RosaryDiagram extends StatefulWidget {
-  const RosaryDiagram({super.key, required this.path});
+  const RosaryDiagram({super.key, required this.path, this.centreImage});
 
   final List<RosaryBeads> path;
+
+  /// An image shown in a circle inside the loop of beads, e.g. Our Lady.
+  final String? centreImage;
 
   /// Set by `test/flutter_test_config.dart` so tests see the settled state.
   static bool disableForTesting = false;
@@ -51,17 +54,46 @@ class _RosaryDiagramState extends State<RosaryDiagram>
   @override
   Widget build(BuildContext context) {
     final indices = [for (final beads in widget.path) _beadIndex(beads)];
+    final image = widget.centreImage;
     return AspectRatio(
       aspectRatio: 1 / 1.3,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) => CustomPaint(
-          painter: _RosaryPainter(
-            current: indices.last,
-            prayed: indices.take(indices.length - 1).toSet(),
-            lightUp: Curves.easeOut.transform(_controller.value),
-          ),
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final w = constraints.maxWidth;
+          // Inside the loop, which is centred at (w/2, 0.36w) with radius
+          // 0.3w (see [_RosaryPainter]).
+          final r = w * 0.235;
+          return Stack(
+            children: [
+              if (image != null)
+                Positioned(
+                  left: w * 0.5 - r,
+                  top: w * 0.36 - r,
+                  width: r * 2,
+                  height: r * 2,
+                  child: ClipOval(
+                    child: Image.asset(
+                      image,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                    ),
+                  ),
+                ),
+              Positioned.fill(
+                child: AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, _) => CustomPaint(
+                    painter: _RosaryPainter(
+                      current: indices.last,
+                      prayed: indices.take(indices.length - 1).toSet(),
+                      lightUp: Curves.easeOut.transform(_controller.value),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
