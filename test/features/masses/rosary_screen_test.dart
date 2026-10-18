@@ -153,13 +153,14 @@ void main() {
   }
 
   group('Pray the Rosary', () {
-    test('the whole Rosary one bead at a time: 67 steps, each decade on its '
-        'Mystery', () {
+    test('the whole Rosary one bead at a time: 69 steps, each decade on its '
+        'Mystery, then the optional prayers', () {
       final set = rosaryMysterySets.last;
       final steps = rosaryStepsFor(set);
       // Crucifix, Our Father, 3 Hail Marys, Glory Be; then five decades of
-      // Our Father, 10 Hail Marys and Glory Be/Fatima; then Hail Holy Queen.
-      expect(steps, hasLength(67));
+      // Our Father, 10 Hail Marys and Glory Be/Fatima; then Hail Holy Queen,
+      // and the card's optional Memorare and Prayer to St Michael.
+      expect(steps, hasLength(69));
       expect(steps.first.beads.kind, RosaryBeadKind.crucifix);
       expect(
         steps.sublist(2, 5).map((s) => s.beads.kind),
@@ -181,7 +182,11 @@ void main() {
           'Fatima Prayer',
         ]);
       }
-      expect(steps.last.prayers.first.name, 'Hail, Holy Queen');
+      expect(steps[66].prayers.first.name, 'Hail, Holy Queen');
+      expect(steps[66].optional, isFalse);
+      expect(steps[67].prayers.single.name, 'Memorare');
+      expect(steps[68].prayers.single.name, 'Prayer to St. Michael');
+      expect(steps.skip(67).map((s) => s.optional), everyElement(isTrue));
       for (final step in steps) {
         expect(step.prayers, isNotEmpty, reason: step.instruction);
       }
@@ -200,7 +205,7 @@ void main() {
     testWidgets("opens on step 1 with today's Mysteries named", (tester) async {
       await pumpScreen(tester, DateTime(2026, 10, 18)); // a Sunday
 
-      expect(find.text('STEP 1 OF 67'), findsOneWidget);
+      expect(find.text('STEP 1 OF 69'), findsOneWidget);
       expect(
         find.text('Today: The Glorious Mysteries, step by step'),
         findsOneWidget,
@@ -231,7 +236,7 @@ void main() {
       expect(find.text('Hail Mary 2 of 3'), findsOneWidget);
 
       await next(tester, 3);
-      expect(find.text('STEP 7 OF 67'), findsOneWidget);
+      expect(find.text('STEP 7 OF 69'), findsOneWidget);
       expect(find.text('1st Decade'), findsOneWidget);
       expect(find.text('1ST SORROWFUL MYSTERY'), findsOneWidget);
       expect(find.text('The Agony in the Garden'), findsWidgets);
@@ -251,16 +256,22 @@ void main() {
       await pumpScreen(tester, DateTime(2026, 10, 18));
 
       await next(tester);
-      expect(find.text('STEP 2 OF 67'), findsOneWidget);
+      expect(find.text('STEP 2 OF 69'), findsOneWidget);
       await tester.tap(find.text('Back'));
       await tester.pumpAndSettle();
-      expect(find.text('STEP 1 OF 67'), findsOneWidget);
+      expect(find.text('STEP 1 OF 69'), findsOneWidget);
 
       await next(tester, 66);
-      expect(find.text('STEP 67 OF 67'), findsOneWidget);
+      expect(find.text('STEP 67 OF 69'), findsOneWidget);
+      await next(tester);
+      expect(find.text('Optional'), findsOneWidget);
+      expect(find.text('Memorare'), findsOneWidget);
+      await next(tester);
+      expect(find.text('STEP 69 OF 69'), findsOneWidget);
+      expect(find.text('Prayer to St. Michael'), findsOneWidget);
       await tester.tap(find.text('Start again'));
       await tester.pumpAndSettle();
-      expect(find.text('STEP 1 OF 67'), findsOneWidget);
+      expect(find.text('STEP 1 OF 69'), findsOneWidget);
     });
 
     testWidgets('nothing moves on its own between taps', (tester) async {

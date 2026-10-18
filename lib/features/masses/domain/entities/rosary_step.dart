@@ -49,6 +49,7 @@ class RosaryStep {
     required this.beads,
     this.prayers = const [],
     this.mystery,
+    this.optional = false,
   });
 
   final String instruction;
@@ -57,6 +58,9 @@ class RosaryStep {
 
   /// The Mystery announced or meditated on in this step, if any.
   final RosaryMystery? mystery;
+
+  /// An optional prayer after the Rosary, e.g. the Memorare.
+  final bool optional;
 
   /// The decade (0 to 4) when this step belongs to one.
   int? get decade => switch (beads.kind) {

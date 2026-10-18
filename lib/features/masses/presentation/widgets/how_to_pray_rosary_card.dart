@@ -119,12 +119,17 @@ class _RosaryStepperState extends State<_RosaryStepper> {
     });
   }
 
-  /// e.g. "Hail Mary 3 of 10", for the steps that count Hail Marys.
-  static String? _countLabel(RosaryStep step) => switch (step.beads.kind) {
-    RosaryBeadKind.introHailMary => 'Hail Mary ${step.beads.bead + 1} of 3',
-    RosaryBeadKind.decadeHailMary => 'Hail Mary ${step.beads.bead + 1} of 10',
-    _ => null,
-  };
+  /// e.g. "Hail Mary 3 of 10" on the Hail Mary steps, or "Optional" on the
+  /// optional prayers after the Rosary.
+  static String? _countLabel(RosaryStep step) => step.optional
+      ? 'Optional'
+      : switch (step.beads.kind) {
+          RosaryBeadKind.introHailMary =>
+            'Hail Mary ${step.beads.bead + 1} of 3',
+          RosaryBeadKind.decadeHailMary =>
+            'Hail Mary ${step.beads.bead + 1} of 10',
+          _ => null,
+        };
 
   @override
   Widget build(BuildContext context) {

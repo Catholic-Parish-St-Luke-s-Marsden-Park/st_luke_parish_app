@@ -78,6 +78,27 @@ const _hailHolyQueen = RosaryPrayer(
       'promises of Christ.',
 );
 
+const _memorare = RosaryPrayer(
+  name: 'Memorare',
+  text:
+      'Remember, O most gracious Virgin Mary, that never was it known, that '
+      'anyone who fled to thy protection, implored thy help or sought thy '
+      'intercession, was left unaided. Inspired with this confidence, I fly '
+      'unto thee, O Virgin of virgins, my Mother. To thee do I come, before '
+      'thee I stand, sinful and sorrowful. O Mother of the Word Incarnate, '
+      'despise not my petitions, but in thy mercy hear and answer me. Amen.',
+);
+
+const _stMichael = RosaryPrayer(
+  name: 'Prayer to St. Michael',
+  text:
+      'Saint Michael the Archangel, defend us in the day of battle. Be our '
+      'safeguard against the wickedness and snares of the devil. May God '
+      'rebuke him we humbly pray, and do thou, O Prince of the Heavenly '
+      'Hosts, by the power of God, cast into hell satan and all the evil '
+      'spirits, who wander through the world seeking the ruin of souls.',
+);
+
 const _letUsPray = RosaryPrayer(
   name: 'Let us Pray',
   text:
@@ -94,7 +115,8 @@ const _ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth'];
 /// "How to Pray the Rosary" with [set]'s Mysteries in their decades: the
 /// opening prayers, then for each of the five decades the Mystery and Our
 /// Father, ten Hail Marys, and the Glory Be and Fatima Prayer, then the
-/// Hail, Holy Queen.
+/// Hail, Holy Queen, and the card's two optional prayers after the Rosary:
+/// the Memorare and the Prayer to St Michael.
 List<RosaryStep> rosaryStepsFor(RosaryMysterySet set) => [
   const RosaryStep(
     instruction:
@@ -148,5 +170,23 @@ List<RosaryStep> rosaryStepsFor(RosaryMysterySet set) => [
         'and conclude with the "Sign of the Cross."',
     beads: RosaryBeads(RosaryBeadKind.centrepiece),
     prayers: [_hailHolyQueen, _letUsPray, _signOfTheCross],
+  ),
+  // From the card: "very powerful optional prayers recited after the Holy
+  // Rosary".
+  const RosaryStep(
+    instruction:
+        'After the Holy Rosary you may also pray the "Memorare," a very '
+        'powerful prayer.',
+    beads: RosaryBeads(RosaryBeadKind.centrepiece),
+    prayers: [_memorare],
+    optional: true,
+  ),
+  const RosaryStep(
+    instruction:
+        'You may also pray the "Prayer to St Michael the Archangel," a very '
+        'powerful prayer.',
+    beads: RosaryBeads(RosaryBeadKind.centrepiece),
+    prayers: [_stMichael],
+    optional: true,
   ),
 ];
