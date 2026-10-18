@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:st_luke_parish_app/features/masses/data/config/rosary_mysteries_config.dart';
@@ -17,6 +19,38 @@ void main() {
     }
     final days = rosaryMysterySets.expand((s) => s.weekdays).toList()..sort();
     expect(days, [1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  test('every mystery has its own picture from the card', () {
+    final assets = [
+      for (final set in rosaryMysterySets)
+        for (final mystery in set.mysteries) mystery.imageAsset,
+    ];
+    expect(assets.toSet(), hasLength(20));
+    for (final asset in assets) {
+      expect(File(asset).existsSync(), isTrue, reason: asset);
+    }
+  });
+
+  testWidgets("today's mysteries show their pictures", (tester) async {
+    tester.view.physicalSize = const Size(800, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RosaryMysteriesScreen(now: () => DateTime(2026, 10, 18)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final shown = tester
+        .widgetList<Image>(find.byType(Image))
+        .map((i) => (i.image as AssetImage).assetName)
+        .toList();
+    expect(shown, [
+      for (final mystery in rosaryMysterySets.last.mysteries)
+        mystery.imageAsset,
+    ]);
   });
 
   test("today's set follows the card's days", () {

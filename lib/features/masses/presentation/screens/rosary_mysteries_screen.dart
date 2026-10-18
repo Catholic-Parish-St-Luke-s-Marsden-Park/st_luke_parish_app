@@ -198,23 +198,49 @@ class _MysteryEntry extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${_ordinals[number - 1]} $adjective Mystery'.toUpperCase(),
-            style: textTheme.labelMedium?.copyWith(
-              color: AppColors.darkGold,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // The mystery's picture from the Rosary card.
+              ExcludeSemantics(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.asset(
+                    mystery.imageAsset,
+                    width: 84,
+                    height: 92,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${_ordinals[number - 1]} $adjective Mystery'
+                          .toUpperCase(),
+                      style: textTheme.labelMedium?.copyWith(
+                        color: AppColors.darkGold,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      mystery.title,
+                      style: textTheme.titleMedium?.copyWith(
+                        color: AppColors.primaryNavy,
+                        fontSize: 17,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 2),
-          Text(
-            mystery.title,
-            style: textTheme.titleMedium?.copyWith(
-              color: AppColors.primaryNavy,
-              fontSize: 17,
-            ),
-          ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 10),
           Text(
             mystery.verse,
             style: textTheme.bodyMedium?.copyWith(

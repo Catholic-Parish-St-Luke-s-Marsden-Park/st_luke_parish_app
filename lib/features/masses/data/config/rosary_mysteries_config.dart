@@ -2,11 +2,12 @@ import '../../domain/entities/rosary_mystery.dart';
 
 /// Where the Mysteries text comes from: the Holy Rosary card published by
 /// Mary's Rosary Chain Inc., St Marys South NSW (parish request, 2026-10-18).
-/// The text below follows the card word for word.
+/// The text below follows the card word for word, and each mystery's
+/// picture is cut from the card.
 const rosaryMysteriesSource =
-    "Mysteries, Scripture and fruits from the Holy Rosary card by Mary's "
-    'Rosary Chain Inc. Imprimatur: Most Rev. Bishop Terence Brady, DD, VG, '
-    '29 June 2009.';
+    "Mysteries, Scripture, fruits and pictures from the Holy Rosary card by "
+    "Mary's Rosary Chain Inc. Imprimatur: Most Rev. Bishop Terence Brady, "
+    'DD, VG, 29 June 2009.';
 
 /// From the card: when the sets are optionally prayed on Sundays.
 const rosaryMysteriesSeasonNote =
@@ -32,6 +33,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'shall call His name Jesus."',
         reference: 'Luke 1: 30 - 31',
         fruit: 'Humility',
+        imageAsset: 'assets/images/rosary/joyful_1.jpg',
       ),
       RosaryMystery(
         title: 'The Visitation',
@@ -41,6 +43,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'should come to me?"',
         reference: 'Luke 1: 42 - 43',
         fruit: 'Love of Neighbour',
+        imageAsset: 'assets/images/rosary/joyful_2.jpg',
       ),
       RosaryMystery(
         title: 'The Birth of Jesus',
@@ -50,6 +53,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'no room for them in the inn.',
         reference: 'Luke 2: 7',
         fruit: 'Poverty',
+        imageAsset: 'assets/images/rosary/joyful_3.jpg',
       ),
       RosaryMystery(
         title: 'The Presentation',
@@ -59,6 +63,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'Him to the Lord -',
         reference: 'Luke 2: 22 - 23',
         fruit: 'Obedience',
+        imageAsset: 'assets/images/rosary/joyful_4.jpg',
       ),
       RosaryMystery(
         title: 'The Finding of the Child Jesus in the Temple',
@@ -68,6 +73,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'them and asking them questions.',
         reference: 'Luke 2: 46',
         fruit: 'Joy in Finding Jesus',
+        imageAsset: 'assets/images/rosary/joyful_5.jpg',
       ),
     ],
   ),
@@ -85,6 +91,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'pleased."',
         reference: 'Mark 1: 10',
         fruit: 'Openness to the Holy Spirit',
+        imageAsset: 'assets/images/rosary/luminous_1.jpg',
       ),
       RosaryMystery(
         title: "Christ's Self-revelation at the Marriage at Cana",
@@ -93,6 +100,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'revealed His glory; and His disciples believed in Him.',
         reference: 'John 2: 11',
         fruit: 'To Jesus Through Mary',
+        imageAsset: 'assets/images/rosary/luminous_2.jpg',
       ),
       RosaryMystery(
         title:
@@ -103,6 +111,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'repent, and believe in the good news."',
         reference: 'Mark 1: 15',
         fruit: 'Repentance and Trust in God',
+        imageAsset: 'assets/images/rosary/luminous_3.jpg',
       ),
       RosaryMystery(
         title: "Christ's Transfiguration",
@@ -111,6 +120,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'sun, and His clothes became dazzling white.',
         reference: 'Matthew 17: 2',
         fruit: 'Desire for Holiness',
+        imageAsset: 'assets/images/rosary/luminous_4.jpg',
       ),
       RosaryMystery(
         title: "Christ's institution of the Eucharist",
@@ -120,6 +130,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'remembrance of me."',
         reference: 'Luke 22: 19',
         fruit: 'Adoration',
+        imageAsset: 'assets/images/rosary/luminous_5.jpg',
       ),
     ],
   ),
@@ -137,6 +148,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'found them sleeping.',
         reference: 'Luke 22: 44 - 45',
         fruit: 'Sorrow for Sin',
+        imageAsset: 'assets/images/rosary/sorrowful_1.jpg',
       ),
       RosaryMystery(
         title: 'The Scourging',
@@ -146,6 +158,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'crucified.',
         reference: 'Mark 15: 15',
         fruit: 'Purity',
+        imageAsset: 'assets/images/rosary/sorrowful_2.jpg',
       ),
       RosaryMystery(
         title: 'The Crowning with Thorns',
@@ -155,6 +168,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'into His right hand:',
         reference: 'Matthew 27: 28 - 29',
         fruit: 'Courage',
+        imageAsset: 'assets/images/rosary/sorrowful_3.jpg',
       ),
       RosaryMystery(
         title: 'The Carrying of the Cross',
@@ -163,6 +177,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'place of the skull, which is called in Hebrew, Golgotha.',
         reference: 'John 19: 17',
         fruit: 'Patience',
+        imageAsset: 'assets/images/rosary/sorrowful_4.jpg',
       ),
       RosaryMystery(
         title: 'The Crucifixion',
@@ -171,6 +186,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'I commit My spirit!" And having said this He breathed His Last.',
         reference: 'Luke 23: 46',
         fruit: 'Perseverance',
+        imageAsset: 'assets/images/rosary/sorrowful_5.jpg',
       ),
     ],
   ),
@@ -187,6 +203,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'crucified. He is not here; for He has risen, as He said."',
         reference: 'Matthew 28: 5 - 6',
         fruit: 'Faith',
+        imageAsset: 'assets/images/rosary/glorious_1.jpg',
       ),
       RosaryMystery(
         title: 'The Ascension',
@@ -195,6 +212,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'heaven, and sits at the right hand of God.',
         reference: 'Mark 16: 19',
         fruit: 'Hope',
+        imageAsset: 'assets/images/rosary/glorious_2.jpg',
       ),
       RosaryMystery(
         title: 'The Descent of the Holy Spirit',
@@ -204,6 +222,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'speak.',
         reference: 'Acts 2: 4',
         fruit: 'Love of God',
+        imageAsset: 'assets/images/rosary/glorious_3.jpg',
       ),
       RosaryMystery(
         title: 'The Assumption',
@@ -213,6 +232,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'asleep... and so we shall always be with the Lord.',
         reference: '1 Thessalonians 4: 14 - 17',
         fruit: 'Grace of a Happy Death',
+        imageAsset: 'assets/images/rosary/glorious_4.jpg',
       ),
       RosaryMystery(
         title: 'The Coronation',
@@ -222,6 +242,7 @@ const List<RosaryMysterySet> rosaryMysterySets = [
             'stars.',
         reference: 'Revelation 12: 1',
         fruit: "Trust in Mary's Intercession",
+        imageAsset: 'assets/images/rosary/glorious_5.jpg',
       ),
     ],
   ),

@@ -6,6 +6,7 @@ class RosaryMystery {
     required this.verse,
     required this.reference,
     required this.fruit,
+    required this.imageAsset,
   });
 
   final String title;
@@ -14,6 +15,9 @@ class RosaryMystery {
   /// Where [verse] is found, e.g. "Luke 1: 30 - 31".
   final String reference;
   final String fruit;
+
+  /// The mystery's picture from the Rosary card, bundled with the app.
+  final String imageAsset;
 }
 
 /// Which set a [RosaryMysterySet] is; the presentation layer maps it to the
