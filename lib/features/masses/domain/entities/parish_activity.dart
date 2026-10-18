@@ -39,6 +39,7 @@ class ParishActivity {
     this.description,
     this.contact,
     this.link,
+    this.showsRosaryMysteries = false,
   });
 
   final String title;
@@ -49,6 +50,9 @@ class ParishActivity {
   final String? description;
   final String? contact;
   final ActivityLink? link;
+
+  /// Adds a "Mysteries of the Rosary" button that opens the Mysteries page.
+  final bool showsRosaryMysteries;
 
   /// Every detail that has a value, in display order.
   List<String> get details => [
