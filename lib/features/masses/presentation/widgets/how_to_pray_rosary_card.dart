@@ -98,7 +98,24 @@ class _RosaryStepperState extends State<_RosaryStepper> {
 
   static const _ordinals = ['1st', '2nd', '3rd', '4th', '5th'];
 
-  void _go(int index) => setState(() => _index = index);
+  /// The top of the stepper, scrolled back into view on each step so the
+  /// diagram is seen lighting up.
+  final _topKey = GlobalKey();
+
+  void _go(int index) {
+    setState(() => _index = index);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final top = _topKey.currentContext;
+      if (top == null || !top.mounted) return;
+      Scrollable.ensureVisible(
+        top,
+        duration: MediaQuery.of(top).disableAnimations
+            ? Duration.zero
+            : const Duration(milliseconds: 350),
+        curve: Curves.easeOut,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +125,7 @@ class _RosaryStepperState extends State<_RosaryStepper> {
     final decade = step.decade;
 
     return Column(
+      key: _topKey,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Center(
