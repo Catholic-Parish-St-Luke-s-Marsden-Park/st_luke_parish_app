@@ -90,10 +90,11 @@ const _letUsPray = RosaryPrayer(
 
 const _ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth'];
 
-/// The whole Rosary, step by step, following the card's "How to Pray the
-/// Rosary" with [set]'s Mysteries in their decades: the opening prayers,
-/// then for each of the five decades the Mystery and Our Father, ten Hail
-/// Marys, and the Glory Be and Fatima Prayer, then the Hail, Holy Queen.
+/// The whole Rosary, one bead (one prayer) per step, following the card's
+/// "How to Pray the Rosary" with [set]'s Mysteries in their decades: the
+/// opening prayers, then for each of the five decades the Mystery and Our
+/// Father, ten Hail Marys, and the Glory Be and Fatima Prayer, then the
+/// Hail, Holy Queen.
 List<RosaryStep> rosaryStepsFor(RosaryMysterySet set) => [
   const RosaryStep(
     instruction:
@@ -106,11 +107,12 @@ List<RosaryStep> rosaryStepsFor(RosaryMysterySet set) => [
     beads: RosaryBeads(RosaryBeadKind.firstOurFather),
     prayers: [_ourFather],
   ),
-  const RosaryStep(
-    instruction: 'Pray three "Hail Marys."',
-    beads: RosaryBeads(RosaryBeadKind.threeHailMarys),
-    prayers: [_hailMary],
-  ),
+  for (var i = 0; i < 3; i++)
+    RosaryStep(
+      instruction: 'Pray a "Hail Mary."',
+      beads: RosaryBeads(RosaryBeadKind.introHailMary, bead: i),
+      prayers: const [_hailMary],
+    ),
   const RosaryStep(
     instruction: 'Pray the "Glory be to the Father."',
     beads: RosaryBeads(RosaryBeadKind.gloryBeforeDecades),
@@ -125,12 +127,13 @@ List<RosaryStep> rosaryStepsFor(RosaryMysterySet set) => [
       prayers: const [_ourFather],
       mystery: mystery,
     ),
-    RosaryStep(
-      instruction: 'Pray ten "Hail Marys," while meditating on the Mystery.',
-      beads: RosaryBeads(RosaryBeadKind.decadeHailMarys, decade: d),
-      prayers: const [_hailMary],
-      mystery: mystery,
-    ),
+    for (var i = 0; i < 10; i++)
+      RosaryStep(
+        instruction: 'Pray a "Hail Mary," while meditating on the Mystery.',
+        beads: RosaryBeads(RosaryBeadKind.decadeHailMary, decade: d, bead: i),
+        prayers: const [_hailMary],
+        mystery: mystery,
+      ),
     RosaryStep(
       instruction:
           'Pray the "Glory be to the Father" and the "Fatima Prayer," '

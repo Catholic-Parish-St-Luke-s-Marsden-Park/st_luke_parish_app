@@ -153,24 +153,35 @@ void main() {
   }
 
   group('Pray the Rosary', () {
-    test('the whole Rosary in 20 steps, with each decade on its Mystery', () {
+    test('the whole Rosary one bead at a time: 67 steps, each decade on its '
+        'Mystery', () {
       final set = rosaryMysterySets.last;
       final steps = rosaryStepsFor(set);
-      expect(steps, hasLength(20));
+      // Crucifix, Our Father, 3 Hail Marys, Glory Be; then five decades of
+      // Our Father, 10 Hail Marys and Glory Be/Fatima; then Hail Holy Queen.
+      expect(steps, hasLength(67));
       expect(steps.first.beads.kind, RosaryBeadKind.crucifix);
-      expect(steps.last.prayers.first.name, 'Hail, Holy Queen');
+      expect(
+        steps.sublist(2, 5).map((s) => s.beads.kind),
+        everyElement(RosaryBeadKind.introHailMary),
+      );
       for (var d = 0; d < 5; d++) {
-        final announce = steps[4 + d * 3];
-        final decade = steps[5 + d * 3];
-        expect(announce.beads.kind, RosaryBeadKind.decadeOurFather);
-        expect(announce.mystery, set.mysteries[d]);
-        expect(decade.beads.kind, RosaryBeadKind.decadeHailMarys);
-        expect(decade.beads.decade, d);
-        expect(steps[6 + d * 3].prayers.map((p) => p.name), [
+        final base = 6 + d * 12;
+        expect(steps[base].beads.kind, RosaryBeadKind.decadeOurFather);
+        expect(steps[base].mystery, set.mysteries[d]);
+        for (var i = 0; i < 10; i++) {
+          final hailMary = steps[base + 1 + i];
+          expect(hailMary.beads.kind, RosaryBeadKind.decadeHailMary);
+          expect(hailMary.beads.decade, d);
+          expect(hailMary.beads.bead, i);
+          expect(hailMary.mystery, set.mysteries[d]);
+        }
+        expect(steps[base + 11].prayers.map((p) => p.name), [
           'Glory be to the Father',
           'Fatima Prayer',
         ]);
       }
+      expect(steps.last.prayers.first.name, 'Hail, Holy Queen');
       for (final step in steps) {
         expect(step.prayers, isNotEmpty, reason: step.instruction);
       }
@@ -179,14 +190,7 @@ void main() {
     Future<void> next(WidgetTester tester, [int times = 1]) async {
       for (var i = 0; i < times; i++) {
         final button = find.text('Next');
-        // Each step changes the page's length, so search down from the top.
-        await tester.drag(find.byType(ListView), const Offset(0, 8000));
-        await tester.pumpAndSettle();
-        await tester.dragUntilVisible(
-          button,
-          find.byType(ListView),
-          const Offset(0, -300),
-        );
+        await tester.ensureVisible(button);
         await tester.pumpAndSettle();
         await tester.tap(button);
         await tester.pumpAndSettle();
@@ -196,7 +200,7 @@ void main() {
     testWidgets("opens on step 1 with today's Mysteries named", (tester) async {
       await pumpScreen(tester, DateTime(2026, 10, 18)); // a Sunday
 
-      expect(find.text('STEP 1 OF 20'), findsOneWidget);
+      expect(find.text('STEP 1 OF 67'), findsOneWidget);
       expect(
         find.text('Today: The Glorious Mysteries, step by step'),
         findsOneWidget,
@@ -205,18 +209,38 @@ void main() {
       expect(find.bySemanticsLabel(RegExp('Rosary diagram')), findsOneWidget);
     });
 
-    testWidgets("today's Mysteries appear in their decades", (tester) async {
+    testWidgets('Next sits just under the rosary, above the prayers', (
+      tester,
+    ) async {
+      await pumpScreen(tester, DateTime(2026, 10, 18));
+
+      final nextY = tester.getTopLeft(find.text('Next')).dy;
+      expect(
+        nextY,
+        lessThan(tester.getTopLeft(find.text("Apostles' Creed")).dy),
+      );
+    });
+
+    testWidgets("each Next prays one bead, with today's Mystery in its "
+        'decade', (tester) async {
       await pumpScreen(tester, DateTime(2026, 10, 16)); // a Friday
 
-      await next(tester, 4);
-      expect(find.text('STEP 5 OF 20'), findsOneWidget);
+      await next(tester, 2);
+      expect(find.text('Hail Mary 1 of 3'), findsOneWidget);
+      await next(tester);
+      expect(find.text('Hail Mary 2 of 3'), findsOneWidget);
+
+      await next(tester, 3);
+      expect(find.text('STEP 7 OF 67'), findsOneWidget);
       expect(find.text('1st Decade'), findsOneWidget);
       expect(find.text('1ST SORROWFUL MYSTERY'), findsOneWidget);
       expect(find.text('The Agony in the Garden'), findsWidgets);
 
       await next(tester);
+      expect(find.text('Hail Mary 1 of 10'), findsOneWidget);
       expect(find.text('MEDITATE ON'), findsOneWidget);
-      expect(find.text('Hail Mary'), findsOneWidget);
+      await next(tester, 9);
+      expect(find.text('Hail Mary 10 of 10'), findsOneWidget);
 
       await next(tester, 2);
       expect(find.text('2nd Decade'), findsOneWidget);
@@ -227,22 +251,23 @@ void main() {
       await pumpScreen(tester, DateTime(2026, 10, 18));
 
       await next(tester);
-      expect(find.text('STEP 2 OF 20'), findsOneWidget);
-      final back = find.text('Back');
-      await tester.ensureVisible(back);
+      expect(find.text('STEP 2 OF 67'), findsOneWidget);
+      await tester.tap(find.text('Back'));
       await tester.pumpAndSettle();
-      await tester.tap(back);
-      await tester.pumpAndSettle();
-      expect(find.text('STEP 1 OF 20'), findsOneWidget);
+      expect(find.text('STEP 1 OF 67'), findsOneWidget);
 
-      await next(tester, 19);
-      expect(find.text('STEP 20 OF 20'), findsOneWidget);
-      final again = find.text('Start again');
-      await tester.ensureVisible(again);
+      await next(tester, 66);
+      expect(find.text('STEP 67 OF 67'), findsOneWidget);
+      await tester.tap(find.text('Start again'));
       await tester.pumpAndSettle();
-      await tester.tap(again);
-      await tester.pumpAndSettle();
-      expect(find.text('STEP 1 OF 20'), findsOneWidget);
+      expect(find.text('STEP 1 OF 67'), findsOneWidget);
+    });
+
+    testWidgets('nothing moves on its own between taps', (tester) async {
+      await pumpScreen(tester, DateTime(2026, 10, 18));
+      await next(tester, 7);
+
+      expect(tester.hasRunningAnimations, isFalse);
     });
 
     for (final scale in const [1.0, 2.0]) {
@@ -255,7 +280,7 @@ void main() {
           size: const Size(360, 690),
           scale: scale,
         );
-        await next(tester, 4);
+        await next(tester, 7);
         expect(tester.takeException(), isNull);
         await tester.drag(find.byType(ListView), const Offset(0, -6000));
         await tester.pumpAndSettle();

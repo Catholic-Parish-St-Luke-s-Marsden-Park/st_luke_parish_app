@@ -9,7 +9,8 @@ import '../../domain/entities/rosary_step.dart';
 import 'rosary_diagram.dart';
 
 /// "Pray the Rosary": a pull-down card that walks through the whole
-/// Rosary one step at a time, with today's Mysteries (from the phone's day)
+/// Rosary one bead (one prayer) at a time, lighting each bead as the user
+/// taps Next, with today's Mysteries (from the phone's day)
 /// in their decades, an animated rosary showing which beads each step is
 /// prayed on, and the words of its prayers (parish request, 2026-10-18).
 class HowToPrayRosaryCard extends StatelessWidget {
@@ -98,8 +99,8 @@ class _RosaryStepperState extends State<_RosaryStepper> {
 
   static const _ordinals = ['1st', '2nd', '3rd', '4th', '5th'];
 
-  /// The top of the stepper, scrolled back into view on each step so the
-  /// diagram is seen lighting up.
+  /// The top of the stepper, brought back into view if it has scrolled off,
+  /// so the diagram is seen lighting up.
   final _topKey = GlobalKey();
 
   void _go(int index) {
@@ -113,9 +114,17 @@ class _RosaryStepperState extends State<_RosaryStepper> {
             ? Duration.zero
             : const Duration(milliseconds: 350),
         curve: Curves.easeOut,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtStart,
       );
     });
   }
+
+  /// e.g. "Hail Mary 3 of 10", for the steps that count Hail Marys.
+  static String? _countLabel(RosaryStep step) => switch (step.beads.kind) {
+    RosaryBeadKind.introHailMary => 'Hail Mary ${step.beads.bead + 1} of 3',
+    RosaryBeadKind.decadeHailMary => 'Hail Mary ${step.beads.bead + 1} of 10',
+    _ => null,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -130,12 +139,19 @@ class _RosaryStepperState extends State<_RosaryStepper> {
       children: [
         Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 220),
+            constraints: const BoxConstraints(maxWidth: 200),
             child: Semantics(
               label:
-                  'Rosary diagram, highlighting the beads for step '
+                  'Rosary diagram, showing the beads prayed so far, step '
                   '${_index + 1}',
-              child: ExcludeSemantics(child: RosaryDiagram(beads: step.beads)),
+              child: ExcludeSemantics(
+                child: RosaryDiagram(
+                  path: [
+                    for (final earlier in _steps.take(_index + 1))
+                      earlier.beads,
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -171,14 +187,48 @@ class _RosaryStepperState extends State<_RosaryStepper> {
             ),
           ],
         ),
-        if (decade != null) ...[
-          const SizedBox(height: 6),
-          Text(
-            '${_ordinals[decade]} Decade',
-            style: textTheme.titleSmall?.copyWith(
-              color: AppColors.primaryNavy,
-              fontWeight: FontWeight.w700,
-            ),
+        const SizedBox(height: 12),
+        // Back and Next sit just under the rosary, so the user can keep
+        // tapping Next through the prayers without scrolling.
+        _StepButtons(
+          onBack: _index == 0 ? null : () => _go(_index - 1),
+          onNext: () => _go(isLast ? 0 : _index + 1),
+          isLast: isLast,
+        ),
+        if (decade != null || _countLabel(step) != null) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (decade != null)
+                Text(
+                  '${_ordinals[decade]} Decade',
+                  style: textTheme.titleSmall?.copyWith(
+                    color: AppColors.primaryNavy,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              if (_countLabel(step) case final count?)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    count,
+                    style: textTheme.labelLarge?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
         const SizedBox(height: 10),
@@ -214,12 +264,6 @@ class _RosaryStepperState extends State<_RosaryStepper> {
               ],
             ],
           ),
-        ),
-        const SizedBox(height: 14),
-        _StepButtons(
-          onBack: _index == 0 ? null : () => _go(_index - 1),
-          onNext: () => _go(isLast ? 0 : _index + 1),
-          isLast: isLast,
         ),
       ],
     );

@@ -5,18 +5,17 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/rosary_step.dart';
 
-/// An animated rosary: the beads for [beads] light up in gold, with the
-/// decades already prayed shown lightly. Where a step
-/// counts several beads (three or ten Hail Marys), they light one after
-/// another, as if being prayed; single beads glow gently. Everything holds
-/// still when the system asks for reduced motion, and in widget tests.
+/// A rosary showing progress through the prayers: [path] is every bead
+/// prayed so far, in order, ending with the current one. Earlier beads stay
+/// lit; the current bead lights up in gold with a brief glow each time it
+/// changes (when the user taps Next). Nothing moves on its own. The glow is
+/// skipped when the system asks for reduced motion, and in widget tests.
 class RosaryDiagram extends StatefulWidget {
-  const RosaryDiagram({super.key, required this.beads});
+  const RosaryDiagram({super.key, required this.path});
 
-  final RosaryBeads beads;
+  final List<RosaryBeads> path;
 
-  /// Set by `test/flutter_test_config.dart`: an endlessly repeating
-  /// animation would stop `pumpAndSettle()` from ever settling.
+  /// Set by `test/flutter_test_config.dart` so tests see the settled state.
   static bool disableForTesting = false;
 
   @override
@@ -25,38 +24,22 @@ class RosaryDiagram extends StatefulWidget {
 
 class _RosaryDiagramState extends State<RosaryDiagram>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(vsync: this);
-
-  bool get _still =>
-      RosaryDiagram.disableForTesting ||
-      MediaQuery.of(context).disableAnimations;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _restart();
-  }
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 500),
+    value: 1,
+  );
 
   @override
   void didUpdateWidget(RosaryDiagram oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.beads.kind != widget.beads.kind ||
-        oldWidget.beads.decade != widget.beads.decade) {
-      _restart();
+    if (oldWidget.path.length == widget.path.length) return;
+    if (RosaryDiagram.disableForTesting ||
+        MediaQuery.of(context).disableAnimations) {
+      _controller.value = 1;
+    } else {
+      _controller.forward(from: 0);
     }
-  }
-
-  /// Starts this step's animation from the beginning: a count through the
-  /// beads (0.6s each, then a pause), or a slow glow for a single bead.
-  void _restart() {
-    if (_still) {
-      _controller.stop();
-      return;
-    }
-    final count = _beadsFor(widget.beads).sequence.length;
-    _controller
-      ..duration = Duration(milliseconds: count > 1 ? 600 * (count + 2) : 1600)
-      ..repeat();
   }
 
   @override
@@ -67,14 +50,16 @@ class _RosaryDiagramState extends State<RosaryDiagram>
 
   @override
   Widget build(BuildContext context) {
+    final indices = [for (final beads in widget.path) _beadIndex(beads)];
     return AspectRatio(
       aspectRatio: 1 / 1.3,
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, _) => CustomPaint(
           painter: _RosaryPainter(
-            beads: _beadsFor(widget.beads),
-            phase: _controller.isAnimating ? _controller.value : null,
+            current: indices.last,
+            prayed: indices.take(indices.length - 1).toSet(),
+            lightUp: Curves.easeOut.transform(_controller.value),
           ),
         ),
       ),
@@ -88,54 +73,20 @@ class _RosaryDiagramState extends State<RosaryDiagram>
 /// 7 the centrepiece, then the loop from 8: each decade's ten Hail Marys,
 /// followed (for the first four decades) by the next Our Father bead; then
 /// from 62 the chain point after each decade (for its Glory Be).
-const _crucifix = 0;
 const _centrepiece = 7;
 const _loopStart = 8;
 
-int _decadeBead(int decade, int bead) => _loopStart + decade * 11 + bead;
-int _ourFatherAfter(int decade) => _loopStart + decade * 11 + 10;
-int _chainAfter(int decade) => 62 + decade;
-
-List<int> _decade(int decade) => [
-  for (var i = 0; i < 10; i++) _decadeBead(decade, i),
-];
-
-/// Decades already prayed before [decade], with their Our Father beads.
-List<int> _prayedBefore(int decade) => [
-  for (var d = 0; d < decade; d++) ...[
-    ..._decade(d),
-    if (d > 0) _ourFatherAfter(d - 1),
-  ],
-  if (decade > 0) 6,
-];
-
-/// The beads a step lights: [sequence] are prayed one after another; [also]
-/// are shown lightly, as already prayed.
-class _Beads {
-  const _Beads(this.sequence, [this.also = const []]);
-
-  final List<int> sequence;
-  final List<int> also;
-}
-
-_Beads _beadsFor(RosaryBeads beads) {
+int _beadIndex(RosaryBeads beads) {
   final d = beads.decade;
   return switch (beads.kind) {
-    RosaryBeadKind.crucifix => const _Beads([_crucifix]),
-    RosaryBeadKind.firstOurFather => const _Beads([1]),
-    RosaryBeadKind.threeHailMarys => const _Beads([2, 3, 4]),
-    RosaryBeadKind.gloryBeforeDecades => const _Beads([5]),
-    RosaryBeadKind.decadeOurFather => _Beads([
-      d == 0 ? 6 : _ourFatherAfter(d - 1),
-    ], _prayedBefore(d)),
-    RosaryBeadKind.decadeHailMarys => _Beads(_decade(d), [
-      ..._prayedBefore(d),
-      d == 0 ? 6 : _ourFatherAfter(d - 1),
-    ]),
-    RosaryBeadKind.afterDecade => _Beads([
-      _chainAfter(d),
-    ], _prayedBefore(d + 1)),
-    RosaryBeadKind.centrepiece => _Beads([_centrepiece], _prayedBefore(5)),
+    RosaryBeadKind.crucifix => 0,
+    RosaryBeadKind.firstOurFather => 1,
+    RosaryBeadKind.introHailMary => 2 + beads.bead,
+    RosaryBeadKind.gloryBeforeDecades => 5,
+    RosaryBeadKind.decadeOurFather => d == 0 ? 6 : _loopStart + d * 11 - 1,
+    RosaryBeadKind.decadeHailMary => _loopStart + d * 11 + beads.bead,
+    RosaryBeadKind.afterDecade => 62 + d,
+    RosaryBeadKind.centrepiece => _centrepiece,
   };
 }
 
@@ -149,12 +100,17 @@ class _Bead {
 }
 
 class _RosaryPainter extends CustomPainter {
-  _RosaryPainter({required this.beads, required this.phase});
+  _RosaryPainter({
+    required this.current,
+    required this.prayed,
+    required this.lightUp,
+  });
 
-  final _Beads beads;
+  final int current;
+  final Set<int> prayed;
 
-  /// 0 to 1 through the animation; `null` when still.
-  final double? phase;
+  /// 0 to 1 as the current bead lights up.
+  final double lightUp;
 
   List<_Bead> _layout(Size size) {
     final w = size.width;
@@ -210,42 +166,30 @@ class _RosaryPainter extends CustomPainter {
       ..drawCircle(centre, w * 0.3, chain)
       ..drawLine(layout[_centrepiece].position, layout[1].position, chain);
 
-    // Which beads are lit right now. A counted sequence lights bead by
-    // bead, then pauses with all lit before starting again.
-    final sequence = beads.sequence;
-    var lit = sequence.length;
-    int? current;
-    var glow = 0.5;
-    if (phase case final t?) {
-      if (sequence.length > 1) {
-        final steps = sequence.length + 2;
-        lit = math.min(sequence.length, (t * steps).floor() + 1);
-        current = lit <= sequence.length ? sequence[lit - 1] : null;
-        glow = 1 - ((t * steps) % 1);
-      } else {
-        glow = 0.5 + 0.5 * math.sin(t * 2 * math.pi);
-        current = sequence.single;
-      }
-    }
-    final litBeads = sequence.take(lit).toSet();
-
     for (final (i, bead) in layout.indexed) {
-      final isLit = litBeads.contains(i);
-      final isAlso = beads.also.contains(i);
-      final colour = isLit
-          ? AppColors.gold
-          : isAlso
-          ? AppColors.gold.withValues(alpha: 0.45)
+      final isCurrent = i == current;
+      final isPrayed = prayed.contains(i);
+      final isLit = isCurrent || isPrayed;
+      final colour = isCurrent
+          ? Color.lerp(
+              AppColors.primaryNavy.withValues(alpha: 0.35),
+              AppColors.gold,
+              lightUp,
+            )!
+          : isPrayed
+          ? AppColors.gold.withValues(alpha: 0.55)
           : AppColors.primaryNavy.withValues(alpha: 0.35);
       final fill = Paint()..color = colour;
 
-      if (isLit && (i == current || phase == null)) {
+      if (isCurrent) {
+        // A burst of glow as the bead lights, settling to a soft halo.
+        final burst = 1 - lightUp;
         canvas.drawCircle(
           bead.position,
-          w * (0.045 + 0.02 * glow),
+          w * (0.05 + 0.04 * burst),
           Paint()
-            ..color = AppColors.gold.withValues(alpha: 0.18 + 0.2 * glow)
-            ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.015),
+            ..color = AppColors.gold.withValues(alpha: 0.3 + 0.25 * burst)
+            ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.018),
         );
       }
 
@@ -255,7 +199,7 @@ class _RosaryPainter extends CustomPainter {
         case _BeadKind.large:
           canvas.drawCircle(bead.position, w * 0.027, fill);
         case _BeadKind.chain:
-          if (isLit) canvas.drawCircle(bead.position, w * 0.012, fill);
+          if (isLit) canvas.drawCircle(bead.position, w * 0.014, fill);
         case _BeadKind.centrepiece:
           canvas.drawOval(
             Rect.fromCenter(
@@ -284,5 +228,7 @@ class _RosaryPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RosaryPainter oldDelegate) =>
-      oldDelegate.phase != phase || oldDelegate.beads != beads;
+      oldDelegate.current != current ||
+      oldDelegate.lightUp != lightUp ||
+      oldDelegate.prayed.length != prayed.length;
 }
