@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/features/masses/data/config/litany_config.dart';
 import 'package:st_luke_parish_app/features/masses/data/config/rosary_how_to_config.dart';
 import 'package:st_luke_parish_app/features/masses/data/config/rosary_mysteries_config.dart';
 import 'package:st_luke_parish_app/features/masses/domain/entities/rosary_step.dart';
@@ -298,5 +299,63 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     }
+  });
+
+  group('Litany of the Blessed Virgin Mary', () {
+    test("follows the card's calls and responses", () {
+      expect(litanyLines.first.call, 'Lord, have mercy.');
+      expect(litanyLines.where((l) => l.response == 'pray for us.').length, 51);
+      expect(
+        litanyLines.last.response,
+        'R. That we may be made worthy of the promises of Christ.',
+      );
+      expect(
+        litanyClosingPrayer.text,
+        endsWith('through Christ Our Lord. Amen.'),
+      );
+    });
+
+    testWidgets('its own card, closed until opened, under Pray the Rosary', (
+      tester,
+    ) async {
+      await pumpScreen(tester, DateTime(2026, 10, 18));
+
+      expect(find.text(litanyTitle), findsOneWidget);
+      expect(find.textContaining('Mother of the Church'), findsNothing);
+      expect(
+        tester.getTopLeft(find.text(litanyTitle)).dy,
+        greaterThan(tester.getTopLeft(find.text('Pray the Rosary')).dy),
+      );
+
+      await tester.ensureVisible(find.text(litanyTitle));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(litanyTitle));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Mother of the Church'), findsOneWidget);
+      expect(find.textContaining('Queen of families'), findsOneWidget);
+      expect(find.text(litanyClosingPrayer.text), findsOneWidget);
+    });
+
+    testWidgets('no overflow with the litany open at text x2', (tester) async {
+      await pumpScreen(
+        tester,
+        DateTime(2026, 10, 18),
+        size: const Size(360, 690),
+        scale: 2,
+      );
+      await tester.dragUntilVisible(
+        find.text(litanyTitle),
+        find.byType(ListView),
+        const Offset(0, -300),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(litanyTitle));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.drag(find.byType(ListView), const Offset(0, -8000));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
   });
 }

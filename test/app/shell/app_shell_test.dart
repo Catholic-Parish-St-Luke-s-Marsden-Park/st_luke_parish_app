@@ -253,8 +253,8 @@ void main() {
   });
 
   group('REQ-F01-003: side drawer', () {
-    testWidgets('opens and shows exactly 3 entries: Resources, Faith '
-        'Formation and Prayer Request', (tester) async {
+    testWidgets('opens and shows exactly 4 entries: Resources, Faith '
+        'Formation, The Rosary and Prayer Request', (tester) async {
       await _pumpShell(tester);
 
       final scaffoldState = tester.state<ScaffoldState>(
@@ -273,7 +273,14 @@ void main() {
           matching: find.byType(ListTile),
         ),
       );
-      expect(listTiles.length, 3);
+      expect(listTiles.length, 4);
+      expect(
+        find.descendant(
+          of: find.byType(Drawer),
+          matching: find.text('The Rosary'),
+        ),
+        findsOneWidget,
+      );
       expect(
         find.descendant(
           of: find.byType(Drawer),
@@ -359,6 +366,24 @@ void main() {
       expect(container.read(selectedNavIndexProvider), 5);
       expect(find.byType(Drawer), findsNothing);
       expect(find.widgetWithText(AppBar, 'Resources'), findsNothing);
+    });
+
+    testWidgets('tapping The Rosary opens The Rosary page', (tester) async {
+      await _pumpShell(tester);
+
+      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(Drawer),
+          matching: find.text('The Rosary'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(AppBar, 'The Rosary'), findsOneWidget);
+      expect(find.text('Pray the Rosary'), findsOneWidget);
+      expect(find.byType(Drawer), findsNothing);
     });
 
     testWidgets('tapping Faith Formation opens its own page of links', (

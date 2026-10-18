@@ -6,6 +6,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../data/config/rosary_mysteries_config.dart';
 import '../../domain/entities/rosary_mystery.dart';
 import '../widgets/how_to_pray_rosary_card.dart';
+import '../widgets/litany_card.dart';
 
 /// "The Rosary", opened from the Holy Rosary ribbon (parish request,
 /// 2026-10-18): Pray the Rosary step by step with today's Mysteries,
@@ -57,6 +58,7 @@ class RosaryScreen extends StatelessWidget {
             ),
           ),
           HowToPrayRosaryCard(mysteries: todaysSet ?? rosaryMysterySets.first),
+          const LitanyCard(),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
             child: Text(
