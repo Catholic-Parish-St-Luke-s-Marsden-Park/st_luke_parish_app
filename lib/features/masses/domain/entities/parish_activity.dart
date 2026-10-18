@@ -51,7 +51,7 @@ class ParishActivity {
   final String? contact;
   final ActivityLink? link;
 
-  /// Adds a "Mysteries of the Rosary" button that opens the Mysteries page.
+  /// Adds a "The Rosary" button that opens how to pray it and the Mysteries.
   final bool showsRosaryMysteries;
 
   /// Every detail that has a value, in display order.

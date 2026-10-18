@@ -13,7 +13,7 @@ import 'package:st_luke_parish_app/features/masses/presentation/providers/mass_s
 import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_screen.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/activity_ribbon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_symbol_icon.dart';
-import 'package:st_luke_parish_app/features/masses/presentation/screens/rosary_mysteries_screen.dart';
+import 'package:st_luke_parish_app/features/masses/presentation/screens/rosary_screen.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_card.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/draped_rosary_icon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/rosary_icon.dart';
@@ -511,9 +511,7 @@ void main() {
       );
     });
 
-    testWidgets('the Holy Rosary ribbon opens the Mysteries of the Rosary', (
-      tester,
-    ) async {
+    testWidgets('the Holy Rosary ribbon opens The Rosary', (tester) async {
       await pumpMassesScreen(tester);
       final rosary = regularActivities.last;
       await tester.ensureVisible(ribbonTitle(rosary));
@@ -521,7 +519,7 @@ void main() {
       await tester.tap(ribbonTitle(rosary));
       await tester.pumpAndSettle();
 
-      final button = find.text('Mysteries of the Rosary');
+      final button = find.text('The Rosary');
       await tester.ensureVisible(button);
       await tester.pumpAndSettle();
       expect(
@@ -531,7 +529,7 @@ void main() {
       await tester.tap(button);
       await tester.pumpAndSettle();
 
-      expect(find.byType(RosaryMysteriesScreen), findsOneWidget);
+      expect(find.byType(RosaryScreen), findsOneWidget);
     });
 
     test('each activity kind is used once, so every ribbon has its own '

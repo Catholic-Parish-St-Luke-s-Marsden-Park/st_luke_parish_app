@@ -2,9 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/features/masses/data/config/rosary_how_to_config.dart';
 import 'package:st_luke_parish_app/features/masses/data/config/rosary_mysteries_config.dart';
+import 'package:st_luke_parish_app/features/masses/domain/entities/rosary_step.dart';
 import 'package:st_luke_parish_app/features/masses/domain/entities/rosary_mystery.dart';
-import 'package:st_luke_parish_app/features/masses/presentation/screens/rosary_mysteries_screen.dart';
+import 'package:st_luke_parish_app/features/masses/presentation/screens/rosary_screen.dart';
 
 void main() {
   test('four sets of five mysteries, covering every day of the week once', () {
@@ -37,9 +39,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      MaterialApp(
-        home: RosaryMysteriesScreen(now: () => DateTime(2026, 10, 18)),
-      ),
+      MaterialApp(home: RosaryScreen(now: () => DateTime(2026, 10, 18))),
     );
     await tester.pumpAndSettle();
 
@@ -78,7 +78,7 @@ void main() {
             data: MediaQuery.of(
               context,
             ).copyWith(textScaler: TextScaler.linear(scale)),
-            child: RosaryMysteriesScreen(now: () => day),
+            child: RosaryScreen(now: () => day),
           ),
         ),
       ),
@@ -91,10 +91,7 @@ void main() {
   ) async {
     await pumpScreen(tester, DateTime(2026, 10, 16)); // a Friday
 
-    expect(
-      find.widgetWithText(AppBar, 'Mysteries of the Rosary'),
-      findsOneWidget,
-    );
+    expect(find.widgetWithText(AppBar, 'The Rosary'), findsOneWidget);
     final tops = [
       for (final name in [
         'The Sorrowful Mysteries',
@@ -107,7 +104,8 @@ void main() {
     expect(tops, orderedEquals(List.of(tops)..sort()));
     expect(find.text("Today's Mysteries"), findsOneWidget);
     expect(find.text('The Agony in the Garden'), findsOneWidget);
-    expect(find.text('1ST SORROWFUL MYSTERY'), findsOneWidget);
+    expect(find.text('1ST SORROWFUL MYSTERY (1ST DECADE)'), findsOneWidget);
+    expect(find.text('5TH SORROWFUL MYSTERY (5TH DECADE)'), findsOneWidget);
     // Other sets start closed.
     expect(find.text('The Annunciation'), findsNothing);
   });
@@ -147,4 +145,89 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  group('How to Pray the Rosary', () {
+    test("the card's ten steps, each with its prayers", () {
+      expect(rosarySteps, hasLength(10));
+      for (final step in rosarySteps) {
+        expect(step.prayers, isNotEmpty, reason: step.instruction);
+      }
+      expect(rosarySteps.first.beads, RosaryBeadGroup.crucifix);
+      expect(rosarySteps[5].beads, RosaryBeadGroup.firstDecade);
+      expect(rosarySteps.last.prayers.first.name, 'Hail, Holy Queen');
+    });
+
+    Future<void> openHowTo(WidgetTester tester) async {
+      await pumpScreen(tester, DateTime(2026, 10, 18));
+      expect(find.text('How to Pray the Rosary'), findsOneWidget);
+      expect(find.text('STEP 1 OF 10'), findsNothing);
+      await tester.tap(find.text('How to Pray the Rosary'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('opens on step 1 with the rosary diagram and its prayers', (
+      tester,
+    ) async {
+      await openHowTo(tester);
+
+      expect(find.text('STEP 1 OF 10'), findsOneWidget);
+      expect(find.text(rosarySteps.first.instruction), findsOneWidget);
+      expect(find.text("Apostles' Creed"), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp('Rosary diagram')), findsOneWidget);
+    });
+
+    testWidgets('Next and Back move through the steps; the last step '
+        'starts again', (tester) async {
+      await openHowTo(tester);
+
+      Future<void> tap(String label) async {
+        final button = find.text(label);
+        await tester.ensureVisible(button);
+        await tester.pumpAndSettle();
+        await tester.tap(button);
+        await tester.pumpAndSettle();
+      }
+
+      await tap('Next');
+      expect(find.text('STEP 2 OF 10'), findsOneWidget);
+      await tap('Back');
+      expect(find.text('STEP 1 OF 10'), findsOneWidget);
+
+      for (var i = 0; i < 4; i++) {
+        await tap('Next');
+      }
+      // Step 5 announces the First Mystery and names today's set.
+      expect(find.text('STEP 5 OF 10'), findsOneWidget);
+      expect(
+        find.text("Today's Mysteries: The Glorious Mysteries"),
+        findsOneWidget,
+      );
+
+      for (var i = 0; i < 5; i++) {
+        await tap('Next');
+      }
+      expect(find.text('STEP 10 OF 10'), findsOneWidget);
+      await tap('Start again');
+      expect(find.text('STEP 1 OF 10'), findsOneWidget);
+    });
+
+    for (final scale in const [1.0, 2.0]) {
+      testWidgets('no overflow with the steps open at text x$scale', (
+        tester,
+      ) async {
+        await pumpScreen(
+          tester,
+          DateTime(2026, 10, 18),
+          size: const Size(360, 690),
+          scale: scale,
+        );
+        await tester.tap(find.text('How to Pray the Rosary'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await tester.drag(find.byType(ListView), const Offset(0, -3000));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
 }

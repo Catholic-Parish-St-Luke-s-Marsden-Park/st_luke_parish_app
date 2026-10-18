@@ -5,12 +5,14 @@ import '../../../../core/theme/app_shapes.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../data/config/rosary_mysteries_config.dart';
 import '../../domain/entities/rosary_mystery.dart';
+import '../widgets/how_to_pray_rosary_card.dart';
 
-/// The Mysteries of the Rosary, opened from the Holy Rosary ribbon (parish
-/// request, 2026-10-18): today's set first and open, then the others as
-/// pull-downs, each mystery with its Scripture and fruit.
-class RosaryMysteriesScreen extends StatelessWidget {
-  const RosaryMysteriesScreen({super.key, DateTime Function()? now})
+/// "The Rosary", opened from the Holy Rosary ribbon (parish request,
+/// 2026-10-18): How to Pray the Rosary, then the Mysteries with today's set
+/// first and open and the others as pull-downs, each mystery with its
+/// picture, Scripture and fruit.
+class RosaryScreen extends StatelessWidget {
+  const RosaryScreen({super.key, DateTime Function()? now})
     : _now = now ?? DateTime.now;
 
   final DateTime Function() _now;
@@ -38,21 +40,23 @@ class RosaryMysteriesScreen extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mysteries of the Rosary')),
+      appBar: AppBar(title: const Text('The Rosary')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
             child: Text(
-              'Choose a set of Mysteries to meditate on while you pray each '
-              'decade. Today is ${_weekdayNames[today.weekday - 1]}.',
+              'Learn how to pray the Rosary, then choose a set of Mysteries '
+              'to meditate on while you pray each decade. Today is '
+              '${_weekdayNames[today.weekday - 1]}.',
               style: textTheme.bodyMedium?.copyWith(
                 color: AppColors.textSecondary,
                 height: 1.5,
               ),
             ),
           ),
+          HowToPrayRosaryCard(todaysMysteries: todaysSet?.name),
           for (final set in sets)
             _MysterySetCard(set: set, isToday: set == todaysSet),
           Padding(
@@ -218,8 +222,10 @@ class _MysteryEntry extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // e.g. "1st Glorious Mystery (1st Decade)".
                     Text(
-                      '${_ordinals[number - 1]} $adjective Mystery'
+                      '${_ordinals[number - 1]} $adjective Mystery '
+                              '(${_ordinals[number - 1]} Decade)'
                           .toUpperCase(),
                       style: textTheme.labelMedium?.copyWith(
                         color: AppColors.darkGold,
