@@ -271,12 +271,12 @@ class _PrayerBeadsStepperState extends State<PrayerBeadsStepper> {
                 const SizedBox(height: 10),
                 _MysteryPanel(
                   mystery: mystery,
+                  // The same wording as the Mysteries cards below, e.g.
+                  // "1st Glorious Mystery (1st Decade)", on every step of
+                  // the decade.
                   label:
                       '${_ordinals[decade!]} ${widget.mysteryAdjective ?? ''} '
-                      'Mystery',
-                  // Announcing shows the whole Mystery; while praying the
-                  // decade, a reminder of what to meditate on.
-                  full: step.beads.kind == RosaryBeadKind.decadeOurFather,
+                      'Mystery (${_ordinals[decade]} Decade)',
                 ),
               ],
               for (final prayer in step.prayers) ...[
@@ -343,17 +343,12 @@ class _StepButtons extends StatelessWidget {
 }
 
 /// Today's Mystery for the current decade: its picture, label and title,
-/// and when [full], its Scripture and fruit.
+/// its Scripture and fruit, on every step of its decade.
 class _MysteryPanel extends StatelessWidget {
-  const _MysteryPanel({
-    required this.mystery,
-    required this.label,
-    required this.full,
-  });
+  const _MysteryPanel({required this.mystery, required this.label});
 
   final RosaryMystery mystery;
   final String label;
-  final bool full;
 
   @override
   Widget build(BuildContext context) {
@@ -376,8 +371,8 @@ class _MysteryPanel extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   child: Image.asset(
                     mystery.imageAsset,
-                    width: full ? 96 : 64,
-                    height: full ? 104 : 70,
+                    width: 96,
+                    height: 104,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -388,7 +383,7 @@ class _MysteryPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      (full ? label : 'Meditate on').toUpperCase(),
+                      label.toUpperCase(),
                       style: textTheme.labelMedium?.copyWith(
                         color: AppColors.darkGold,
                         fontWeight: FontWeight.w700,
@@ -408,7 +403,7 @@ class _MysteryPanel extends StatelessWidget {
               ),
             ],
           ),
-          if (full) ...[
+          ...[
             const SizedBox(height: 10),
             Text(
               mystery.verse,

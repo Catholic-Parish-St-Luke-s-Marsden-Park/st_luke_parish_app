@@ -239,18 +239,24 @@ void main() {
       await next(tester, 3);
       expect(find.text('STEP 7 OF 69'), findsOneWidget);
       expect(find.text('1st Decade'), findsOneWidget);
-      expect(find.text('1ST SORROWFUL MYSTERY'), findsOneWidget);
+      expect(find.text('1ST SORROWFUL MYSTERY (1ST DECADE)'), findsOneWidget);
       expect(find.text('The Agony in the Garden'), findsWidgets);
 
       await next(tester);
       expect(find.text('Hail Mary 1 of 10'), findsOneWidget);
-      expect(find.text('MEDITATE ON'), findsOneWidget);
+      // Each Hail Mary step shows the whole Mystery, as on the cards.
+      expect(find.text('1ST SORROWFUL MYSTERY (1ST DECADE)'), findsOneWidget);
+      expect(
+        find.text(rosaryMysterySets[2].mysteries.first.verse),
+        findsOneWidget,
+      );
+      expect(find.text('MEDITATE ON'), findsNothing);
       await next(tester, 9);
       expect(find.text('Hail Mary 10 of 10'), findsOneWidget);
 
       await next(tester, 2);
       expect(find.text('2nd Decade'), findsOneWidget);
-      expect(find.text('2ND SORROWFUL MYSTERY'), findsOneWidget);
+      expect(find.text('2ND SORROWFUL MYSTERY (2ND DECADE)'), findsOneWidget);
     });
 
     testWidgets('Back works, and the last step starts again', (tester) async {
@@ -357,5 +363,74 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });
+  });
+
+  group("Pray the Rosary follows the phone's date", () {
+    const expectedByWeekday = {
+      DateTime.monday: 'The Joyful Mysteries',
+      DateTime.tuesday: 'The Sorrowful Mysteries',
+      DateTime.wednesday: 'The Glorious Mysteries',
+      DateTime.thursday: 'The Luminous Mysteries',
+      DateTime.friday: 'The Sorrowful Mysteries',
+      DateTime.saturday: 'The Joyful Mysteries',
+      DateTime.sunday: 'The Glorious Mysteries',
+    };
+
+    test('every day for a year, across month and year ends', () {
+      var day = DateTime(2026, 1, 1);
+      final end = DateTime(2027, 1, 7);
+      var checked = 0;
+      while (day.isBefore(end)) {
+        expect(
+          mysterySetForDay(rosaryMysterySets, day)!.name,
+          expectedByWeekday[day.weekday],
+          reason: '$day',
+        );
+        day = DateTime(day.year, day.month, day.day + 1);
+        checked++;
+      }
+      expect(checked, greaterThan(365));
+    });
+
+    test('the time of day does not change the set', () {
+      for (final hour in [0, 6, 12, 23]) {
+        expect(
+          mysterySetForDay(
+            rosaryMysterySets,
+            DateTime(2026, 10, 19, hour, 59), // a Monday
+          )!.name,
+          'The Joyful Mysteries',
+        );
+      }
+    });
+
+    // One date for each day of the week (19-25 October 2026).
+    for (var offset = 0; offset < 7; offset++) {
+      final date = DateTime(2026, 10, 19 + offset);
+      final setName = expectedByWeekday[date.weekday]!;
+      final set = rosaryMysterySets.singleWhere((s) => s.name == setName);
+
+      testWidgets('${date.toIso8601String().substring(0, 10)} '
+          '(weekday ${date.weekday}) prays $setName', (tester) async {
+        await pumpScreen(tester, date);
+
+        expect(find.text('Today: $setName, step by step'), findsOneWidget);
+        // The first decade's step shows that set's first Mystery.
+        for (var i = 0; i < 6; i++) {
+          final next = find.text('Next');
+          await tester.ensureVisible(next);
+          await tester.pumpAndSettle();
+          await tester.tap(next);
+          await tester.pumpAndSettle();
+        }
+        expect(
+          find.text('1ST ${set.adjective.toUpperCase()} MYSTERY (1ST DECADE)'),
+          findsOneWidget,
+        );
+        expect(find.text(set.mysteries.first.title), findsWidgets);
+        // Its card below is marked as today's.
+        expect(find.text("Today's Mysteries"), findsOneWidget);
+      });
+    }
   });
 }
