@@ -5,14 +5,15 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/rosary_step.dart';
 
-/// An animated rosary: the beads for [group] light up in gold. Where a step
+/// An animated rosary: the beads for [beads] light up in gold, with the
+/// decades already prayed shown lightly. Where a step
 /// counts several beads (three or ten Hail Marys), they light one after
 /// another, as if being prayed; single beads glow gently. Everything holds
 /// still when the system asks for reduced motion, and in widget tests.
 class RosaryDiagram extends StatefulWidget {
-  const RosaryDiagram({super.key, required this.group});
+  const RosaryDiagram({super.key, required this.beads});
 
-  final RosaryBeadGroup group;
+  final RosaryBeads beads;
 
   /// Set by `test/flutter_test_config.dart`: an endlessly repeating
   /// animation would stop `pumpAndSettle()` from ever settling.
@@ -39,7 +40,10 @@ class _RosaryDiagramState extends State<RosaryDiagram>
   @override
   void didUpdateWidget(RosaryDiagram oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.group != widget.group) _restart();
+    if (oldWidget.beads.kind != widget.beads.kind ||
+        oldWidget.beads.decade != widget.beads.decade) {
+      _restart();
+    }
   }
 
   /// Starts this step's animation from the beginning: a count through the
@@ -49,7 +53,7 @@ class _RosaryDiagramState extends State<RosaryDiagram>
       _controller.stop();
       return;
     }
-    final count = _beadsFor(widget.group).sequence.length;
+    final count = _beadsFor(widget.beads).sequence.length;
     _controller
       ..duration = Duration(milliseconds: count > 1 ? 600 * (count + 2) : 1600)
       ..repeat();
@@ -69,7 +73,7 @@ class _RosaryDiagramState extends State<RosaryDiagram>
         animation: _controller,
         builder: (context, _) => CustomPaint(
           painter: _RosaryPainter(
-            beads: _beadsFor(widget.group),
+            beads: _beadsFor(widget.beads),
             phase: _controller.isAnimating ? _controller.value : null,
           ),
         ),
@@ -82,16 +86,31 @@ class _RosaryDiagramState extends State<RosaryDiagram>
 /// 0 crucifix, 1 first Our Father, 2-4 three Hail Marys (bottom to top),
 /// 5 the chain before the next bead, 6 the First Mystery's Our Father,
 /// 7 the centrepiece, then the loop from 8: each decade's ten Hail Marys,
-/// followed (for the first four decades) by the next Our Father bead.
+/// followed (for the first four decades) by the next Our Father bead; then
+/// from 62 the chain point after each decade (for its Glory Be).
 const _crucifix = 0;
 const _centrepiece = 7;
 const _loopStart = 8;
 
 int _decadeBead(int decade, int bead) => _loopStart + decade * 11 + bead;
 int _ourFatherAfter(int decade) => _loopStart + decade * 11 + 10;
+int _chainAfter(int decade) => 62 + decade;
 
-/// The beads a [RosaryBeadGroup] lights: [sequence] are prayed one after
-/// another; [also] are shown lightly as "and so on".
+List<int> _decade(int decade) => [
+  for (var i = 0; i < 10; i++) _decadeBead(decade, i),
+];
+
+/// Decades already prayed before [decade], with their Our Father beads.
+List<int> _prayedBefore(int decade) => [
+  for (var d = 0; d < decade; d++) ...[
+    ..._decade(d),
+    if (d > 0) _ourFatherAfter(d - 1),
+  ],
+  if (decade > 0) 6,
+];
+
+/// The beads a step lights: [sequence] are prayed one after another; [also]
+/// are shown lightly, as already prayed.
 class _Beads {
   const _Beads(this.sequence, [this.also = const []]);
 
@@ -99,25 +118,26 @@ class _Beads {
   final List<int> also;
 }
 
-_Beads _beadsFor(RosaryBeadGroup group) => switch (group) {
-  RosaryBeadGroup.crucifix => const _Beads([_crucifix]),
-  RosaryBeadGroup.firstOurFather => const _Beads([1]),
-  RosaryBeadGroup.threeHailMarys => const _Beads([2, 3, 4]),
-  RosaryBeadGroup.gloryBeforeFirstDecade => const _Beads([5]),
-  RosaryBeadGroup.firstMysteryOurFather => const _Beads([6]),
-  RosaryBeadGroup.firstDecade => _Beads([
-    for (var i = 0; i < 10; i++) _decadeBead(0, i),
-  ]),
-  RosaryBeadGroup.afterFirstDecade => _Beads([_ourFatherAfter(0)]),
-  RosaryBeadGroup.remainingDecades => _Beads(
-    [for (var d = 0; d < 4; d++) _ourFatherAfter(d)],
-    [
-      for (var d = 1; d < 5; d++)
-        for (var i = 0; i < 10; i++) _decadeBead(d, i),
-    ],
-  ),
-  RosaryBeadGroup.centrepiece => const _Beads([_centrepiece]),
-};
+_Beads _beadsFor(RosaryBeads beads) {
+  final d = beads.decade;
+  return switch (beads.kind) {
+    RosaryBeadKind.crucifix => const _Beads([_crucifix]),
+    RosaryBeadKind.firstOurFather => const _Beads([1]),
+    RosaryBeadKind.threeHailMarys => const _Beads([2, 3, 4]),
+    RosaryBeadKind.gloryBeforeDecades => const _Beads([5]),
+    RosaryBeadKind.decadeOurFather => _Beads([
+      d == 0 ? 6 : _ourFatherAfter(d - 1),
+    ], _prayedBefore(d)),
+    RosaryBeadKind.decadeHailMarys => _Beads(_decade(d), [
+      ..._prayedBefore(d),
+      d == 0 ? 6 : _ourFatherAfter(d - 1),
+    ]),
+    RosaryBeadKind.afterDecade => _Beads([
+      _chainAfter(d),
+    ], _prayedBefore(d + 1)),
+    RosaryBeadKind.centrepiece => _Beads([_centrepiece], _prayedBefore(5)),
+  };
+}
 
 enum _BeadKind { crucifix, large, small, chain, centrepiece }
 
@@ -163,6 +183,14 @@ class _RosaryPainter extends CustomPainter {
           centre + Offset.fromDirection(angle, radius),
           isOurFather ? _BeadKind.large : _BeadKind.small,
         ),
+      );
+    }
+    // The chain just after each decade's last Hail Mary.
+    for (var d = 0; d < 5; d++) {
+      final slot = d < 4 ? d * 11 + 10.5 : 55.0;
+      final angle = math.pi / 2 + slot * 2 * math.pi / slots;
+      list.add(
+        _Bead(centre + Offset.fromDirection(angle, radius), _BeadKind.chain),
       );
     }
     return list;

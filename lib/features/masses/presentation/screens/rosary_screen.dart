@@ -8,9 +8,9 @@ import '../../domain/entities/rosary_mystery.dart';
 import '../widgets/how_to_pray_rosary_card.dart';
 
 /// "The Rosary", opened from the Holy Rosary ribbon (parish request,
-/// 2026-10-18): How to Pray the Rosary, then the Mysteries with today's set
-/// first and open and the others as pull-downs, each mystery with its
-/// picture, Scripture and fruit.
+/// 2026-10-18): Pray the Rosary step by step with today's Mysteries,
+/// then all the Mysteries as pull-downs (today's set first), each mystery
+/// with its picture, Scripture and fruit.
 class RosaryScreen extends StatelessWidget {
   const RosaryScreen({super.key, DateTime Function()? now})
     : _now = now ?? DateTime.now;
@@ -47,16 +47,27 @@ class RosaryScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
             child: Text(
-              'Learn how to pray the Rosary, then choose a set of Mysteries '
-              'to meditate on while you pray each decade. Today is '
-              '${_weekdayNames[today.weekday - 1]}.',
+              'Today is ${_weekdayNames[today.weekday - 1]}. Pray the '
+              "Rosary step by step with today's Mysteries, or browse all the "
+              'Mysteries below.',
               style: textTheme.bodyMedium?.copyWith(
                 color: AppColors.textSecondary,
                 height: 1.5,
               ),
             ),
           ),
-          HowToPrayRosaryCard(todaysMysteries: todaysSet?.name),
+          HowToPrayRosaryCard(mysteries: todaysSet ?? rosaryMysterySets.first),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
+            child: Text(
+              'ALL THE MYSTERIES',
+              style: textTheme.labelMedium?.copyWith(
+                color: AppColors.textMuted,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
           for (final set in sets)
             _MysterySetCard(set: set, isToday: set == todaysSet),
           Padding(
@@ -119,7 +130,6 @@ class _MysterySetCard extends StatelessWidget {
             // Drops ExpansionTile's divider lines inside the card.
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
-              initiallyExpanded: isToday,
               tilePadding: const EdgeInsets.fromLTRB(16, 6, 12, 6),
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               expandedCrossAxisAlignment: CrossAxisAlignment.stretch,

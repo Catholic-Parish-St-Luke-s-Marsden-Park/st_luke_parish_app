@@ -1,6 +1,7 @@
+import '../../domain/entities/rosary_mystery.dart';
 import '../../domain/entities/rosary_step.dart';
 
-/// "How to Pray the Rosary" and the prayers of the Rosary, word for word
+/// "Pray the Rosary" and the prayers of the Rosary, word for word
 /// from the Holy Rosary card by Mary's Rosary Chain Inc. (parish request,
 /// 2026-10-18).
 const rosaryHowToIntro =
@@ -87,67 +88,62 @@ const _letUsPray = RosaryPrayer(
       'obtain what they promise, through the same Christ Our Lord. Amen.',
 );
 
-/// The card's ten steps, each with the beads it is prayed on and its
-/// prayers.
-const List<RosaryStep> rosarySteps = [
-  RosaryStep(
+const _ordinals = ['First', 'Second', 'Third', 'Fourth', 'Fifth'];
+
+/// The whole Rosary, step by step, following the card's "How to Pray the
+/// Rosary" with [set]'s Mysteries in their decades: the opening prayers,
+/// then for each of the five decades the Mystery and Our Father, ten Hail
+/// Marys, and the Glory Be and Fatima Prayer, then the Hail, Holy Queen.
+List<RosaryStep> rosaryStepsFor(RosaryMysterySet set) => [
+  const RosaryStep(
     instruction:
         'Make the "Sign of the Cross" and pray the "Apostles\' Creed."',
-    beads: RosaryBeadGroup.crucifix,
+    beads: RosaryBeads(RosaryBeadKind.crucifix),
     prayers: [_signOfTheCross, _apostlesCreed],
   ),
-  RosaryStep(
+  const RosaryStep(
     instruction: 'Pray the "Our Father."',
-    beads: RosaryBeadGroup.firstOurFather,
+    beads: RosaryBeads(RosaryBeadKind.firstOurFather),
     prayers: [_ourFather],
   ),
-  RosaryStep(
+  const RosaryStep(
     instruction: 'Pray three "Hail Marys."',
-    beads: RosaryBeadGroup.threeHailMarys,
+    beads: RosaryBeads(RosaryBeadKind.threeHailMarys),
     prayers: [_hailMary],
   ),
-  RosaryStep(
+  const RosaryStep(
     instruction: 'Pray the "Glory be to the Father."',
-    beads: RosaryBeadGroup.gloryBeforeFirstDecade,
+    beads: RosaryBeads(RosaryBeadKind.gloryBeforeDecades),
     prayers: [_gloryBe],
   ),
-  RosaryStep(
-    instruction: 'Announce the First Mystery, then pray the "Our Father."',
-    beads: RosaryBeadGroup.firstMysteryOurFather,
-    prayers: [_ourFather],
-    announcesMystery: true,
-  ),
-  RosaryStep(
-    instruction: 'Pray ten "Hail Marys," while meditating on the Mystery.',
-    beads: RosaryBeadGroup.firstDecade,
-    prayers: [_hailMary],
-  ),
-  RosaryStep(
-    instruction: 'Pray the "Glory be to the Father."',
-    beads: RosaryBeadGroup.afterFirstDecade,
-    prayers: [_gloryBe],
-  ),
-  RosaryStep(
-    instruction:
-        'After each decade pray the "Fatima Prayer," requested by the '
-        'Blessed Virgin Mary at Fatima.',
-    beads: RosaryBeadGroup.afterFirstDecade,
-    prayers: [_fatimaPrayer],
-  ),
-  RosaryStep(
-    instruction:
-        'Announce the Second Mystery, then pray the "Our Father." Repeat '
-        'steps 6, 7 and 8 and continue with the Third, Fourth and Fifth '
-        'Mysteries in the same manner.',
-    beads: RosaryBeadGroup.remainingDecades,
-    prayers: [_ourFather],
-    announcesMystery: true,
-  ),
-  RosaryStep(
+  for (final (d, mystery) in set.mysteries.indexed) ...[
+    RosaryStep(
+      instruction:
+          'Announce the ${_ordinals[d]} Mystery, then pray the "Our '
+          'Father."',
+      beads: RosaryBeads(RosaryBeadKind.decadeOurFather, decade: d),
+      prayers: const [_ourFather],
+      mystery: mystery,
+    ),
+    RosaryStep(
+      instruction: 'Pray ten "Hail Marys," while meditating on the Mystery.',
+      beads: RosaryBeads(RosaryBeadKind.decadeHailMarys, decade: d),
+      prayers: const [_hailMary],
+      mystery: mystery,
+    ),
+    RosaryStep(
+      instruction:
+          'Pray the "Glory be to the Father" and the "Fatima Prayer," '
+          'requested by the Blessed Virgin Mary at Fatima.',
+      beads: RosaryBeads(RosaryBeadKind.afterDecade, decade: d),
+      prayers: const [_gloryBe, _fatimaPrayer],
+    ),
+  ],
+  const RosaryStep(
     instruction:
         'Pray the "Hail, Holy Queen" after the five decades are completed '
         'and conclude with the "Sign of the Cross."',
-    beads: RosaryBeadGroup.centrepiece,
+    beads: RosaryBeads(RosaryBeadKind.centrepiece),
     prayers: [_hailHolyQueen, _letUsPray, _signOfTheCross],
   ),
 ];
