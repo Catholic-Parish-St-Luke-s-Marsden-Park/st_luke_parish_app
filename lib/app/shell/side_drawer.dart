@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/external_links.dart';
 import '../../core/services/url_launcher_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../features/masses/data/config/divine_mercy_config.dart';
 import '../../features/masses/presentation/screens/divine_mercy_screen.dart';
 import '../../features/masses/presentation/screens/rosary_screen.dart';
 import '../../features/masses/presentation/widgets/rosary_icon.dart';
@@ -122,8 +123,20 @@ class SideDrawer extends ConsumerWidget {
               },
             ),
             ListTile(
-              // Rays, as in the Divine Mercy image.
-              leading: const Icon(Icons.light_mode_outlined),
+              // A small round crop of the Divine Mercy image itself: the face
+              // and the rays from the Heart.
+              leading: ExcludeSemantics(
+                child: ClipOval(
+                  child: Image.asset(
+                    divineMercyImage,
+                    // The standard icon size, so its label lines up.
+                    width: 24,
+                    height: 24,
+                    fit: BoxFit.cover,
+                    alignment: const Alignment(0, -0.6),
+                  ),
+                ),
+              ),
               title: const Text('Divine Mercy Chaplet'),
               onTap: () {
                 final navigator = Navigator.of(context);
