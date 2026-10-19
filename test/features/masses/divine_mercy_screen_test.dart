@@ -50,6 +50,7 @@ void main() {
     double scale = 1,
     FakePrayerProgressStore? store,
     DateTime? day,
+    bool openCard = true,
   }) async {
     final launcher = _FakeUrlLauncher();
     final progress = store ?? FakePrayerProgressStore();
@@ -77,6 +78,17 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    if (openCard) {
+      // Below the picture, so scroll down to it on small phones.
+      await tester.scrollUntilVisible(
+        find.text('Pray the Chaplet'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pray the Chaplet'));
+      await tester.pumpAndSettle();
+    }
     return launcher;
   }
 
@@ -89,6 +101,25 @@ void main() {
       await tester.pumpAndSettle();
     }
   }
+
+  testWidgets('Pray the Chaplet starts closed, under the picture', (
+    tester,
+  ) async {
+    await pump(tester, openCard: false);
+
+    expect(find.text(divineMercyImageCaption), findsOneWidget);
+    expect(find.text('Pray the Chaplet'), findsOneWidget);
+    expect(find.text('Jesus, I trust in You'), findsOneWidget);
+    expect(find.text('STEP 1 OF 64'), findsNothing);
+    expect(
+      tester.getTopLeft(find.text('Pray the Chaplet')).dy,
+      greaterThan(tester.getTopLeft(find.text(divineMercyImageCaption)).dy),
+    );
+
+    await tester.tap(find.text('Pray the Chaplet'));
+    await tester.pumpAndSettle();
+    expect(find.text('STEP 1 OF 64'), findsOneWidget);
+  });
 
   testWidgets('one prayer per tap of Next, bead by bead', (tester) async {
     await pump(tester);
@@ -147,14 +178,14 @@ void main() {
   testWidgets('shows the Divine Mercy image with its caption', (tester) async {
     await pump(tester);
 
-    // Once at the top, and again inside the rosary's loop of beads.
     final images = find.byWidgetPredicate(
       (w) =>
           w is Image &&
           w.image is AssetImage &&
           (w.image as AssetImage).assetName == divineMercyImage,
     );
-    expect(images, findsNWidgets(2));
+    // Large above the card, small on the card, and inside the rosary.
+    expect(images, findsNWidgets(3));
     expect(
       tester.widget<Image>(images.first).semanticLabel,
       contains('Divine Mercy'),

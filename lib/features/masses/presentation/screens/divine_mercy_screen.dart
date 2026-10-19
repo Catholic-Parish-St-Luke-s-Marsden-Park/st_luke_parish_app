@@ -17,6 +17,9 @@ class DivineMercyScreen extends ConsumerWidget {
 
   final DateTime Function() _now;
 
+  /// The red of the Divine Mercy image's rays.
+  static const _mercyRed = Color(0xFFC8102E);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
@@ -26,6 +29,44 @@ class DivineMercyScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // The Divine Mercy image, as painted under St Faustina's
+                // direction.
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 360),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset(
+                        divineMercyImage,
+                        semanticLabel:
+                            'The Divine Mercy image: Jesus with red and '
+                            'pale rays shining from His Heart',
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  divineMercyImageCaption,
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  divineMercyIntro,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
@@ -40,66 +81,52 @@ class DivineMercyScreen extends ConsumerWidget {
                 side: const BorderSide(color: AppColors.border),
               ),
               child: DecoratedBox(
-                // The red and pale rays of the Divine Mercy image.
                 decoration: const BoxDecoration(
-                  border: Border(
-                    left: BorderSide(color: Color(0xFFC8102E), width: 8),
-                  ),
+                  border: Border(left: BorderSide(color: _mercyRed, width: 8)),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          'Pray the Chaplet',
-                          style: AppTypography.display(
-                            fontSize: 19,
-                            color: AppColors.primaryNavy,
-                          ),
+                child: Theme(
+                  data: Theme.of(
+                    context,
+                  ).copyWith(dividerColor: Colors.transparent),
+                  // Closed until tapped, like Pray the Rosary (parish
+                  // request, 2026-10-19).
+                  child: ExpansionTile(
+                    initiallyExpanded: false,
+                    tilePadding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                    childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+                    iconColor: AppColors.gold,
+                    collapsedIconColor: AppColors.primaryNavy,
+                    // A small Divine Mercy image on the card itself.
+                    leading: ExcludeSemantics(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          divineMercyImage,
+                          width: 48,
+                          height: 56,
+                          fit: BoxFit.cover,
+                          alignment: const Alignment(0, -0.6),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
+                    ),
+                    title: Text(
+                      'Pray the Chaplet',
+                      style: AppTypography.display(
+                        fontSize: 19,
+                        color: AppColors.primaryNavy,
+                      ),
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
                         'Jesus, I trust in You',
                         style: textTheme.bodySmall?.copyWith(
                           fontStyle: FontStyle.italic,
                         ),
                       ),
-                      const SizedBox(height: 14),
-                      // The Divine Mercy image, as painted under St
-                      // Faustina's direction.
-                      Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 360),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.asset(
-                              divineMercyImage,
-                              semanticLabel:
-                                  'The Divine Mercy image: Jesus with red and '
-                                  'pale rays shining from His Heart',
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        divineMercyImageCaption,
-                        textAlign: TextAlign.center,
-                        style: textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        divineMercyIntro,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
+                    ),
+                    children: [
                       PrayerBeadsStepper(
                         steps: divineMercySteps,
                         centreImage: divineMercyImage,
