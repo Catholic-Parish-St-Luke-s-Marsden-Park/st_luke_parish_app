@@ -35,7 +35,7 @@ final class PrayerProgressStoreProvider
         argument: null,
         retry: null,
         name: r'prayerProgressStoreProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -56,4 +56,4 @@ final class PrayerProgressStoreProvider
 }
 
 String _$prayerProgressStoreHash() =>
-    r'a95671eb91d7a1c80a8e1da242005a874b7da076';
+    r'21f0a20c239a0021e7897e66cb01df5af78f2cae';

@@ -8,6 +8,6 @@ part 'prayer_progress_provider.g.dart';
 
 /// Where the Rosary and the Chaplet remember the step reached. `Future`-typed
 /// because `SharedPreferences.getInstance()` is async.
-@riverpod
+@Riverpod(keepAlive: true)
 Future<PrayerProgressStore> prayerProgressStore(Ref ref) async =>
     SharedPreferencesPrayerProgressStore(await SharedPreferences.getInstance());
