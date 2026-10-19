@@ -66,6 +66,8 @@ void main() {
         .map((i) => (i.image as AssetImage).assetName)
         .toList();
     expect(shown, [
+      // Our Lady at prayer, small, on the Pray the Rosary card.
+      virginInPrayerImage,
       for (final mystery in rosaryMysterySets.last.mysteries)
         mystery.imageAsset,
     ]);
@@ -129,6 +131,15 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('STEP 1 OF 69'), findsNothing);
+    // A small picture of Our Lady on the closed card.
+    final cardPicture = find.byWidgetPredicate(
+      (w) =>
+          w is Image &&
+          w.image is AssetImage &&
+          (w.image as AssetImage).assetName == virginInPrayerImage,
+    );
+    expect(cardPicture, findsOneWidget);
+    expect(tester.getSize(cardPicture), const Size(48, 56));
 
     await tester.tap(find.text('Pray the Rosary'));
     await tester.pumpAndSettle();

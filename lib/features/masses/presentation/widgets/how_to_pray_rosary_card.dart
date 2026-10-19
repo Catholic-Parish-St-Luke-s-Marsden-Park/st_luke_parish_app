@@ -60,11 +60,25 @@ class HowToPrayRosaryCard extends StatelessWidget {
             child: ExpansionTile(
               // Closed until tapped (parish request, 2026-10-19).
               initiallyExpanded: false,
-              tilePadding: const EdgeInsets.fromLTRB(16, 6, 12, 6),
+              tilePadding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
               iconColor: AppColors.gold,
               collapsedIconColor: AppColors.primaryNavy,
+              // A small picture of Our Lady at prayer on the card itself,
+              // as on Pray the Chaplet.
+              leading: ExcludeSemantics(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    virginInPrayerImage,
+                    width: 48,
+                    height: 56,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                  ),
+                ),
+              ),
               title: Text(
                 'Pray the Rosary',
                 style: AppTypography.display(
