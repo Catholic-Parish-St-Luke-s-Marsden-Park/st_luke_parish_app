@@ -261,7 +261,7 @@ void main() {
 
         expect(find.text('Welcome back'), findsOneWidget);
         expect(
-          find.text('Continuing at Step 10 of 69, where you stopped.'),
+          find.text('Continuing at the 1st Decade, where you stopped.'),
           findsOneWidget,
         );
         expect(find.text('STEP 10 OF 69'), findsOneWidget);
@@ -273,6 +273,22 @@ void main() {
         expect(find.text('STEP 11 OF 69'), findsOneWidget);
         expect(store.saved['rosary']?.$2, 10);
       });
+
+      for (final (step, place) in const [
+        (3, 'the opening prayers'),
+        (30, 'the 3rd Decade'),
+        (66, 'the closing prayers'),
+      ]) {
+        testWidgets('names the place reached: $place', (tester) async {
+          final store = FakePrayerProgressStore()
+            ..saved['rosary'] = (DateTime(2026, 10, 19), step);
+          await pumpScreen(tester, DateTime(2026, 10, 19), store: store);
+          expect(
+            find.text('Continuing at $place, where you stopped.'),
+            findsOneWidget,
+          );
+        });
+      }
 
       testWidgets('Start from the beginning goes back to step 1', (
         tester,

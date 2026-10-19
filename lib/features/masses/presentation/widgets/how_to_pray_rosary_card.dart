@@ -225,6 +225,15 @@ class _PrayerBeadsStepperState extends ConsumerState<PrayerBeadsStepper> {
     });
   }
 
+  /// Where step [index] falls, in words people know: "the 2nd Decade",
+  /// or the opening or closing prayers either side of the decades.
+  String _placeOf(int index) {
+    final decade = _steps[index].decade;
+    if (decade != null) return 'the ${_ordinals[decade]} Decade';
+    final firstDecade = _steps.indexWhere((s) => s.decade != null);
+    return index < firstDecade ? 'the opening prayers' : 'the closing prayers';
+  }
+
   /// e.g. "Hail Mary 3 of 10" on the Hail Mary steps, or "Optional" on the
   /// optional prayers after the Rosary.
   static String? _countLabel(RosaryStep step) => step.countLabel != null
@@ -251,11 +260,7 @@ class _PrayerBeadsStepperState extends ConsumerState<PrayerBeadsStepper> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_resumed) ...[
-          _ResumeNote(
-            step: _index + 1,
-            total: _steps.length,
-            onStartAgain: () => _go(0),
-          ),
+          _ResumeNote(place: _placeOf(_index), onStartAgain: () => _go(0)),
           const SizedBox(height: 12),
         ],
         Center(
@@ -398,14 +403,10 @@ class _PrayerBeadsStepperState extends ConsumerState<PrayerBeadsStepper> {
 /// Shown when the prayer carries on from where the user stopped earlier
 /// today, with a way to begin again instead.
 class _ResumeNote extends StatelessWidget {
-  const _ResumeNote({
-    required this.step,
-    required this.total,
-    required this.onStartAgain,
-  });
+  const _ResumeNote({required this.place, required this.onStartAgain});
 
-  final int step;
-  final int total;
+  /// e.g. "the 2nd Decade".
+  final String place;
   final VoidCallback onStartAgain;
 
   @override
@@ -431,7 +432,7 @@ class _ResumeNote extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            'Continuing at Step $step of $total, where you stopped.',
+            'Continuing at $place, where you stopped.',
             style: textTheme.bodyMedium?.copyWith(
               color: AppColors.textSecondary,
             ),

@@ -121,6 +121,10 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await pump(tester, store: store, day: DateTime(2026, 10, 19, 15));
     expect(find.text('Welcome back'), findsOneWidget);
+    expect(
+      find.text('Continuing at the 1st Decade, where you stopped.'),
+      findsOneWidget,
+    );
     expect(find.text('STEP 13 OF 64'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
