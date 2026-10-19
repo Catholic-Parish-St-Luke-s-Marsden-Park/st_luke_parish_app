@@ -372,9 +372,12 @@ class _PrayerBeadsStepperState extends ConsumerState<PrayerBeadsStepper> {
                 const SizedBox(height: 10),
                 _MysteryPanel(
                   mystery: mystery,
+                  // The picture and Scripture are read once, as the
+                  // Mystery is announced; the Hail Marys keep just the
+                  // Mystery and its fruit (parish request, 2026-10-19).
+                  full: step.beads.kind == RosaryBeadKind.decadeOurFather,
                   // The same wording as the Mysteries cards below, e.g.
-                  // "1st Glorious Mystery (1st Decade)", on every step of
-                  // the decade.
+                  // "1st Glorious Mystery (1st Decade)".
                   label:
                       '${_ordinals[decade!]} ${widget.mysteryAdjective ?? ''} '
                       'Mystery (${_ordinals[decade]} Decade)',
@@ -503,13 +506,19 @@ class _StepButtons extends StatelessWidget {
   }
 }
 
-/// Today's Mystery for the current decade: its picture, label and title,
-/// its Scripture and fruit, on every step of its decade.
+/// Today's Mystery for the current decade. In [full] (as the Mystery is
+/// announced) its picture, label and title, Scripture and fruit; otherwise
+/// just the label, title and fruit.
 class _MysteryPanel extends StatelessWidget {
-  const _MysteryPanel({required this.mystery, required this.label});
+  const _MysteryPanel({
+    required this.mystery,
+    required this.label,
+    required this.full,
+  });
 
   final RosaryMystery mystery;
   final String label;
+  final bool full;
 
   @override
   Widget build(BuildContext context) {
@@ -527,18 +536,20 @@ class _MysteryPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              ExcludeSemantics(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.asset(
-                    mystery.imageAsset,
-                    width: 96,
-                    height: 104,
-                    fit: BoxFit.cover,
+              if (full) ...[
+                ExcludeSemantics(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      mystery.imageAsset,
+                      width: 96,
+                      height: 104,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -564,7 +575,7 @@ class _MysteryPanel extends StatelessWidget {
               ),
             ],
           ),
-          ...[
+          if (full) ...[
             const SizedBox(height: 10),
             Text(
               mystery.verse,

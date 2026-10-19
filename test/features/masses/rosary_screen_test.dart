@@ -10,6 +10,7 @@ import 'package:st_luke_parish_app/features/masses/domain/entities/rosary_step.d
 import 'package:st_luke_parish_app/features/masses/domain/entities/rosary_mystery.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/providers/prayer_progress_provider.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/screens/rosary_screen.dart';
+import 'package:st_luke_parish_app/features/masses/presentation/widgets/how_to_pray_rosary_card.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/rosary_diagram.dart';
 
 import '../../helpers/fake_prayer_progress_store.dart';
@@ -372,6 +373,17 @@ void main() {
       );
     });
 
+    /// [asset] shown in Pray the Rosary (not the Mysteries cards below).
+    Finder stepperImage(String asset) => find.descendant(
+      of: find.byType(PrayerBeadsStepper),
+      matching: find.byWidgetPredicate(
+        (w) =>
+            w is Image &&
+            w.image is AssetImage &&
+            (w.image as AssetImage).assetName == asset,
+      ),
+    );
+
     testWidgets("each Next prays one bead, with today's Mystery in its "
         'decade', (tester) async {
       await pumpScreen(tester, DateTime(2026, 10, 16)); // a Friday
@@ -386,16 +398,22 @@ void main() {
       expect(find.text('1st Decade'), findsOneWidget);
       expect(find.text('1ST SORROWFUL MYSTERY (1ST DECADE)'), findsOneWidget);
       expect(find.text('The Agony in the Garden'), findsWidgets);
+      final agony = rosaryMysterySets[2].mysteries.first;
+      // Announcing the Mystery shows it in full: picture and Scripture.
+      expect(find.text(agony.verse), findsOneWidget);
+      expect(find.text(agony.reference), findsOneWidget);
+      expect(stepperImage(agony.imageAsset), findsOneWidget);
 
       await next(tester);
       expect(find.text('Hail Mary 1 of 10'), findsOneWidget);
-      // Each Hail Mary step shows the whole Mystery, as on the cards.
+      // The Hail Marys keep just the Mystery and its fruit.
       expect(find.text('1ST SORROWFUL MYSTERY (1ST DECADE)'), findsOneWidget);
       expect(
-        find.text(rosaryMysterySets[2].mysteries.first.verse),
-        findsOneWidget,
+        find.textContaining(agony.fruit, findRichText: true),
+        findsWidgets,
       );
-      expect(find.text('MEDITATE ON'), findsNothing);
+      expect(find.text(agony.verse), findsNothing);
+      expect(stepperImage(agony.imageAsset), findsNothing);
       await next(tester, 9);
       expect(find.text('Hail Mary 10 of 10'), findsOneWidget);
 
