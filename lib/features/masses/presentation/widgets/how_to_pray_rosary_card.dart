@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_shapes.dart';
@@ -7,6 +11,7 @@ import '../../data/config/rosary_how_to_config.dart';
 import '../../data/config/rosary_mysteries_config.dart';
 import '../../domain/entities/rosary_mystery.dart';
 import '../../domain/entities/rosary_step.dart';
+import '../providers/prayer_progress_provider.dart';
 import 'rosary_diagram.dart';
 
 /// "Pray the Rosary": a pull-down card that walks through the whole
@@ -15,10 +20,17 @@ import 'rosary_diagram.dart';
 /// in their decades, an animated rosary showing which beads each step is
 /// prayed on, and the words of its prayers (parish request, 2026-10-18).
 class HowToPrayRosaryCard extends StatelessWidget {
-  const HowToPrayRosaryCard({super.key, required this.mysteries});
+  const HowToPrayRosaryCard({
+    super.key,
+    required this.mysteries,
+    required this.today,
+  });
 
   /// Today's set of Mysteries.
   final RosaryMysterySet mysteries;
+
+  /// The phone's day, so a Rosary stopped partway continues only that day.
+  final DateTime today;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +58,8 @@ class HowToPrayRosaryCard extends StatelessWidget {
           child: Theme(
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
-              initiallyExpanded: true,
+              // Closed until tapped (parish request, 2026-10-19).
+              initiallyExpanded: false,
               tilePadding: const EdgeInsets.fromLTRB(16, 6, 12, 6),
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
@@ -80,6 +93,8 @@ class HowToPrayRosaryCard extends StatelessWidget {
                   mysteryAdjective: mysteries.adjective,
                   // Our Lady at prayer, in the middle of the rosary.
                   centreImage: virginInPrayerImage,
+                  progressKey: 'rosary',
+                  today: today,
                 ),
               ],
             ),
@@ -94,13 +109,24 @@ class HowToPrayRosaryCard extends StatelessWidget {
 /// the rosary diagram (prayed beads lit), the step count, Back and Next,
 /// then the step's instruction, Mystery (if any) and prayers. Used for the
 /// Rosary and the Chaplet of Divine Mercy.
-class PrayerBeadsStepper extends StatefulWidget {
+///
+/// With a [progressKey], the step reached is remembered on the phone, and
+/// coming back the same [today] carries on from it; a new day starts again.
+class PrayerBeadsStepper extends ConsumerStatefulWidget {
   const PrayerBeadsStepper({
     super.key,
     required this.steps,
     this.mysteryAdjective,
     this.centreImage,
+    this.progressKey,
+    this.today,
   });
+
+  /// Names the prayer whose step is remembered, e.g. "rosary".
+  final String? progressKey;
+
+  /// The phone's day the step is remembered for.
+  final DateTime? today;
 
   final List<RosaryStep> steps;
 
@@ -111,12 +137,66 @@ class PrayerBeadsStepper extends StatefulWidget {
   final String? mysteryAdjective;
 
   @override
-  State<PrayerBeadsStepper> createState() => _PrayerBeadsStepperState();
+  ConsumerState<PrayerBeadsStepper> createState() => _PrayerBeadsStepperState();
 }
 
-class _PrayerBeadsStepperState extends State<PrayerBeadsStepper> {
+class _PrayerBeadsStepperState extends ConsumerState<PrayerBeadsStepper> {
   List<RosaryStep> get _steps => widget.steps;
   int _index = 0;
+
+  /// Set when the saved step was picked up, until the user moves on.
+  bool _resumed = false;
+
+  /// Set once the user taps Back or Next, so a slow load of the saved step
+  /// never jumps them away from where they are.
+  bool _moved = false;
+
+  DateTime get _today => widget.today ?? DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedStep();
+  }
+
+  Future<void> _loadSavedStep() async {
+    final key = widget.progressKey;
+    if (key == null) return;
+    try {
+      final store = await ref.read(prayerProgressStoreProvider.future);
+      final saved = await store.stepFor(key, _today);
+      if (!mounted || _moved || saved == null) return;
+      // A finished prayer, or one barely begun, starts from the beginning.
+      if (saved <= 0 || saved >= _steps.length - 1) return;
+      setState(() {
+        _index = saved;
+        _resumed = true;
+      });
+    } catch (error, stackTrace) {
+      developer.log(
+        'Could not read the saved $key step',
+        name: 'prayer_progress',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  Future<void> _saveStep(int index) async {
+    final key = widget.progressKey;
+    if (key == null) return;
+    try {
+      final store = await ref.read(prayerProgressStoreProvider.future);
+      await store.save(key, _today, index);
+    } catch (error, stackTrace) {
+      developer.log(
+        'Could not save the $key step',
+        name: 'prayer_progress',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
 
   static const _ordinals = ['1st', '2nd', '3rd', '4th', '5th'];
 
@@ -125,7 +205,12 @@ class _PrayerBeadsStepperState extends State<PrayerBeadsStepper> {
   final _topKey = GlobalKey();
 
   void _go(int index) {
-    setState(() => _index = index);
+    setState(() {
+      _index = index;
+      _moved = true;
+      _resumed = false;
+    });
+    unawaited(_saveStep(index));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final top = _topKey.currentContext;
       if (top == null || !top.mounted) return;
@@ -165,6 +250,14 @@ class _PrayerBeadsStepperState extends State<PrayerBeadsStepper> {
       key: _topKey,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (_resumed) ...[
+          _ResumeNote(
+            step: _index + 1,
+            total: _steps.length,
+            onStartAgain: () => _go(0),
+          ),
+          const SizedBox(height: 12),
+        ],
         Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 200),
@@ -295,6 +388,66 @@ class _PrayerBeadsStepperState extends State<PrayerBeadsStepper> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Shown when the prayer carries on from where the user stopped earlier
+/// today, with a way to begin again instead.
+class _ResumeNote extends StatelessWidget {
+  const _ResumeNote({
+    required this.step,
+    required this.total,
+    required this.onStartAgain,
+  });
+
+  final int step;
+  final int total;
+  final VoidCallback onStartAgain;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+      decoration: BoxDecoration(
+        color: AppColors.paleGold.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.gold),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Welcome back',
+            style: textTheme.titleSmall?.copyWith(
+              color: AppColors.primaryNavy,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Continuing at Step $step of $total, where you stopped.',
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: onStartAgain,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryNavy,
+                minimumSize: const Size(48, 48),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+              ),
+              icon: const Icon(Icons.replay_rounded),
+              label: const Text('Start from the beginning'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

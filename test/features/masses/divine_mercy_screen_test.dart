@@ -4,7 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
 import 'package:st_luke_parish_app/features/masses/data/config/divine_mercy_config.dart';
 import 'package:st_luke_parish_app/features/masses/domain/entities/rosary_step.dart';
+import 'package:st_luke_parish_app/features/masses/presentation/providers/prayer_progress_provider.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/screens/divine_mercy_screen.dart';
+
+import '../../helpers/fake_prayer_progress_store.dart';
 
 class _FakeUrlLauncher implements UrlLauncherService {
   final List<String> launchedUrls = [];
@@ -45,21 +48,29 @@ void main() {
     WidgetTester tester, {
     Size size = const Size(800, 2600),
     double scale = 1,
+    FakePrayerProgressStore? store,
+    DateTime? day,
   }) async {
     final launcher = _FakeUrlLauncher();
+    final progress = store ?? FakePrayerProgressStore();
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [urlLauncherServiceProvider.overrideWithValue(launcher)],
+        overrides: [
+          urlLauncherServiceProvider.overrideWithValue(launcher),
+          prayerProgressStoreProvider.overrideWith((ref) async => progress),
+        ],
         child: MaterialApp(
           home: Builder(
             builder: (context) => MediaQuery(
               data: MediaQuery.of(
                 context,
               ).copyWith(textScaler: TextScaler.linear(scale)),
-              child: const DivineMercyScreen(),
+              child: DivineMercyScreen(
+                now: () => day ?? DateTime(2026, 10, 19),
+              ),
             ),
           ),
         ),
@@ -93,6 +104,28 @@ void main() {
     await next(tester, 3);
     expect(find.text('Bead 3 of 10'), findsOneWidget);
     expect(find.text('For the sake of His sorrowful Passion'), findsOneWidget);
+  });
+
+  testWidgets('remembers the bead reached, apart from the Rosary', (
+    tester,
+  ) async {
+    final store = FakePrayerProgressStore()
+      ..saved['rosary'] = (DateTime(2026, 10, 19), 30);
+    await pump(tester, store: store);
+    // The Rosary's saved place does not move the Chaplet.
+    expect(find.text('STEP 1 OF 64'), findsOneWidget);
+    await next(tester, 12);
+    expect(store.saved['divine_mercy_chaplet']?.$2, 12);
+    expect(store.saved['rosary']?.$2, 30);
+
+    await tester.pumpWidget(const SizedBox());
+    await pump(tester, store: store, day: DateTime(2026, 10, 19, 15));
+    expect(find.text('Welcome back'), findsOneWidget);
+    expect(find.text('STEP 13 OF 64'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await pump(tester, store: store, day: DateTime(2026, 10, 20));
+    expect(find.text('STEP 1 OF 64'), findsOneWidget);
   });
 
   testWidgets('ends with Holy God three times and the optional closing', (

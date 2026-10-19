@@ -12,7 +12,10 @@ import '../widgets/how_to_pray_rosary_card.dart';
 /// bead-by-bead guide as The Rosary, one prayer per tap of Next (parish
 /// request, 2026-10-18).
 class DivineMercyScreen extends ConsumerWidget {
-  const DivineMercyScreen({super.key});
+  const DivineMercyScreen({super.key, DateTime Function()? now})
+    : _now = now ?? DateTime.now;
+
+  final DateTime Function() _now;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -100,6 +103,8 @@ class DivineMercyScreen extends ConsumerWidget {
                       PrayerBeadsStepper(
                         steps: divineMercySteps,
                         centreImage: divineMercyImage,
+                        progressKey: 'divine_mercy_chaplet',
+                        today: _now(),
                       ),
                     ],
                   ),

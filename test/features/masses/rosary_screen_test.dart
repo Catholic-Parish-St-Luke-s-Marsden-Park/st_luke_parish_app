@@ -1,14 +1,18 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:st_luke_parish_app/features/masses/data/config/litany_config.dart';
 import 'package:st_luke_parish_app/features/masses/data/config/rosary_how_to_config.dart';
 import 'package:st_luke_parish_app/features/masses/data/config/rosary_mysteries_config.dart';
 import 'package:st_luke_parish_app/features/masses/domain/entities/rosary_step.dart';
 import 'package:st_luke_parish_app/features/masses/domain/entities/rosary_mystery.dart';
+import 'package:st_luke_parish_app/features/masses/presentation/providers/prayer_progress_provider.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/screens/rosary_screen.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/rosary_diagram.dart';
+
+import '../../helpers/fake_prayer_progress_store.dart';
 
 void main() {
   test('four sets of five mysteries, covering every day of the week once', () {
@@ -41,10 +45,17 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      MaterialApp(home: RosaryScreen(now: () => DateTime(2026, 10, 18))),
+      ProviderScope(
+        overrides: [
+          prayerProgressStoreProvider.overrideWith(
+            (ref) async => FakePrayerProgressStore(),
+          ),
+        ],
+        child: MaterialApp(
+          home: RosaryScreen(now: () => DateTime(2026, 10, 18)),
+        ),
+      ),
     );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Pray the Rosary'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('The Glorious Mysteries'));
     await tester.pumpAndSettle();
@@ -68,29 +79,60 @@ void main() {
     expect(today(DateTime(2026, 10, 18)), 'The Glorious Mysteries');
   });
 
+  /// Shows The Rosary on [day], with "Pray the Rosary" opened unless
+  /// [openCard] is false.
   Future<void> pumpScreen(
     WidgetTester tester,
     DateTime day, {
     Size size = const Size(800, 2600),
     double scale = 1,
+    bool openCard = true,
+    FakePrayerProgressStore? store,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
+    final progress = store ?? FakePrayerProgressStore();
     await tester.pumpWidget(
-      MaterialApp(
-        home: Builder(
-          builder: (context) => MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(textScaler: TextScaler.linear(scale)),
-            child: RosaryScreen(now: () => day),
+      ProviderScope(
+        overrides: [
+          prayerProgressStoreProvider.overrideWith((ref) async => progress),
+        ],
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(scale)),
+              child: RosaryScreen(now: () => day),
+            ),
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
+    if (openCard) {
+      await tester.ensureVisible(find.text('Pray the Rosary'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pray the Rosary'));
+      await tester.pumpAndSettle();
+    }
   }
+
+  testWidgets('Pray the Rosary starts closed', (tester) async {
+    await pumpScreen(tester, DateTime(2026, 10, 19), openCard: false);
+
+    expect(find.text('Pray the Rosary'), findsOneWidget);
+    expect(
+      find.text('Today: The Joyful Mysteries, step by step'),
+      findsOneWidget,
+    );
+    expect(find.text('STEP 1 OF 69'), findsNothing);
+
+    await tester.tap(find.text('Pray the Rosary'));
+    await tester.pumpAndSettle();
+    expect(find.text('STEP 1 OF 69'), findsOneWidget);
+  });
 
   testWidgets("today's set comes first among the Mysteries, marked Today", (
     tester,
@@ -203,6 +245,89 @@ void main() {
         await tester.pumpAndSettle();
       }
     }
+
+    group('remembers where the user stopped', () {
+      testWidgets('carries on later the same day', (tester) async {
+        final store = FakePrayerProgressStore();
+        await pumpScreen(tester, DateTime(2026, 10, 19, 9), store: store);
+        await next(tester, 9);
+        expect(find.text('STEP 10 OF 69'), findsOneWidget);
+        expect(store.saved['rosary']?.$2, 9);
+
+        // Leave The Rosary, and come back that evening.
+        await tester.pumpWidget(const SizedBox());
+        await pumpScreen(tester, DateTime(2026, 10, 19, 20), store: store);
+
+        expect(find.text('Welcome back'), findsOneWidget);
+        expect(
+          find.text('Continuing at Step 10 of 69, where you stopped.'),
+          findsOneWidget,
+        );
+        expect(find.text('STEP 10 OF 69'), findsOneWidget);
+        expect(find.text('Hail Mary 3 of 10'), findsOneWidget);
+
+        // Moving on hides the note and keeps counting from there.
+        await next(tester);
+        expect(find.text('Welcome back'), findsNothing);
+        expect(find.text('STEP 11 OF 69'), findsOneWidget);
+        expect(store.saved['rosary']?.$2, 10);
+      });
+
+      testWidgets('Start from the beginning goes back to step 1', (
+        tester,
+      ) async {
+        final store = FakePrayerProgressStore()
+          ..saved['rosary'] = (DateTime(2026, 10, 19), 30);
+        await pumpScreen(tester, DateTime(2026, 10, 19), store: store);
+        expect(find.text('STEP 31 OF 69'), findsOneWidget);
+
+        await tester.tap(find.text('Start from the beginning'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('STEP 1 OF 69'), findsOneWidget);
+        expect(find.text('Welcome back'), findsNothing);
+        expect(store.saved['rosary']?.$2, 0);
+      });
+
+      testWidgets('a new day starts from the beginning', (tester) async {
+        final store = FakePrayerProgressStore()
+          ..saved['rosary'] = (DateTime(2026, 10, 19), 30);
+        await pumpScreen(tester, DateTime(2026, 10, 20), store: store);
+
+        expect(find.text('STEP 1 OF 69'), findsOneWidget);
+        expect(find.text('Welcome back'), findsNothing);
+      });
+
+      testWidgets('a finished Rosary starts from the beginning', (
+        tester,
+      ) async {
+        final store = FakePrayerProgressStore()
+          ..saved['rosary'] = (DateTime(2026, 10, 19), 68);
+        await pumpScreen(tester, DateTime(2026, 10, 19), store: store);
+
+        expect(find.text('STEP 1 OF 69'), findsOneWidget);
+        expect(find.text('Welcome back'), findsNothing);
+      });
+
+      for (final scale in const [1.0, 2.0]) {
+        testWidgets('no overflow with the note at text x$scale', (
+          tester,
+        ) async {
+          final store = FakePrayerProgressStore()
+            ..saved['rosary'] = (DateTime(2026, 10, 19), 30);
+          await pumpScreen(
+            tester,
+            DateTime(2026, 10, 19),
+            size: const Size(360, 690),
+            scale: scale,
+            store: store,
+          );
+          await tester.ensureVisible(find.text('Welcome back'));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+        });
+      }
+    });
 
     testWidgets("opens on step 1 with today's Mysteries named", (tester) async {
       await pumpScreen(tester, DateTime(2026, 10, 18)); // a Sunday

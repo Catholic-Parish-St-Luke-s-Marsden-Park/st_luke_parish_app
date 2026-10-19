@@ -57,7 +57,10 @@ class RosaryScreen extends StatelessWidget {
               ),
             ),
           ),
-          HowToPrayRosaryCard(mysteries: todaysSet ?? rosaryMysterySets.first),
+          HowToPrayRosaryCard(
+            mysteries: todaysSet ?? rosaryMysterySets.first,
+            today: today,
+          ),
           const LitanyCard(),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
