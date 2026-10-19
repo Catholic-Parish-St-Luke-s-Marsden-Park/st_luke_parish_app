@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/features/parish/presentation/widgets/about_st_lukes_section.dart';
 import 'package:st_luke_parish_app/app/shell/app_shell.dart';
 import 'package:st_luke_parish_app/app/shell/bottom_nav.dart';
 import 'package:st_luke_parish_app/app/shell/nav_index_provider.dart';
@@ -312,6 +313,32 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets("the header shows the St Luke's emblem beside the name", (
+      tester,
+    ) async {
+      await _pumpShell(tester);
+      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await tester.pumpAndSettle();
+
+      final emblem = find.descendant(
+        of: find.byType(Drawer),
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is Image &&
+              w.image is AssetImage &&
+              (w.image as AssetImage).assetName ==
+                  AboutStLukesSection.emblemAsset,
+        ),
+      );
+      expect(emblem, findsOneWidget);
+      final name = find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text("St Luke's Parish"),
+      );
+      expect(name, findsOneWidget);
+      expect(tester.getCenter(emblem).dx, lessThan(tester.getTopLeft(name).dx));
     });
 
     testWidgets('tapping Resources navigates to the Resources screen', (

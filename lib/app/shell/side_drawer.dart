@@ -8,6 +8,7 @@ import '../../features/masses/data/config/divine_mercy_config.dart';
 import '../../features/masses/presentation/screens/divine_mercy_screen.dart';
 import '../../features/masses/presentation/screens/rosary_screen.dart';
 import '../../features/masses/presentation/widgets/rosary_icon.dart';
+import '../../features/parish/presentation/widgets/about_st_lukes_section.dart';
 import '../../features/resources/data/config/static_resources_config.dart';
 import '../../features/resources/domain/entities/resource_link.dart';
 import '../../features/resources/presentation/screens/resources_screen.dart';
@@ -65,16 +66,35 @@ class SideDrawer extends ConsumerWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: const BoxDecoration(gradient: AppColors.heroGradient),
-              child: const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "St Luke's Parish",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+              child: Row(
+                children: [
+                  // The round part of the St Luke's logo, on white so its
+                  // blue ring stands out from the navy (parish request,
+                  // 2026-10-19).
+                  ExcludeSemantics(
+                    child: Container(
+                      width: 56,
+                      height: 56,
+                      padding: const EdgeInsets.all(5),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Image.asset(AboutStLukesSection.emblemAsset),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Text(
+                      "St Luke's Parish",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const Padding(
