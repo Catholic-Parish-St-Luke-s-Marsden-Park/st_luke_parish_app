@@ -508,7 +508,7 @@ class _StepButtons extends StatelessWidget {
 
 /// Today's Mystery for the current decade. In [full] (as the Mystery is
 /// announced) its picture, label and title, Scripture and fruit; otherwise
-/// just the label, title and fruit.
+/// a small picture with the label, title and fruit.
 class _MysteryPanel extends StatelessWidget {
   const _MysteryPanel({
     required this.mystery,
@@ -536,20 +536,19 @@ class _MysteryPanel extends StatelessWidget {
         children: [
           Row(
             children: [
-              if (full) ...[
-                ExcludeSemantics(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.asset(
-                      mystery.imageAsset,
-                      width: 96,
-                      height: 104,
-                      fit: BoxFit.cover,
-                    ),
+              // Smaller on the Hail Marys, where the Scripture is left out.
+              ExcludeSemantics(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(full ? 10 : 8),
+                  child: Image.asset(
+                    mystery.imageAsset,
+                    width: full ? 96 : 56,
+                    height: full ? 104 : 60,
+                    fit: BoxFit.cover,
                   ),
                 ),
-                const SizedBox(width: 12),
-              ],
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

@@ -403,17 +403,19 @@ void main() {
       expect(find.text(agony.verse), findsOneWidget);
       expect(find.text(agony.reference), findsOneWidget);
       expect(stepperImage(agony.imageAsset), findsOneWidget);
+      expect(tester.getSize(stepperImage(agony.imageAsset)).width, 96);
 
       await next(tester);
       expect(find.text('Hail Mary 1 of 10'), findsOneWidget);
-      // The Hail Marys keep just the Mystery and its fruit.
+      // The Hail Marys keep just the Mystery and its fruit,
       expect(find.text('1ST SORROWFUL MYSTERY (1ST DECADE)'), findsOneWidget);
       expect(
         find.textContaining(agony.fruit, findRichText: true),
         findsWidgets,
       );
       expect(find.text(agony.verse), findsNothing);
-      expect(stepperImage(agony.imageAsset), findsNothing);
+      // with a smaller picture.
+      expect(tester.getSize(stepperImage(agony.imageAsset)).width, 56);
       await next(tester, 9);
       expect(find.text('Hail Mary 10 of 10'), findsOneWidget);
 
