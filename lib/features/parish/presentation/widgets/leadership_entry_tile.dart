@@ -74,7 +74,7 @@ class LeadershipEntryTile extends ConsumerWidget {
 }
 
 /// The Pope's and Bishop's rows: photo, name and role, pulling down to a
-/// short introduction, a website button and the photo credit.
+/// short introduction and a website button.
 class _PullDownEntry extends ConsumerWidget {
   const _PullDownEntry({required this.entry});
 
@@ -82,7 +82,6 @@ class _PullDownEntry extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final textTheme = Theme.of(context).textTheme;
     final linkUrl = entry.linkUrl;
 
     return Material(
@@ -136,10 +135,6 @@ class _PullDownEntry extends ConsumerWidget {
                 icon: const Icon(Icons.open_in_new_rounded),
                 label: Text(entry.linkLabel ?? 'Visit website'),
               ),
-            ],
-            if (entry.photoCredit case final credit?) ...[
-              const SizedBox(height: 8),
-              Text(credit, style: textTheme.bodySmall),
             ],
           ],
         ),
