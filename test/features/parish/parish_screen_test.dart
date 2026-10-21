@@ -149,7 +149,6 @@ void main() {
       expect(entry.name, 'Pope Leo XIV');
       expect(entry.assetPath, startsWith('assets/images/leadership/'));
       expect(entry.linkUrl, 'https://www.vatican.va');
-      expect(entry.photoCredit, contains('CC BY-SA 4.0'));
     });
 
     testWidgets('the Pope Leo XIV row pulls down to a short introduction and '
@@ -167,7 +166,8 @@ void main() {
       // Opening the row doesn't leave the app.
       expect(fakeLauncher.launchedUrls, isEmpty);
       expect(find.text(entry.about!), findsOneWidget);
-      expect(find.text(entry.photoCredit!), findsOneWidget);
+      // Photo credits were removed at the parish's request (2026-10-21).
+      expect(find.textContaining('CC BY-SA'), findsNothing);
 
       final button = find.text('Visit the Vatican website');
       await tester.ensureVisible(button);
@@ -207,7 +207,6 @@ void main() {
       expect(entry.role, contains('Bishop of Parramatta'));
       expect(entry.assetPath, startsWith('assets/images/leadership/'));
       expect(entry.linkUrl, 'https://parracatholic.org');
-      expect(entry.photoCredit, contains('CC BY-SA 4.0'));
     });
 
     testWidgets('the Bishop Vincent Long row pulls down to a short '
@@ -224,6 +223,7 @@ void main() {
 
       expect(fakeLauncher.launchedUrls, isEmpty);
       expect(find.text(entry.about!), findsOneWidget);
+      expect(find.textContaining('CC BY-SA'), findsNothing);
 
       final button = find.text('Visit the Diocese of Parramatta');
       await tester.ensureVisible(button);
@@ -261,8 +261,6 @@ void main() {
         section.entries[1].linkUrl,
         'mailto:marsdenpark@parracatholic.org',
       );
-      // The parish's own photos need no credit line.
-      expect(section.entries.map((e) => e.photoCredit), everyElement(isNull));
     });
 
     for (final (name, label, url) in [

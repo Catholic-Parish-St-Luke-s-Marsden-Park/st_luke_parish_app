@@ -31,7 +31,6 @@ const List<ChurchLeadershipSection> churchLeadershipSections = [
             'continues the mission entrusted to St Peter, strengthening '
             'Catholics throughout the world in faith and leading the Church '
             'in the way of Christ.',
-        photoCredit: 'Photo: Edgar Beltrán, The Pillar · CC BY-SA 4.0',
       ),
     ],
   ),
@@ -55,7 +54,6 @@ const List<ChurchLeadershipSection> churchLeadershipSections = [
             'others. As our Bishop, he leads the Diocese of Parramatta and '
             'accompanies its diverse communities in living and sharing the '
             'Gospel.',
-        photoCredit: 'Photo: BaBaBa91 · CC BY-SA 4.0',
       ),
     ],
   ),
