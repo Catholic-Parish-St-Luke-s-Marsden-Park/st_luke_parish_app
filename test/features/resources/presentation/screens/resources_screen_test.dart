@@ -84,7 +84,7 @@ void main() {
     await pumpResources(tester);
 
     expect(find.widgetWithText(AppBar, 'Resources'), findsOneWidget);
-    const groups = ['Universal & National Church', 'Scripture & Readings'];
+    const groups = ['Universal & National Church', 'Scripture & Mass Readings'];
     // Parish Resources is gone: Bulletins, Prayer Requests and Donate have
     // their own tabs and menu item (2026-10-22).
     expect(find.text('Parish Resources'), findsNothing);
@@ -98,7 +98,7 @@ void main() {
     expect(resourceGroups.map((g) => g.title), groups);
     // Renamed from "Bible & Liturgy", with no caption under it.
     expect(find.text('Bible & Liturgy'), findsNothing);
-    expect(find.text('SCRIPTURE & READINGS'), findsNothing);
+    expect(find.text('SCRIPTURE & MASS READINGS'), findsNothing);
     final tops = [
       for (final title in groups) tester.getTopLeft(find.text(title)).dy,
     ];
@@ -161,10 +161,10 @@ void main() {
     }
   });
 
-  test('Scripture & Readings: Bible (Bible Gateway), then Daily Mass '
+  test('Scripture & Mass Readings: Bible (Bible Gateway), then Daily Mass '
       'Readings (USCCB); no Universalis', () {
     final group = resourceGroups.singleWhere(
-      (g) => g.title == 'Scripture & Readings',
+      (g) => g.title == 'Scripture & Mass Readings',
     );
     expect(
       [

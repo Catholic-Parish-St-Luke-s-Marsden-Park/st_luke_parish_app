@@ -26,8 +26,9 @@ const List<ResourceGroup> resourceGroups = [
     ],
   ),
   ResourceGroup(
-    // Was "Bible & Liturgy" (parish request, 2026-10-17).
-    title: 'Scripture & Readings',
+    // Was "Bible & Liturgy" (parish request, 2026-10-17), then "Scripture &
+    // Readings" (2026-10-22).
+    title: 'Scripture & Mass Readings',
     links: [
       // Parish request, 2026-10-16: the USCCB link is now the daily
       // readings (replacing Universalis), plus Bible Gateway.
