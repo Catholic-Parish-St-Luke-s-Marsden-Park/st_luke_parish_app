@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
+import '../../../../shared/widgets/parish_name_lockup.dart';
 
-/// Hero banner for the Parish tab: headline + subtext only, no eyebrow
-/// label (REQ-F02-002) and no old "Australia's newest catholic parish"
-/// copy.
+/// Hero banner for the Parish tab: the parish name set out as in the side
+/// menu header (parish request, 2026-10-22) + subtext, no eyebrow label
+/// (REQ-F02-002) and no old "Australia's newest catholic parish" copy.
 class ParishHeroBanner extends StatelessWidget {
   const ParishHeroBanner({super.key});
 
@@ -23,12 +23,11 @@ class ParishHeroBanner extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "St Luke's Catholic Parish\nMarsden Park",
-            style: AppTypography.display(
-              fontSize: 22,
-              height: 1.25,
-              color: Colors.white,
+          Semantics(
+            header: true,
+            label: "St Luke's Catholic Parish, Marsden Park",
+            child: const ExcludeSemantics(
+              child: ParishNameLockup(nameSize: 22),
             ),
           ),
           const SizedBox(height: 10),

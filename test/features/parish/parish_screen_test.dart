@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/shared/widgets/parish_name_lockup.dart';
 import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
 import 'package:st_luke_parish_app/features/parish/data/config/church_leadership_config.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/providers/parish_documents_provider.dart';
@@ -80,6 +81,56 @@ void main() {
   );
 
   group('REQ-F02-002/003: hero copy', () {
+    testWidgets("sets out the parish name as in the side menu: St Luke's "
+        'Catholic Parish, a gold rule, then MARSDEN PARK', (tester) async {
+      await pumpParishScreen(tester, fakeLauncher: _FakeUrlLauncherService());
+
+      Finder inBanner(Finder f) =>
+          find.descendant(of: find.byType(ParishHeroBanner), matching: f);
+      expect(inBanner(find.byType(ParishNameLockup)), findsOneWidget);
+      final name = inBanner(find.text(ParishNameLockup.name));
+      final place = inBanner(find.text(ParishNameLockup.place));
+      expect(name, findsOneWidget);
+      expect(place, findsOneWidget);
+      expect(
+        tester.getTopLeft(place).dy,
+        greaterThan(tester.getBottomLeft(name).dy),
+      );
+      // Larger than in the side menu.
+      expect(tester.widget<Text>(name).style!.fontSize, 22);
+      // Read as one heading by screen readers.
+      expect(
+        inBanner(
+          find.byWidgetPredicate(
+            (w) =>
+                w is Semantics &&
+                w.properties.header == true &&
+                w.properties.label == "St Luke's Catholic Parish, Marsden Park",
+          ),
+        ),
+        findsOneWidget,
+      );
+      // The old two-line title has gone.
+      expect(
+        find.text("St Luke's Catholic Parish\nMarsden Park"),
+        findsNothing,
+      );
+    });
+
+    for (final scale in const [1.0, 2.0]) {
+      testWidgets('the banner fits on a small phone at text x$scale', (
+        tester,
+      ) async {
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        await pumpParishScreen(tester, fakeLauncher: _FakeUrlLauncherService());
+        tester.view.physicalSize = const Size(360, 690);
+        await tester.pumpAndSettle();
+        expect(find.byType(ParishNameLockup), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+
     testWidgets('does not contain the old eyebrow text in any case variant', (
       tester,
     ) async {

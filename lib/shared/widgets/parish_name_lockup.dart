@@ -5,22 +5,25 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_typography.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_typography.dart';
 
-/// "St Luke's Catholic Parish" over a gold rule and MARSDEN PARK, for the
-/// side menu header (parish request, 2026-10-22). MARSDEN PARK is spaced
-/// out so its first and last letters line up exactly with the name's, as on
-/// the parish logo, and the two lines shrink together if large system text
-/// would not otherwise fit.
-class DrawerParishName extends StatefulWidget {
-  const DrawerParishName({super.key});
+/// "St Luke's Catholic Parish" over a gold rule and MARSDEN PARK, in white
+/// for the navy side menu header and Parish tab banner (parish requests,
+/// 2026-10-22). MARSDEN PARK is spaced out so its first and last letters
+/// line up exactly with the name's, as on the parish logo, and the two lines
+/// shrink together if large system text would not otherwise fit.
+class ParishNameLockup extends StatefulWidget {
+  const ParishNameLockup({super.key, this.nameSize = 17});
+
+  /// The font size of the name; MARSDEN PARK and the rule follow it.
+  final double nameSize;
 
   static const name = "St Luke's Catholic Parish";
   static const place = 'MARSDEN PARK';
 
   @override
-  State<DrawerParishName> createState() => _DrawerParishNameState();
+  State<ParishNameLockup> createState() => _ParishNameLockupState();
 }
 
 /// Where a line's ink (the visible letters) starts and ends, measured from
@@ -34,17 +37,22 @@ class _Ink {
   final double right;
 }
 
-class _DrawerParishNameState extends State<DrawerParishName> {
-  static final _nameStyle = AppTypography.display(
-    fontSize: 17,
+class _ParishNameLockupState extends State<ParishNameLockup> {
+  /// MARSDEN PARK's size and the rule's spacing, as fractions of the name's
+  /// size (12 and 6 against 17 in the side menu).
+  static const _placeRatio = 12 / 17;
+  static const _ruleGapRatio = 6 / 17;
+
+  TextStyle get _nameStyle => AppTypography.display(
+    fontSize: widget.nameSize,
     fontWeight: FontWeight.w600,
     color: Colors.white,
     height: 1.15,
   );
 
-  static const _placeStyle = TextStyle(
+  TextStyle get _placeStyle => TextStyle(
     color: Colors.white,
-    fontSize: 12,
+    fontSize: widget.nameSize * _placeRatio,
     fontWeight: FontWeight.w600,
   );
 
@@ -132,7 +140,7 @@ class _DrawerParishNameState extends State<DrawerParishName> {
       // The lines then line up by their text boxes instead, which is close.
       developer.log(
         'Could not measure the menu header letters',
-        name: 'drawer_parish_name',
+        name: 'parish_name_lockup',
         error: error,
         stackTrace: stackTrace,
       );
@@ -152,8 +160,8 @@ class _DrawerParishNameState extends State<DrawerParishName> {
     final nameStyle = base.merge(_nameStyle);
     final placeStyle = base.merge(_placeStyle).copyWith(letterSpacing: 0);
 
-    final namePainter = _painter(DrawerParishName.name, nameStyle, scaler);
-    final placePainter = _painter(DrawerParishName.place, placeStyle, scaler);
+    final namePainter = _painter(ParishNameLockup.name, nameStyle, scaler);
+    final placePainter = _painter(ParishNameLockup.place, placeStyle, scaler);
     final nameWidth = namePainter.width;
     final placeWidth = placePainter.width;
 
@@ -174,7 +182,7 @@ class _DrawerParishNameState extends State<DrawerParishName> {
     // goes in the gaps between letters (letter spacing is not enlarged by
     // the system text size), and the line is nudged so the M starts where
     // the S does.
-    final gaps = DrawerParishName.place.length - 1;
+    final gaps = ParishNameLockup.place.length - 1;
     final nameSpan = nameInk.right - nameInk.left;
     final placeSpan = placeInk.right - placeInk.left;
     final spacing = ((nameSpan - placeSpan) / gaps).clamp(0.0, double.infinity);
@@ -191,7 +199,7 @@ class _DrawerParishNameState extends State<DrawerParishName> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              DrawerParishName.name,
+              ParishNameLockup.name,
               maxLines: 1,
               softWrap: false,
               style: nameStyle,
@@ -200,7 +208,11 @@ class _DrawerParishNameState extends State<DrawerParishName> {
             Container(
               height: 1.5,
               width: nameSpan,
-              margin: EdgeInsets.only(left: nameInk.left, top: 6, bottom: 6),
+              margin: EdgeInsets.only(
+                left: nameInk.left,
+                top: widget.nameSize * _ruleGapRatio,
+                bottom: widget.nameSize * _ruleGapRatio,
+              ),
               color: AppColors.gold,
             ),
             // Half a gap of letter spacing also follows the last letter;
@@ -212,7 +224,7 @@ class _DrawerParishNameState extends State<DrawerParishName> {
                 maxWidth: double.infinity,
                 fit: OverflowBoxFit.deferToChild,
                 child: Text(
-                  DrawerParishName.place,
+                  ParishNameLockup.place,
                   maxLines: 1,
                   softWrap: false,
                   style: placeStyle.copyWith(letterSpacing: spacing),
