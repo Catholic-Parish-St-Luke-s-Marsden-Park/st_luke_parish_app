@@ -334,18 +334,11 @@ void main() {
       expect(emblem, findsOneWidget);
       final name = find.descendant(
         of: find.byType(Drawer),
-        matching: find.text("St Luke's"),
+        matching: find.text("St Luke's Catholic Parish"),
       );
       expect(name, findsOneWidget);
       expect(tester.getCenter(emblem).dx, lessThan(tester.getTopLeft(name).dx));
-      // CATHOLIC PARISH and MARSDEN PARK beneath, as on the parish logo.
-      expect(
-        find.descendant(
-          of: find.byType(Drawer),
-          matching: find.text('CATHOLIC PARISH'),
-        ),
-        findsOneWidget,
-      );
+      // MARSDEN PARK beneath, as on the parish logo; two lines in all.
       final place = find.descendant(
         of: find.byType(Drawer),
         matching: find.text('MARSDEN PARK'),
