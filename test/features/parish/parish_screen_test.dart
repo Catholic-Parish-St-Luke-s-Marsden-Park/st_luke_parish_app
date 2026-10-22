@@ -97,7 +97,7 @@ void main() {
         greaterThan(tester.getBottomLeft(name).dy),
       );
       // Larger than in the side menu.
-      expect(tester.widget<Text>(name).style!.fontSize, 20);
+      expect(tester.widget<Text>(name).style!.fontSize, 22);
       // Read as one heading by screen readers.
       expect(
         inBanner(
