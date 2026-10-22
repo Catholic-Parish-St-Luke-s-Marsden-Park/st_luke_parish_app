@@ -27,10 +27,10 @@ class ParishHeroBanner extends StatelessWidget {
             header: true,
             label: "St Luke's Catholic Parish, Marsden Park",
             child: const ExcludeSemantics(
-              child: ParishNameLockup(nameSize: 24),
+              child: ParishNameLockup(nameSize: 20),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           Text(
             subtitle,
             style: const TextStyle(
