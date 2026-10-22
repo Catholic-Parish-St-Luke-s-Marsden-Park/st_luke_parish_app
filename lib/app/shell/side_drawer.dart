@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/constants/external_links.dart';
-import '../../core/services/url_launcher_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../features/masses/data/config/divine_mercy_config.dart';
+import '../../features/masses/presentation/screens/divine_mercy_screen.dart';
+import '../../features/masses/presentation/screens/rosary_screen.dart';
+import '../../features/masses/presentation/widgets/rosary_icon.dart';
+import '../../features/parish/presentation/widgets/about_st_lukes_section.dart';
 import '../../features/resources/data/config/static_resources_config.dart';
 import '../../features/resources/domain/entities/resource_link.dart';
 import '../../features/resources/presentation/screens/resources_screen.dart';
 import 'nav_index_provider.dart';
+import 'widgets/drawer_parish_name.dart';
 
-/// Side drawer chrome hosting the 3 secondary destinations: the Resources
-/// and Faith Formation pages, and Prayer Request,
+/// Side drawer chrome hosting the 5 secondary destinations: the Resources,
+/// Faith Formation, The Rosary and Divine Mercy Chaplet pages, and Prayer
+/// Request,
 /// which opens the parish's prayer-request form in the browser (the same
 /// page as the News tab's button).
 class SideDrawer extends ConsumerWidget {
@@ -53,23 +58,42 @@ class SideDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Drawer(
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        // Scrolls, so every entry can be reached with large system text.
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
               decoration: const BoxDecoration(gradient: AppColors.heroGradient),
-              child: const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "St Luke's Parish",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+              child: Row(
+                children: [
+                  // The round part of the St Luke's logo, on white so its
+                  // blue ring stands out from the navy (parish request,
+                  // 2026-10-19).
+                  ExcludeSemantics(
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Image.asset(AboutStLukesSection.emblemAsset),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  // The parish name as on the parish logo (parish
+                  // request, 2026-10-22).
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      label: "St Luke's Catholic Parish, Marsden Park",
+                      child: const ExcludeSemantics(child: DrawerParishName()),
+                    ),
+                  ),
+                ],
               ),
             ),
             const Padding(
@@ -105,18 +129,44 @@ class SideDrawer extends ConsumerWidget {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.favorite_border_rounded),
-              title: const Text('Prayer Request'),
-              trailing: const ExcludeSemantics(
-                child: Icon(Icons.open_in_new_rounded, size: 18),
+              leading: const ExcludeSemantics(
+                child: RosaryIcon(color: AppColors.textSecondary),
               ),
+              title: const Text('The Rosary'),
               onTap: () {
-                Navigator.of(context).pop();
-                ref
-                    .read(urlLauncherServiceProvider)
-                    .launchExternal(ExternalLinks.prayerRequests);
+                final navigator = Navigator.of(context);
+                Scaffold.maybeOf(context)?.closeDrawer();
+                navigator.push(
+                  MaterialPageRoute(builder: (_) => const RosaryScreen()),
+                );
               },
             ),
+            ListTile(
+              // A small round crop of the Divine Mercy image itself: the face
+              // and the rays from the Heart.
+              leading: ExcludeSemantics(
+                child: ClipOval(
+                  child: Image.asset(
+                    divineMercyImage,
+                    // The standard icon size, so its label lines up.
+                    width: 24,
+                    height: 24,
+                    fit: BoxFit.cover,
+                    alignment: const Alignment(0, -0.6),
+                  ),
+                ),
+              ),
+              title: const Text('Divine Mercy Chaplet'),
+              onTap: () {
+                final navigator = Navigator.of(context);
+                Scaffold.maybeOf(context)?.closeDrawer();
+                navigator.push(
+                  MaterialPageRoute(builder: (_) => const DivineMercyScreen()),
+                );
+              },
+            ),
+            // No Prayer Request entry: it is on the News tab's "Submit a
+            // Prayer Request" section (parish request, 2026-10-22).
           ],
         ),
       ),

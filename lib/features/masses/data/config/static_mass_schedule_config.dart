@@ -244,6 +244,7 @@ const List<ParishActivity> regularActivities = [
       // 2026-10-16), linked directly rather than via the Google share link.
       url: 'https://www.marysrosarychain.org/prayers/FullRosaryCard.pdf',
     ),
+    showsRosaryMysteries: true,
   ),
 ];
 

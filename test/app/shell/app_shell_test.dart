@@ -3,11 +3,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/app/shell/widgets/drawer_parish_name.dart';
+import 'package:st_luke_parish_app/features/parish/presentation/widgets/about_st_lukes_section.dart';
 import 'package:st_luke_parish_app/app/shell/app_shell.dart';
 import 'package:st_luke_parish_app/app/shell/bottom_nav.dart';
 import 'package:st_luke_parish_app/app/shell/nav_index_provider.dart';
 import 'package:st_luke_parish_app/app/shell/widgets/pulsing_nav_icon.dart';
-import 'package:st_luke_parish_app/core/constants/external_links.dart';
 import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
 import 'package:st_luke_parish_app/core/theme/app_colors.dart';
 import 'package:st_luke_parish_app/core/theme/app_theme.dart';
@@ -66,6 +67,11 @@ Future<_FakeUrlLauncher> _pumpShell(
   await tester.pumpAndSettle();
   return launcher;
 }
+
+/// How much the menu header is shrunk to fit (1 when it is not).
+double _drawerScale(WidgetTester tester, Finder name) =>
+    (tester.getTopRight(name).dx - tester.getTopLeft(name).dx) /
+    tester.renderObject<RenderBox>(name).size.width;
 
 void main() {
   group('REQ-F01-002: bottom navigation', () {
@@ -253,8 +259,10 @@ void main() {
   });
 
   group('REQ-F01-003: side drawer', () {
-    testWidgets('opens and shows exactly 3 entries: Resources, Faith '
-        'Formation and Prayer Request', (tester) async {
+    testWidgets('opens and shows exactly 4 entries: Resources, Faith '
+        'Formation, The Rosary and Divine Mercy Chaplet (no Prayer Request)', (
+      tester,
+    ) async {
       await _pumpShell(tester);
 
       final scaffoldState = tester.state<ScaffoldState>(
@@ -273,7 +281,21 @@ void main() {
           matching: find.byType(ListTile),
         ),
       );
-      expect(listTiles.length, 3);
+      expect(listTiles.length, 4);
+      expect(
+        find.descendant(
+          of: find.byType(Drawer),
+          matching: find.text('Divine Mercy Chaplet'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(Drawer),
+          matching: find.text('The Rosary'),
+        ),
+        findsOneWidget,
+      );
       expect(
         find.descendant(
           of: find.byType(Drawer),
@@ -294,9 +316,96 @@ void main() {
           of: find.byType(Drawer),
           matching: find.text('Prayer Request'),
         ),
+        findsNothing,
+      );
+    });
+
+    testWidgets("the header shows the St Luke's emblem beside the name", (
+      tester,
+    ) async {
+      await _pumpShell(tester);
+      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await tester.pumpAndSettle();
+
+      final emblem = find.descendant(
+        of: find.byType(Drawer),
+        matching: find.byWidgetPredicate(
+          (w) =>
+              w is Image &&
+              w.image is AssetImage &&
+              (w.image as AssetImage).assetName ==
+                  AboutStLukesSection.emblemAsset,
+        ),
+      );
+      expect(emblem, findsOneWidget);
+      final name = find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text("St Luke's Catholic Parish"),
+      );
+      expect(name, findsOneWidget);
+      expect(tester.getCenter(emblem).dx, lessThan(tester.getTopLeft(name).dx));
+      // MARSDEN PARK beneath, as on the parish logo; two lines in all.
+      final place = find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text('MARSDEN PARK'),
+      );
+      expect(place, findsOneWidget);
+      expect(
+        tester.getTopLeft(place).dy,
+        greaterThan(tester.getBottomLeft(name).dy),
+      );
+      expect(
+        find.bySemanticsLabel("St Luke's Catholic Parish, Marsden Park"),
         findsOneWidget,
       );
     });
+
+    for (final scale in const [1.0, 2.0]) {
+      testWidgets('MARSDEN PARK is spaced to end with the name at text '
+          'x$scale', (tester) async {
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        await _pumpShell(tester);
+        tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+        await tester.pumpAndSettle();
+
+        final name = find.text(DrawerParishName.name);
+        final place = find.text(DrawerParishName.place);
+        final spacing = tester.widget<Text>(place).style!.letterSpacing!;
+        expect(spacing, greaterThan(0));
+        // Letter spacing sits half before and half after each letter, and
+        // the test font's letters fill their boxes, so the M's ink starts
+        // half a gap in from the line's box and the K's ends half a gap
+        // before it. Both should meet the name's edges.
+        final half = spacing / 2 * _drawerScale(tester, name);
+        expect(
+          tester.getTopLeft(place).dx + half,
+          moreOrLessEquals(tester.getTopLeft(name).dx, epsilon: 0.5),
+        );
+        expect(
+          tester.getTopRight(place).dx - half,
+          moreOrLessEquals(tester.getTopRight(name).dx, epsilon: 0.5),
+        );
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    for (final scale in const [1.0, 2.0]) {
+      testWidgets('the header fits on a small phone at text x$scale', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(360, 690);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        await _pumpShell(tester);
+        tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+        await tester.pumpAndSettle();
+        expect(find.text('MARSDEN PARK'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
 
     testWidgets('tapping Resources navigates to the Resources screen', (
       tester,
@@ -361,6 +470,24 @@ void main() {
       expect(find.widgetWithText(AppBar, 'Resources'), findsNothing);
     });
 
+    testWidgets('tapping The Rosary opens The Rosary page', (tester) async {
+      await _pumpShell(tester);
+
+      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(Drawer),
+          matching: find.text('The Rosary'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(AppBar, 'The Rosary'), findsOneWidget);
+      expect(find.text('Pray the Rosary'), findsOneWidget);
+      expect(find.byType(Drawer), findsNothing);
+    });
+
     testWidgets('tapping Faith Formation opens its own page of links', (
       tester,
     ) async {
@@ -375,19 +502,6 @@ void main() {
       expect(find.text('FORMED'), findsOneWidget);
       expect(find.text('On Our Knees'), findsOneWidget);
       expect(find.text('Vatican News'), findsNothing);
-    });
-
-    testWidgets('tapping Prayer Request opens the parish prayer-request page '
-        'in the browser', (tester) async {
-      final launcher = await _pumpShell(tester);
-
-      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Prayer Request'));
-      await tester.pumpAndSettle();
-
-      expect(launcher.launchedUrls, [ExternalLinks.prayerRequests]);
-      expect(find.byType(Drawer), findsNothing);
     });
   });
 
