@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/constants/external_links.dart';
-import '../../core/services/url_launcher_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../features/masses/data/config/divine_mercy_config.dart';
@@ -210,19 +208,8 @@ class SideDrawer extends ConsumerWidget {
                 );
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.favorite_border_rounded),
-              title: const Text('Prayer Request'),
-              trailing: const ExcludeSemantics(
-                child: Icon(Icons.open_in_new_rounded, size: 18),
-              ),
-              onTap: () {
-                Navigator.of(context).pop();
-                ref
-                    .read(urlLauncherServiceProvider)
-                    .launchExternal(ExternalLinks.prayerRequests);
-              },
-            ),
+            // No Prayer Request entry: it is on the News tab's "Submit a
+            // Prayer Request" section (parish request, 2026-10-22).
           ],
         ),
       ),

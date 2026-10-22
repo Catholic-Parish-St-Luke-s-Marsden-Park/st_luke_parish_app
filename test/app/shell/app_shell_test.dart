@@ -8,7 +8,6 @@ import 'package:st_luke_parish_app/app/shell/app_shell.dart';
 import 'package:st_luke_parish_app/app/shell/bottom_nav.dart';
 import 'package:st_luke_parish_app/app/shell/nav_index_provider.dart';
 import 'package:st_luke_parish_app/app/shell/widgets/pulsing_nav_icon.dart';
-import 'package:st_luke_parish_app/core/constants/external_links.dart';
 import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
 import 'package:st_luke_parish_app/core/theme/app_colors.dart';
 import 'package:st_luke_parish_app/core/theme/app_theme.dart';
@@ -254,8 +253,8 @@ void main() {
   });
 
   group('REQ-F01-003: side drawer', () {
-    testWidgets('opens and shows exactly 5 entries: Resources, Faith '
-        'Formation, The Rosary, Divine Mercy Chaplet and Prayer Request', (
+    testWidgets('opens and shows exactly 4 entries: Resources, Faith '
+        'Formation, The Rosary and Divine Mercy Chaplet (no Prayer Request)', (
       tester,
     ) async {
       await _pumpShell(tester);
@@ -276,7 +275,7 @@ void main() {
           matching: find.byType(ListTile),
         ),
       );
-      expect(listTiles.length, 5);
+      expect(listTiles.length, 4);
       expect(
         find.descendant(
           of: find.byType(Drawer),
@@ -311,7 +310,7 @@ void main() {
           of: find.byType(Drawer),
           matching: find.text('Prayer Request'),
         ),
-        findsOneWidget,
+        findsNothing,
       );
     });
 
@@ -474,19 +473,6 @@ void main() {
       expect(find.text('FORMED'), findsOneWidget);
       expect(find.text('On Our Knees'), findsOneWidget);
       expect(find.text('Vatican News'), findsNothing);
-    });
-
-    testWidgets('tapping Prayer Request opens the parish prayer-request page '
-        'in the browser', (tester) async {
-      final launcher = await _pumpShell(tester);
-
-      tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Prayer Request'));
-      await tester.pumpAndSettle();
-
-      expect(launcher.launchedUrls, [ExternalLinks.prayerRequests]);
-      expect(find.byType(Drawer), findsNothing);
     });
   });
 
