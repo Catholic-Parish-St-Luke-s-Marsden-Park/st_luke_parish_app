@@ -373,16 +373,18 @@ void main() {
         final place = find.text(DrawerParishName.place);
         final spacing = tester.widget<Text>(place).style!.letterSpacing!;
         expect(spacing, greaterThan(0));
+        // Letter spacing sits half before and half after each letter, and
+        // the test font's letters fill their boxes, so the M's ink starts
+        // half a gap in from the line's box and the K's ends half a gap
+        // before it. Both should meet the name's edges.
+        final half = spacing / 2 * _drawerScale(tester, name);
         expect(
-          tester.getTopLeft(place).dx,
+          tester.getTopLeft(place).dx + half,
           moreOrLessEquals(tester.getTopLeft(name).dx, epsilon: 0.5),
         );
-        // The last letter ends where the name does; letter spacing also
-        // follows the last letter, so allow for that trailing space.
-        final trailing = spacing * _drawerScale(tester, name);
         expect(
-          tester.getTopRight(place).dx - trailing,
-          moreOrLessEquals(tester.getTopRight(name).dx, epsilon: 1.5),
+          tester.getTopRight(place).dx - half,
+          moreOrLessEquals(tester.getTopRight(name).dx, epsilon: 0.5),
         );
         expect(tester.takeException(), isNull);
       });

@@ -178,7 +178,9 @@ class _DrawerParishNameState extends State<DrawerParishName> {
     final nameSpan = nameInk.right - nameInk.left;
     final placeSpan = placeInk.right - placeInk.left;
     final spacing = ((nameSpan - placeSpan) / gaps).clamp(0.0, double.infinity);
-    final shift = nameInk.left - placeInk.left;
+    // Letter spacing is shared out half before and half after each
+    // letter, so the M also moves in by half a gap; take that back.
+    final shift = nameInk.left - placeInk.left - spacing / 2;
 
     return FittedBox(
       fit: BoxFit.scaleDown,
@@ -201,8 +203,8 @@ class _DrawerParishNameState extends State<DrawerParishName> {
               margin: EdgeInsets.only(left: nameInk.left, top: 6, bottom: 6),
               color: AppColors.gold,
             ),
-            // Letter spacing also follows the last letter; let that
-            // trailing space hang past the edge rather than wrap.
+            // Half a gap of letter spacing also follows the last letter;
+            // let it hang past the edge rather than wrap.
             Transform.translate(
               offset: Offset(shift, 0),
               child: OverflowBox(
