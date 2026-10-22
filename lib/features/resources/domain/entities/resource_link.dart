@@ -60,7 +60,7 @@ class ResourceLink {
   final ResourceDestination destination;
 }
 
-/// A group of [ResourceLink]s, e.g. "Universal & Local Church".
+/// A group of [ResourceLink]s, e.g. "Universal & National Church".
 class ResourceGroup {
   const ResourceGroup({this.title, this.subtitle, required this.links});
 

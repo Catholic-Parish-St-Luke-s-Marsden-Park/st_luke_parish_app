@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:st_luke_parish_app/core/services/url_launcher_service.dart';
+import 'package:st_luke_parish_app/features/donate/domain/entities/giving_area.dart';
 import 'package:st_luke_parish_app/features/donate/data/config/donate_config.dart';
 import 'package:st_luke_parish_app/features/donate/presentation/screens/donate_screen.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -120,6 +121,14 @@ void main() {
     expect(
       DonateConfig.givingAreas.last.description,
       contains("first permanent church"),
+    );
+    // Faith Formation names the Sacramental Program just after SRE.
+    final formation = DonateConfig.givingAreas.singleWhere(
+      (a) => a.kind == GivingAreaKind.formation,
+    );
+    expect(
+      formation.description,
+      contains('education (SRE), Sacramental Program, Youth Ministry'),
     );
   });
 
