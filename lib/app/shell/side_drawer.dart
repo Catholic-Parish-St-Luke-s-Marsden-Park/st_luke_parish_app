@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/external_links.dart';
 import '../../core/services/url_launcher_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_typography.dart';
 import '../../features/masses/data/config/divine_mercy_config.dart';
 import '../../features/masses/presentation/screens/divine_mercy_screen.dart';
 import '../../features/masses/presentation/screens/rosary_screen.dart';
@@ -59,8 +60,9 @@ class SideDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Drawer(
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        // Scrolls, so every entry can be reached with large system text.
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
             Container(
               width: double.infinity,
@@ -84,13 +86,49 @@ class SideDrawer extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Expanded(
-                    child: Text(
-                      "St Luke's Parish",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                  // The parish name in the heading font, with "Marsden
+                  // Park" in spaced capitals beneath, as on the parish logo
+                  // (parish request, 2026-10-22).
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      label: "St Luke's Parish, Marsden Park",
+                      child: ExcludeSemantics(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "St Luke's Parish",
+                              style: AppTypography.display(
+                                fontSize: 21,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                                height: 1.15,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.only(top: 5),
+                              decoration: const BoxDecoration(
+                                border: Border(
+                                  top: BorderSide(
+                                    color: AppColors.gold,
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                              child: const Text(
+                                'MARSDEN PARK',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 2.2,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

@@ -339,7 +339,38 @@ void main() {
       );
       expect(name, findsOneWidget);
       expect(tester.getCenter(emblem).dx, lessThan(tester.getTopLeft(name).dx));
+      // "Marsden Park" beneath the name, as on the parish logo.
+      final place = find.descendant(
+        of: find.byType(Drawer),
+        matching: find.text('MARSDEN PARK'),
+      );
+      expect(place, findsOneWidget);
+      expect(
+        tester.getTopLeft(place).dy,
+        greaterThan(tester.getBottomLeft(name).dy),
+      );
+      expect(
+        find.bySemanticsLabel("St Luke's Parish, Marsden Park"),
+        findsOneWidget,
+      );
     });
+
+    for (final scale in const [1.0, 2.0]) {
+      testWidgets('the header fits on a small phone at text x$scale', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(360, 690);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        await _pumpShell(tester);
+        tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+        await tester.pumpAndSettle();
+        expect(find.text('MARSDEN PARK'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
 
     testWidgets('tapping Resources navigates to the Resources screen', (
       tester,
