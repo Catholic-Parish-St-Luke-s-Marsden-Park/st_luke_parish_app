@@ -81,6 +81,13 @@ void main() {
     },
   );
 
+  test('Youth Ministry is for all teens and young adults aged 11–21', () {
+    final youth = regularActivities.singleWhere(
+      (a) => a.kind == ParishActivityKind.youth,
+    );
+    expect(youth.who, 'All teens and young adults aged 11–21');
+  });
+
   group('REQ-F04-002: hero banner copy', () {
     testWidgets('renders the eyebrow and "Mass Times" title, no address '
         'subtitle line', (tester) async {
