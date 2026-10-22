@@ -79,22 +79,26 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('Resources shows its three groups, in order, with every link; '
+  testWidgets('Resources shows its two groups, in order, with every link; '
       'Faith Formation has moved to its own page', (tester) async {
     await pumpResources(tester);
 
     expect(find.widgetWithText(AppBar, 'Resources'), findsOneWidget);
-    const groups = [
-      'Parish Resources',
-      'Universal & Local Church',
-      'Scripture & Readings',
-    ];
+    const groups = ['Universal & Local Church', 'Scripture & Readings'];
+    // Parish Resources is gone: Bulletins, Prayer Requests and Donate have
+    // their own tabs and menu item (2026-10-22).
+    expect(find.text('Parish Resources'), findsNothing);
+    for (final gone in [
+      'Weekly Bulletins',
+      'Prayer Requests',
+      'Donate Online',
+    ]) {
+      expect(find.text(gone), findsNothing, reason: gone);
+    }
     expect(resourceGroups.map((g) => g.title), groups);
     // Renamed from "Bible & Liturgy", with no caption under it.
     expect(find.text('Bible & Liturgy'), findsNothing);
     expect(find.text('SCRIPTURE & READINGS'), findsNothing);
-    // No "St Luke's" caption under Parish Resources (2026-10-17).
-    expect(find.text("ST LUKE'S"), findsNothing);
     final tops = [
       for (final title in groups) tester.getTopLeft(find.text(title)).dy,
     ];
@@ -184,27 +188,6 @@ void main() {
       'https://www.vaticannews.va/en.html',
       'https://bible.usccb.org',
     ]);
-  });
-
-  testWidgets('Prayer Requests opens the parish prayer-request page', (
-    tester,
-  ) async {
-    await pumpResources(tester);
-
-    await tapRow(tester, 'Prayer Requests');
-
-    expect(launcher.launchedUrls, [ExternalLinks.prayerRequests]);
-  });
-
-  testWidgets('Weekly Bulletins and Donate Online switch to the app tabs '
-      'instead of opening the website', (tester) async {
-    await pumpResources(tester);
-
-    await tapRow(tester, 'Weekly Bulletins');
-    await tapRow(tester, 'Donate Online');
-
-    expect(openedTabs, [AppTab.news, AppTab.donate]);
-    expect(launcher.launchedUrls, isEmpty);
   });
 
   testWidgets("Daily Readings & Reflections opens this month's booklet and "
