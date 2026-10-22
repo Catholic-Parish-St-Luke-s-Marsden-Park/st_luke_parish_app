@@ -7,8 +7,9 @@ import '../../domain/entities/resource_link.dart';
 /// its own tab or menu item (parish request, 2026-10-22).
 const List<ResourceGroup> resourceGroups = [
   ResourceGroup(
-    // Renamed and trimmed to two links (parish request, 2026-10-16).
-    title: 'Universal & Local Church',
+    // Renamed and trimmed to two links (parish request, 2026-10-16); "Local"
+    // became "National" (2026-10-22).
+    title: 'Universal & National Church',
     links: [
       ResourceLink(
         title: 'Vatican News',

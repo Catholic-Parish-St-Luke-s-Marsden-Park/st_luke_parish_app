@@ -84,7 +84,7 @@ void main() {
     await pumpResources(tester);
 
     expect(find.widgetWithText(AppBar, 'Resources'), findsOneWidget);
-    const groups = ['Universal & Local Church', 'Scripture & Readings'];
+    const groups = ['Universal & National Church', 'Scripture & Readings'];
     // Parish Resources is gone: Bulletins, Prayer Requests and Donate have
     // their own tabs and menu item (2026-10-22).
     expect(find.text('Parish Resources'), findsNothing);
@@ -139,12 +139,12 @@ void main() {
     },
   );
 
-  testWidgets('"Universal & Local Church" has only Catholic Church '
+  testWidgets('"Universal & National Church" has only Catholic Church '
       'Australia and Vatican News, with no caption', (tester) async {
     await pumpResources(tester);
 
     final group = resourceGroups.singleWhere(
-      (g) => g.title == 'Universal & Local Church',
+      (g) => g.title == 'Universal & National Church',
     );
     expect(group.links.map((l) => l.title), [
       'Vatican News',
