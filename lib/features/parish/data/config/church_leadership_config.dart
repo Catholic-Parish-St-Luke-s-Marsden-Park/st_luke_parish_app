@@ -13,6 +13,10 @@ const List<ChurchLeadershipSection> churchLeadershipSections = [
     title: 'Universal Church',
     entries: [
       // Photo and pull-down added at the parish's request (2026-10-16).
+      // The photo is cropped from the official portrait (©Vatican Media),
+      // free to reproduce for institutional purposes:
+      // vatican.va/content/vatican/it/special/habemus-papam/habemus-papam-2025/foto-leone-xiv.html
+      // (parish request, 2026-10-22).
       ChurchLeadershipEntry(
         name: 'Pope Leo XIV',
         role: 'Bishop of Rome',
