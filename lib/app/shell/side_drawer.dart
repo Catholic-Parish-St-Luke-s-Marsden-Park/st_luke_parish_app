@@ -56,6 +56,14 @@ class SideDrawer extends ConsumerWidget {
     );
   }
 
+  /// CATHOLIC PARISH and MARSDEN PARK in the menu header.
+  static const _spaced = TextStyle(
+    color: Colors.white,
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 2.2,
+  );
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Drawer(
@@ -86,45 +94,43 @@ class SideDrawer extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  // The parish name in the heading font, with "Marsden
-                  // Park" in spaced capitals beneath, as on the parish logo
-                  // (parish request, 2026-10-22).
+                  // The parish name set out as on the parish logo: "St
+                  // Luke's" in the heading font, then CATHOLIC PARISH and
+                  // MARSDEN PARK in spaced capitals either side of a gold
+                  // rule (parish request, 2026-10-22).
                   Expanded(
                     child: Semantics(
                       header: true,
-                      label: "St Luke's Parish, Marsden Park",
+                      label: "St Luke's Catholic Parish, Marsden Park",
                       child: ExcludeSemantics(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "St Luke's Parish",
+                              "St Luke's",
                               style: AppTypography.display(
-                                fontSize: 21,
+                                fontSize: 26,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
-                                height: 1.15,
+                                height: 1.1,
                               ),
                             ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.only(top: 5),
-                              decoration: const BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(
+                            const SizedBox(height: 4),
+                            // The rule runs the width of the longer line.
+                            IntrinsicWidth(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const Text('CATHOLIC PARISH', style: _spaced),
+                                  Container(
+                                    height: 1.5,
+                                    margin: const EdgeInsets.symmetric(
+                                      vertical: 5,
+                                    ),
                                     color: AppColors.gold,
-                                    width: 1.5,
                                   ),
-                                ),
-                              ),
-                              child: const Text(
-                                'MARSDEN PARK',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 2.2,
-                                ),
+                                  const Text('MARSDEN PARK', style: _spaced),
+                                ],
                               ),
                             ),
                           ],

@@ -335,11 +335,18 @@ void main() {
       expect(emblem, findsOneWidget);
       final name = find.descendant(
         of: find.byType(Drawer),
-        matching: find.text("St Luke's Parish"),
+        matching: find.text("St Luke's"),
       );
       expect(name, findsOneWidget);
       expect(tester.getCenter(emblem).dx, lessThan(tester.getTopLeft(name).dx));
-      // "Marsden Park" beneath the name, as on the parish logo.
+      // CATHOLIC PARISH and MARSDEN PARK beneath, as on the parish logo.
+      expect(
+        find.descendant(
+          of: find.byType(Drawer),
+          matching: find.text('CATHOLIC PARISH'),
+        ),
+        findsOneWidget,
+      );
       final place = find.descendant(
         of: find.byType(Drawer),
         matching: find.text('MARSDEN PARK'),
@@ -350,7 +357,7 @@ void main() {
         greaterThan(tester.getBottomLeft(name).dy),
       );
       expect(
-        find.bySemanticsLabel("St Luke's Parish, Marsden Park"),
+        find.bySemanticsLabel("St Luke's Catholic Parish, Marsden Park"),
         findsOneWidget,
       );
     });
