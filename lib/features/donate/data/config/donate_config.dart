@@ -57,9 +57,11 @@ abstract final class DonateConfig {
       title: 'Faith Formation & Education',
       kind: GivingAreaKind.formation,
       description:
+          // Sacramental Program added after SRE (parish request,
+          // 2026-10-22).
           "Workbooks, materials, and resources for children's religious "
-          'education (SRE), Youth Ministry, and Adult Faith Formation '
-          '(OCIA).',
+          'education (SRE), Sacramental Program, Youth Ministry, and Adult '
+          'Faith Formation (OCIA).',
     ),
     GivingArea(
       title: 'Capital Improvements (Building Fund)',
