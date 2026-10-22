@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:st_luke_parish_app/app/shell/widgets/drawer_parish_name.dart';
+import 'package:st_luke_parish_app/shared/widgets/parish_name_lockup.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/widgets/about_st_lukes_section.dart';
 import 'package:st_luke_parish_app/app/shell/app_shell.dart';
 import 'package:st_luke_parish_app/app/shell/bottom_nav.dart';
@@ -369,8 +369,10 @@ void main() {
         tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
         await tester.pumpAndSettle();
 
-        final name = find.text(DrawerParishName.name);
-        final place = find.text(DrawerParishName.place);
+        Finder inMenu(Finder f) =>
+            find.descendant(of: find.byType(Drawer), matching: f);
+        final name = inMenu(find.text(ParishNameLockup.name));
+        final place = inMenu(find.text(ParishNameLockup.place));
         final spacing = tester.widget<Text>(place).style!.letterSpacing!;
         expect(spacing, greaterThan(0));
         // Letter spacing sits half before and half after each letter, and
@@ -402,7 +404,13 @@ void main() {
         await _pumpShell(tester);
         tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
         await tester.pumpAndSettle();
-        expect(find.text('MARSDEN PARK'), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byType(Drawer),
+            matching: find.text('MARSDEN PARK'),
+          ),
+          findsOneWidget,
+        );
         expect(tester.takeException(), isNull);
       });
     }

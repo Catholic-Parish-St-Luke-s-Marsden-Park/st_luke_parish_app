@@ -10,8 +10,8 @@ import '../../features/parish/presentation/widgets/about_st_lukes_section.dart';
 import '../../features/resources/data/config/static_resources_config.dart';
 import '../../features/resources/domain/entities/resource_link.dart';
 import '../../features/resources/presentation/screens/resources_screen.dart';
+import '../../shared/widgets/parish_name_lockup.dart';
 import 'nav_index_provider.dart';
-import 'widgets/drawer_parish_name.dart';
 
 /// Side drawer chrome hosting the 5 secondary destinations: the Resources,
 /// Faith Formation, The Rosary and Divine Mercy Chaplet pages, and Prayer
@@ -90,7 +90,7 @@ class SideDrawer extends ConsumerWidget {
                     child: Semantics(
                       header: true,
                       label: "St Luke's Catholic Parish, Marsden Park",
-                      child: const ExcludeSemantics(child: DrawerParishName()),
+                      child: const ExcludeSemantics(child: ParishNameLockup()),
                     ),
                   ),
                 ],
