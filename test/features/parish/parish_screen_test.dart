@@ -609,6 +609,10 @@ void main() {
         NewToMarsdenParkSection.body,
         contains('marsdenpark@parracatholic.org'),
       );
+      expect(
+        NewToMarsdenParkSection.body,
+        contains('Marsden Park, Elara, Melonba, Colebee or surrounds'),
+      );
 
       double top(Finder finder) => tester.getTopLeft(finder).dy;
       final welcomeY = top(find.text(NewToMarsdenParkSection.title));
