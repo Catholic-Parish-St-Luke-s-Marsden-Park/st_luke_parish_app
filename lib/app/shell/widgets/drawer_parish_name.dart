@@ -65,8 +65,13 @@ class _DrawerParishNameState extends State<DrawerParishName> {
   @override
   Widget build(BuildContext context) {
     final scaler = MediaQuery.textScalerOf(context);
-    final nameWidth = _widthOf(DrawerParishName.name, _nameStyle, scaler);
-    final placeWidth = _widthOf(DrawerParishName.place, _placeStyle, scaler);
+    // Measure with exactly the styles the Text widgets will draw with,
+    // including what they take from the surrounding default style.
+    final base = DefaultTextStyle.of(context).style;
+    final nameStyle = base.merge(_nameStyle);
+    final placeStyle = base.merge(_placeStyle).copyWith(letterSpacing: 0);
+    final nameWidth = _widthOf(DrawerParishName.name, nameStyle, scaler);
+    final placeWidth = _widthOf(DrawerParishName.place, placeStyle, scaler);
     // Spread the leftover width over the gaps between letters. (Letter
     // spacing is not enlarged by the system text size, so no scaling.)
     final gaps = DrawerParishName.place.length - 1;
@@ -81,7 +86,12 @@ class _DrawerParishNameState extends State<DrawerParishName> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(DrawerParishName.name, maxLines: 1, style: _nameStyle),
+            Text(
+              DrawerParishName.name,
+              maxLines: 1,
+              softWrap: false,
+              style: nameStyle,
+            ),
             Container(
               height: 1.5,
               margin: const EdgeInsets.symmetric(vertical: 6),
@@ -97,7 +107,7 @@ class _DrawerParishNameState extends State<DrawerParishName> {
                 DrawerParishName.place,
                 maxLines: 1,
                 softWrap: false,
-                style: _placeStyle.copyWith(letterSpacing: spacing),
+                style: placeStyle.copyWith(letterSpacing: spacing),
               ),
             ),
           ],
