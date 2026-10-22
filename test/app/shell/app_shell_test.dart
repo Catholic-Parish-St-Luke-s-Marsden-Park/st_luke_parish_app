@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:st_luke_parish_app/app/shell/widgets/drawer_parish_name.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/widgets/about_st_lukes_section.dart';
 import 'package:st_luke_parish_app/app/shell/app_shell.dart';
 import 'package:st_luke_parish_app/app/shell/bottom_nav.dart';
@@ -66,6 +67,11 @@ Future<_FakeUrlLauncher> _pumpShell(
   await tester.pumpAndSettle();
   return launcher;
 }
+
+/// How much the menu header is shrunk to fit (1 when it is not).
+double _drawerScale(WidgetTester tester, Finder name) =>
+    (tester.getTopRight(name).dx - tester.getTopLeft(name).dx) /
+    tester.renderObject<RenderBox>(name).size.width;
 
 void main() {
   group('REQ-F01-002: bottom navigation', () {
@@ -353,6 +359,34 @@ void main() {
         findsOneWidget,
       );
     });
+
+    for (final scale in const [1.0, 2.0]) {
+      testWidgets('MARSDEN PARK is spaced to end with the name at text '
+          'x$scale', (tester) async {
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        await _pumpShell(tester);
+        tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
+        await tester.pumpAndSettle();
+
+        final name = find.text(DrawerParishName.name);
+        final place = find.text(DrawerParishName.place);
+        final spacing = tester.widget<Text>(place).style!.letterSpacing!;
+        expect(spacing, greaterThan(0));
+        expect(
+          tester.getTopLeft(place).dx,
+          moreOrLessEquals(tester.getTopLeft(name).dx, epsilon: 0.5),
+        );
+        // The last letter ends where the name does; letter spacing also
+        // follows the last letter, so allow for that trailing space.
+        final trailing = spacing * _drawerScale(tester, name);
+        expect(
+          tester.getTopRight(place).dx - trailing,
+          moreOrLessEquals(tester.getTopRight(name).dx, epsilon: 1.5),
+        );
+        expect(tester.takeException(), isNull);
+      });
+    }
 
     for (final scale in const [1.0, 2.0]) {
       testWidgets('the header fits on a small phone at text x$scale', (

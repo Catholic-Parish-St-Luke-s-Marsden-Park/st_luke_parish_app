@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_typography.dart';
 import '../../features/masses/data/config/divine_mercy_config.dart';
 import '../../features/masses/presentation/screens/divine_mercy_screen.dart';
 import '../../features/masses/presentation/screens/rosary_screen.dart';
@@ -12,6 +11,7 @@ import '../../features/resources/data/config/static_resources_config.dart';
 import '../../features/resources/domain/entities/resource_link.dart';
 import '../../features/resources/presentation/screens/resources_screen.dart';
 import 'nav_index_provider.dart';
+import 'widgets/drawer_parish_name.dart';
 
 /// Side drawer chrome hosting the 5 secondary destinations: the Resources,
 /// Faith Formation, The Rosary and Divine Mercy Chaplet pages, and Prayer
@@ -54,14 +54,6 @@ class SideDrawer extends ConsumerWidget {
     );
   }
 
-  /// MARSDEN PARK in the menu header.
-  static const _spaced = TextStyle(
-    color: Colors.white,
-    fontSize: 12,
-    fontWeight: FontWeight.w600,
-    letterSpacing: 2.2,
-  );
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Drawer(
@@ -92,48 +84,13 @@ class SideDrawer extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // The full name on one line in the heading font (shrunk
-                  // only if it would not fit), then MARSDEN PARK in spaced
-                  // capitals under a gold rule, as on the parish logo
-                  // (parish request, 2026-10-22).
+                  // The parish name as on the parish logo (parish
+                  // request, 2026-10-22).
                   Expanded(
                     child: Semantics(
                       header: true,
                       label: "St Luke's Catholic Parish, Marsden Park",
-                      child: ExcludeSemantics(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: AlignmentDirectional.centerStart,
-                              child: Text(
-                                "St Luke's Catholic Parish",
-                                maxLines: 1,
-                                style: AppTypography.display(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                  height: 1.15,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.only(top: 5),
-                              decoration: const BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(
-                                    color: AppColors.gold,
-                                    width: 1.5,
-                                  ),
-                                ),
-                              ),
-                              child: const Text('MARSDEN PARK', style: _spaced),
-                            ),
-                          ],
-                        ),
-                      ),
+                      child: const ExcludeSemantics(child: DrawerParishName()),
                     ),
                   ),
                 ],
