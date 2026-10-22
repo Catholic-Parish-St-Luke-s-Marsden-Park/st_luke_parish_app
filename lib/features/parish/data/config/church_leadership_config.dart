@@ -41,9 +41,10 @@ const List<ChurchLeadershipSection> churchLeadershipSections = [
   ChurchLeadershipSection(
     title: 'Diocese of Parramatta',
     entries: [
-      // The photo is cropped from the Diocese's own album of St Luke's
-      // Feast Mass, 19 October 2025 (flickr.com/photos/parracatholic,
-      // photo 54872763607; parish request, 2026-10-22).
+      // The photo is cropped from the Diocese's own Flickr album "Bishop
+      // Vincent Presents Kim Daniels" (flickr.com/photos/parracatholic,
+      // photo 55588508974), chosen for a clear, front-facing portrait
+      // (parish request, 2026-10-22).
       ChurchLeadershipEntry(
         name: 'Bishop Vincent Long',
         role: 'Bishop of Parramatta',
