@@ -111,7 +111,7 @@ class SideDrawer extends ConsumerWidget {
                                 "St Luke's Catholic Parish",
                                 maxLines: 1,
                                 style: AppTypography.display(
-                                  fontSize: 19,
+                                  fontSize: 17,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                   height: 1.15,
