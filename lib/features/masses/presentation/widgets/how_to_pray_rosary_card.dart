@@ -1,0 +1,667 @@
+import 'dart:async';
+import 'dart:developer' as developer;
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_shapes.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../data/config/rosary_how_to_config.dart';
+import '../../data/config/rosary_mysteries_config.dart';
+import '../../domain/entities/rosary_mystery.dart';
+import '../../domain/entities/rosary_step.dart';
+import '../providers/prayer_progress_provider.dart';
+import 'rosary_diagram.dart';
+
+/// "Pray the Rosary": a pull-down card that walks through the whole
+/// Rosary one bead (one prayer) at a time, lighting each bead as the user
+/// taps Next, with today's Mysteries (from the phone's day)
+/// in their decades, an animated rosary showing which beads each step is
+/// prayed on, and the words of its prayers (parish request, 2026-10-18).
+class HowToPrayRosaryCard extends StatelessWidget {
+  const HowToPrayRosaryCard({
+    super.key,
+    required this.mysteries,
+    required this.today,
+  });
+
+  /// Today's set of Mysteries.
+  final RosaryMysterySet mysteries;
+
+  /// The phone's day, so a Rosary stopped partway continues only that day.
+  final DateTime today;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: AppShapes.cardBorderRadius,
+        boxShadow: AppShapes.cardShadow,
+      ),
+      child: Material(
+        color: AppColors.surfaceWhite,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppShapes.cardBorderRadius,
+          side: const BorderSide(color: AppColors.border),
+        ),
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            border: Border(
+              left: BorderSide(color: AppColors.primaryNavy, width: 8),
+            ),
+          ),
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              // Closed until tapped (parish request, 2026-10-19).
+              initiallyExpanded: false,
+              tilePadding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+              childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+              iconColor: AppColors.gold,
+              collapsedIconColor: AppColors.primaryNavy,
+              // A small picture of Our Lady at prayer on the card itself,
+              // as on Pray the Chaplet.
+              leading: ExcludeSemantics(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    virginInPrayerImage,
+                    width: 48,
+                    height: 56,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                  ),
+                ),
+              ),
+              title: Text(
+                'Pray the Rosary',
+                style: AppTypography.display(
+                  fontSize: 19,
+                  color: AppColors.primaryNavy,
+                ),
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  "Today: ${mysteries.name}, step by step",
+                  style: textTheme.bodySmall,
+                ),
+              ),
+              children: [
+                Text(
+                  rosaryHowToIntro,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                PrayerBeadsStepper(
+                  steps: rosaryStepsFor(mysteries),
+                  mysteryAdjective: mysteries.adjective,
+                  // Our Lady at prayer, in the middle of the rosary.
+                  centreImage: virginInPrayerImage,
+                  progressKey: 'rosary',
+                  today: today,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Walks through prayers said on rosary beads, one bead per tap of Next:
+/// the rosary diagram (prayed beads lit), the step count, Back and Next,
+/// then the step's instruction, Mystery (if any) and prayers. Used for the
+/// Rosary and the Chaplet of Divine Mercy.
+///
+/// With a [progressKey], the step reached is remembered on the phone, and
+/// coming back the same [today] carries on from it; a new day starts again.
+class PrayerBeadsStepper extends ConsumerStatefulWidget {
+  const PrayerBeadsStepper({
+    super.key,
+    required this.steps,
+    this.mysteryAdjective,
+    this.centreImage,
+    this.progressKey,
+    this.today,
+  });
+
+  /// Names the prayer whose step is remembered, e.g. "rosary".
+  final String? progressKey;
+
+  /// The phone's day the step is remembered for.
+  final DateTime? today;
+
+  final List<RosaryStep> steps;
+
+  /// Shown inside the rosary's loop of beads.
+  final String? centreImage;
+
+  /// e.g. "Glorious", for labels like "1st Glorious Mystery".
+  final String? mysteryAdjective;
+
+  @override
+  ConsumerState<PrayerBeadsStepper> createState() => _PrayerBeadsStepperState();
+}
+
+class _PrayerBeadsStepperState extends ConsumerState<PrayerBeadsStepper> {
+  List<RosaryStep> get _steps => widget.steps;
+  int _index = 0;
+
+  /// Set when the saved step was picked up, until the user moves on.
+  bool _resumed = false;
+
+  /// Set once the user taps Back or Next, so a slow load of the saved step
+  /// never jumps them away from where they are.
+  bool _moved = false;
+
+  DateTime get _today => widget.today ?? DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedStep();
+  }
+
+  Future<void> _loadSavedStep() async {
+    final key = widget.progressKey;
+    if (key == null) return;
+    try {
+      final store = await ref.read(prayerProgressStoreProvider.future);
+      final saved = await store.stepFor(key, _today);
+      if (!mounted || _moved || saved == null) return;
+      // A finished prayer, or one barely begun, starts from the beginning.
+      if (saved <= 0 || saved >= _steps.length - 1) return;
+      setState(() {
+        _index = saved;
+        _resumed = true;
+      });
+    } catch (error, stackTrace) {
+      developer.log(
+        'Could not read the saved $key step',
+        name: 'prayer_progress',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  Future<void> _saveStep(int index) async {
+    final key = widget.progressKey;
+    if (key == null) return;
+    try {
+      final store = await ref.read(prayerProgressStoreProvider.future);
+      await store.save(key, _today, index);
+    } catch (error, stackTrace) {
+      developer.log(
+        'Could not save the $key step',
+        name: 'prayer_progress',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  static const _ordinals = ['1st', '2nd', '3rd', '4th', '5th'];
+
+  /// The top of the stepper, brought back into view if it has scrolled off,
+  /// so the diagram is seen lighting up.
+  final _topKey = GlobalKey();
+
+  void _go(int index) {
+    setState(() {
+      _index = index;
+      _moved = true;
+      _resumed = false;
+    });
+    unawaited(_saveStep(index));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final top = _topKey.currentContext;
+      if (top == null || !top.mounted) return;
+      Scrollable.ensureVisible(
+        top,
+        duration: MediaQuery.of(top).disableAnimations
+            ? Duration.zero
+            : const Duration(milliseconds: 350),
+        curve: Curves.easeOut,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+      );
+    });
+  }
+
+  /// Where step [index] falls, in words people know: "the 2nd Decade",
+  /// or the opening or closing prayers either side of the decades.
+  String _placeOf(int index) {
+    final decade = _steps[index].decade;
+    if (decade != null) return 'the ${_ordinals[decade]} Decade';
+    final firstDecade = _steps.indexWhere((s) => s.decade != null);
+    return index < firstDecade ? 'the opening prayers' : 'the closing prayers';
+  }
+
+  /// e.g. "Hail Mary 3 of 10" on the Hail Mary steps, or "Optional" on the
+  /// optional prayers after the Rosary.
+  static String? _countLabel(RosaryStep step) => step.countLabel != null
+      ? step.countLabel!
+      : step.optional
+      ? 'Optional'
+      : switch (step.beads.kind) {
+          RosaryBeadKind.introHailMary =>
+            'Hail Mary ${step.beads.bead + 1} of 3',
+          RosaryBeadKind.decadeHailMary =>
+            'Hail Mary ${step.beads.bead + 1} of 10',
+          _ => null,
+        };
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final step = _steps[_index];
+    final isLast = _index == _steps.length - 1;
+    final decade = step.decade;
+
+    return Column(
+      key: _topKey,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_resumed) ...[
+          _ResumeNote(place: _placeOf(_index), onStartAgain: () => _go(0)),
+          const SizedBox(height: 12),
+        ],
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 200),
+            child: Semantics(
+              label:
+                  'Rosary diagram, showing the beads prayed so far, step '
+                  '${_index + 1}',
+              child: ExcludeSemantics(
+                child: RosaryDiagram(
+                  centreImage: widget.centreImage,
+                  path: [
+                    for (final earlier in _steps.take(_index + 1))
+                      earlier.beads,
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // The step count above a full-width progress bar, so it fits at any
+        // text size.
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'STEP ${_index + 1} OF ${_steps.length}',
+              style: textTheme.labelMedium?.copyWith(
+                color: AppColors.darkGold,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(end: (_index + 1) / _steps.length),
+                  duration: const Duration(milliseconds: 300),
+                  builder: (context, value, _) => LinearProgressIndicator(
+                    value: value,
+                    minHeight: 6,
+                    color: AppColors.gold,
+                    backgroundColor: AppColors.paleGold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Back and Next sit just under the rosary, so the user can keep
+        // tapping Next through the prayers without scrolling.
+        _StepButtons(
+          onBack: _index == 0 ? null : () => _go(_index - 1),
+          onNext: () => _go(isLast ? 0 : _index + 1),
+          isLast: isLast,
+        ),
+        if (decade != null || _countLabel(step) != null) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (decade != null)
+                Text(
+                  '${_ordinals[decade]} Decade',
+                  style: textTheme.titleSmall?.copyWith(
+                    color: AppColors.primaryNavy,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              if (_countLabel(step) case final count?)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    count,
+                    style: textTheme.labelLarge?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+        const SizedBox(height: 10),
+        // The step's words fade across when moving between steps.
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: Column(
+            key: ValueKey(_index),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                step.instruction,
+                style: textTheme.titleMedium?.copyWith(
+                  color: AppColors.primaryNavy,
+                  height: 1.4,
+                ),
+              ),
+              if (step.mystery case final mystery?) ...[
+                const SizedBox(height: 10),
+                _MysteryPanel(
+                  mystery: mystery,
+                  // The picture and Scripture are read once, as the
+                  // Mystery is announced; the Hail Marys keep just the
+                  // Mystery and its fruit (parish request, 2026-10-19).
+                  full: step.beads.kind == RosaryBeadKind.decadeOurFather,
+                  // The same wording as the Mysteries cards below, e.g.
+                  // "1st Glorious Mystery (1st Decade)".
+                  label:
+                      '${_ordinals[decade!]} ${widget.mysteryAdjective ?? ''} '
+                      'Mystery (${_ordinals[decade]} Decade)',
+                ),
+              ],
+              for (final prayer in step.prayers) ...[
+                const SizedBox(height: 10),
+                _PrayerBox(prayer: prayer),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Shown when the prayer carries on from where the user stopped earlier
+/// today, with a way to begin again instead.
+class _ResumeNote extends StatelessWidget {
+  const _ResumeNote({required this.place, required this.onStartAgain});
+
+  /// e.g. "the 2nd Decade".
+  final String place;
+  final VoidCallback onStartAgain;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+      decoration: BoxDecoration(
+        color: AppColors.paleGold.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.gold),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Welcome back',
+            style: textTheme.titleSmall?.copyWith(
+              color: AppColors.primaryNavy,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Continuing at $place, where you stopped.',
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: onStartAgain,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryNavy,
+                minimumSize: const Size(48, 48),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+              ),
+              icon: const Icon(Icons.replay_rounded),
+              label: const Text('Start from the beginning'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Back and Next, side by side; stacked when large system text would make
+/// them too wide to sit together.
+class _StepButtons extends StatelessWidget {
+  const _StepButtons({
+    required this.onBack,
+    required this.onNext,
+    required this.isLast,
+  });
+
+  final VoidCallback? onBack;
+  final VoidCallback onNext;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    final back = OutlinedButton.icon(
+      onPressed: onBack,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.primaryNavy,
+        minimumSize: const Size.fromHeight(48),
+      ),
+      icon: const Icon(Icons.chevron_left_rounded),
+      label: const Text('Back'),
+    );
+    final next = FilledButton.icon(
+      onPressed: onNext,
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColors.primaryNavy,
+        foregroundColor: Colors.white,
+        minimumSize: const Size.fromHeight(48),
+      ),
+      icon: Icon(isLast ? Icons.replay_rounded : Icons.chevron_right_rounded),
+      label: Text(isLast ? 'Start again' : 'Next'),
+    );
+
+    if (MediaQuery.textScalerOf(context).scale(1) > 1.4) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [next, const SizedBox(height: 8), back],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: back),
+        const SizedBox(width: 10),
+        Expanded(child: next),
+      ],
+    );
+  }
+}
+
+/// Today's Mystery for the current decade. In [full] (as the Mystery is
+/// announced) its picture, label and title, Scripture and fruit; otherwise
+/// a small picture with the label, title and fruit.
+class _MysteryPanel extends StatelessWidget {
+  const _MysteryPanel({
+    required this.mystery,
+    required this.label,
+    required this.full,
+  });
+
+  final RosaryMystery mystery;
+  final String label;
+  final bool full;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.primaryNavy.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              // Smaller on the Hail Marys, where the Scripture is left out.
+              ExcludeSemantics(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(full ? 10 : 8),
+                  child: Image.asset(
+                    mystery.imageAsset,
+                    width: full ? 96 : 56,
+                    height: full ? 104 : 60,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label.toUpperCase(),
+                      style: textTheme.labelMedium?.copyWith(
+                        color: AppColors.darkGold,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      mystery.title,
+                      style: textTheme.titleMedium?.copyWith(
+                        color: AppColors.primaryNavy,
+                        fontSize: 17,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (full) ...[
+            const SizedBox(height: 10),
+            Text(
+              mystery.verse,
+              style: textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+                fontStyle: FontStyle.italic,
+                height: 1.55,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(mystery.reference, style: textTheme.bodySmall),
+          ],
+          const SizedBox(height: 6),
+          Text.rich(
+            TextSpan(
+              children: [
+                const TextSpan(text: 'Fruit of the Mystery: '),
+                TextSpan(
+                  text: mystery.fruit,
+                  style: const TextStyle(
+                    color: AppColors.primaryNavy,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrayerBox extends StatelessWidget {
+  const _PrayerBox({required this.prayer});
+
+  final RosaryPrayer prayer;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.paleGold.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            prayer.name,
+            style: textTheme.titleSmall?.copyWith(
+              color: AppColors.primaryNavy,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            prayer.text,
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+              fontStyle: FontStyle.italic,
+              height: 1.55,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

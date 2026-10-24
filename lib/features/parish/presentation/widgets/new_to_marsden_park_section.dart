@@ -12,8 +12,9 @@ class NewToMarsdenParkSection extends StatelessWidget {
 
   static const title = 'New to Marsden Park?';
 
+  // Melonba added to the suburbs (parish request, 2026-10-22).
   static const body =
-      "If you've recently moved to Marsden Park, Elara, Colebee or "
+      "If you've recently moved to Marsden Park, Elara, Melonba, Colebee or "
       'surrounds, email us at marsdenpark@parracatholic.org with your name '
       'and contact details to stay updated.';
 

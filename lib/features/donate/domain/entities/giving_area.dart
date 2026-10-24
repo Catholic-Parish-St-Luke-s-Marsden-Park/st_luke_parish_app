@@ -5,7 +5,6 @@ enum GivingAreaKind {
   facilities,
   sacramental,
   formation,
-  outreach,
   buildingFund,
 }
 

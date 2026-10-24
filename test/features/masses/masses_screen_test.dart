@@ -13,6 +13,7 @@ import 'package:st_luke_parish_app/features/masses/presentation/providers/mass_s
 import 'package:st_luke_parish_app/features/masses/presentation/screens/masses_screen.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/activity_ribbon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_symbol_icon.dart';
+import 'package:st_luke_parish_app/features/masses/presentation/screens/rosary_screen.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/mass_card.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/draped_rosary_icon.dart';
 import 'package:st_luke_parish_app/features/masses/presentation/widgets/rosary_icon.dart';
@@ -79,6 +80,13 @@ void main() {
       });
     },
   );
+
+  test('Youth Ministry is for all teens and young adults aged 11–21', () {
+    final youth = regularActivities.singleWhere(
+      (a) => a.kind == ParishActivityKind.youth,
+    );
+    expect(youth.who, 'All teens and young adults aged 11–21');
+  });
 
   group('REQ-F04-002: hero banner copy', () {
     testWidgets('renders the eyebrow and "Mass Times" title, no address '
@@ -508,6 +516,27 @@ void main() {
         find.descendant(of: ribbon, matching: find.byType(RosaryIcon)),
         findsNothing,
       );
+    });
+
+    testWidgets('the Holy Rosary ribbon opens The Rosary', (tester) async {
+      await pumpMassesScreen(tester);
+      final rosary = regularActivities.last;
+      await tester.ensureVisible(ribbonTitle(rosary));
+      await tester.pumpAndSettle();
+      await tester.tap(ribbonTitle(rosary));
+      await tester.pumpAndSettle();
+
+      final button = find.text('The Rosary');
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSize(find.byType(OutlinedButton)).height,
+        greaterThanOrEqualTo(48),
+      );
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RosaryScreen), findsOneWidget);
     });
 
     test('each activity kind is used once, so every ribbon has its own '

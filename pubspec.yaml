@@ -127,6 +127,7 @@ flutter:
     - assets/images/branding/
     - assets/images/leadership/
     - assets/images/parish/
+    - assets/images/rosary/
     # App-side config only. Never bundle server/.env: it holds the API key.
     - assets/app.env
     # GET /v1/ministries snapshot, shown offline before anything is cached.

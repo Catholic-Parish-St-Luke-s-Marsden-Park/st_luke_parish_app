@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:st_luke_parish_app/app/shell/widgets/pulsing_nav_icon.dart';
+import 'package:st_luke_parish_app/features/masses/presentation/widgets/rosary_diagram.dart';
 import 'package:st_luke_parish_app/features/parish/presentation/widgets/broadcasting_megaphone.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
@@ -24,5 +25,6 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   WebViewPlatform.instance = FakeWebViewPlatform();
   PulsingNavIcon.disableForTesting = true;
   BroadcastingMegaphone.disableForTesting = true;
+  RosaryDiagram.disableForTesting = true;
   await testMain();
 }

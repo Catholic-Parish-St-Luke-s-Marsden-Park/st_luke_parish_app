@@ -41,16 +41,17 @@ class ResourceGroupCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      group.title,
-                      style: AppTypography.display(
-                        fontSize: 18,
-                        color: AppColors.primaryNavy,
+                  if (group.title case final title?)
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        title,
+                        style: AppTypography.display(
+                          fontSize: 18,
+                          color: AppColors.primaryNavy,
+                        ),
                       ),
                     ),
-                  ),
                   if (group.subtitle case final subtitle?)
                     Text(
                       subtitle.toUpperCase(),

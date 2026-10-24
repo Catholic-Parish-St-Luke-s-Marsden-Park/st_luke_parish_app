@@ -11,6 +11,14 @@ import '../../../core/theme/app_shapes.dart';
 class AppBarLogo extends StatelessWidget {
   const AppBarLogo({super.key});
 
+  /// Wordmark size inside the chip (the image is 2560x843, so 26dp tall is
+  /// about 79dp wide) and the resulting chip width. [AppShell] reserves
+  /// [chipWidth] so the buttons beside it can never squeeze the logo.
+  static const double imageHeight = 26;
+  static const double imageWidth = 79;
+  static const double chipPadding = 10;
+  static const double chipWidth = imageWidth + 2 * chipPadding;
+
   static const String assetPath =
       'assets/images/branding/st_lukes_wordmark.jpg';
 
@@ -26,8 +34,16 @@ class AppBarLogo extends StatelessWidget {
             borderRadius: AppShapes.pillBorderRadius,
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: Image.asset(assetPath, height: 26, fit: BoxFit.contain),
+            padding: const EdgeInsets.symmetric(
+              horizontal: chipPadding,
+              vertical: 4,
+            ),
+            child: Image.asset(
+              assetPath,
+              width: imageWidth,
+              height: imageHeight,
+              fit: BoxFit.contain,
+            ),
           ),
         ),
       ),

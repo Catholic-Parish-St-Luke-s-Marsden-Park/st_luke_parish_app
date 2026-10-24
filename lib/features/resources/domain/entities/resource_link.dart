@@ -60,15 +60,12 @@ class ResourceLink {
   final ResourceDestination destination;
 }
 
-/// A titled group of [ResourceLink]s, e.g. "Bible & Liturgy".
+/// A group of [ResourceLink]s, e.g. "Universal & National Church".
 class ResourceGroup {
-  const ResourceGroup({
-    required this.title,
-    this.subtitle,
-    required this.links,
-  });
+  const ResourceGroup({this.title, this.subtitle, required this.links});
 
-  final String title;
+  /// Optional heading; a group without one shows just its caption.
+  final String? title;
 
   /// Optional small caption under the title.
   final String? subtitle;

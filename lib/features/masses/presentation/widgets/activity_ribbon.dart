@@ -5,6 +5,7 @@ import '../../../../core/services/url_launcher_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_shapes.dart';
 import '../../domain/entities/parish_activity.dart';
+import '../screens/rosary_screen.dart';
 import 'parish_activity_icon.dart';
 
 /// One collapsible "Regular Activities" ribbon: icon and title when
@@ -126,6 +127,32 @@ class ActivityRibbon extends ConsumerWidget {
                         ),
                       ),
                       label: Text(link.label),
+                    ),
+                  ),
+                ),
+              if (activity.showsRosaryMysteries)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const RosaryScreen()),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primaryNavy,
+                        side: const BorderSide(
+                          color: AppColors.primaryNavy,
+                          width: 1.5,
+                        ),
+                        minimumSize: const Size.fromHeight(48),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
+                      ),
+                      icon: const Icon(Icons.auto_stories_outlined),
+                      label: const Text('The Rosary'),
                     ),
                   ),
                 ),

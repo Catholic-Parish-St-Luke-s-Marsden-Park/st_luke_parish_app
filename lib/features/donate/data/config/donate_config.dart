@@ -35,40 +35,33 @@ abstract final class DonateConfig {
       title: 'Personnel & Staffing',
       kind: GivingAreaKind.staffing,
       description:
-          'Salaries and health benefits for our priests, office staff, music '
-          'ministers, and facility maintenance team who keep our community '
-          'running every day.',
+          'Salaries and health benefits for our priests and office staff.',
     ),
     GivingArea(
       title: 'Facilities & Operations',
       kind: GivingAreaKind.facilities,
       description:
-          'Everyday utility bills (heating, cooling, electricity), '
-          'insurance, and standard upkeep for our parish building and '
-          'grounds.',
+          'Everyday utility bills (heating, cooling, electricity), council '
+          'rates, insurance, and standard upkeep for our parish building '
+          'and grounds.',
     ),
     GivingArea(
       title: 'Sacramental & Altar Supplies',
       kind: GivingAreaKind.sacramental,
       description:
           'Essential items for Mass and holy sacraments, including altar '
-          'bread, wine, candles, vestments, hymnals, and missalettes.',
+          'bread, wine, candles, vestments, missalettes, and copyright '
+          'licences.',
     ),
     GivingArea(
       title: 'Faith Formation & Education',
       kind: GivingAreaKind.formation,
       description:
+          // Sacramental Program added after SRE (parish request,
+          // 2026-10-22).
           "Workbooks, materials, and resources for children's religious "
-          'education (CCD/PREP), Youth Ministry, and Adult Faith Formation '
-          '(OCIA).',
-    ),
-    GivingArea(
-      title: 'Community Outreach & Charity',
-      kind: GivingAreaKind.outreach,
-      description:
-          'Direct support for our local food pantry, emergency assistance '
-          'for families in crisis, and our mandatory contribution to broader '
-          'diocesan ministries.',
+          'education (SRE), Sacramental Program, Youth Ministry, and Adult '
+          'Faith Formation (OCIA).',
     ),
     GivingArea(
       title: 'Capital Improvements (Building Fund)',

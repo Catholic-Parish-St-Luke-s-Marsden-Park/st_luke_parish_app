@@ -12,7 +12,6 @@ class ChurchLeadershipEntry {
     this.linkUrl,
     this.about,
     this.linkLabel,
-    this.photoCredit,
   });
 
   /// Display name, e.g. "Fr Gayan Thamel".
@@ -34,7 +33,4 @@ class ChurchLeadershipEntry {
 
   /// The pull-down's button text, e.g. "Visit the Vatican website".
   final String? linkLabel;
-
-  /// Attribution the photo's licence requires, shown under [about].
-  final String? photoCredit;
 }

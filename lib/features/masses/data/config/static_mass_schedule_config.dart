@@ -142,7 +142,8 @@ const List<ParishActivity> regularActivities = [
     kind: ParishActivityKind.youth,
     when: 'Every 2nd Friday: 6.30pm Mass, then the youth program at 7pm',
     where: "St Luke's Hub",
-    who: 'Students in Year 4 to Year 12',
+    // Was "Students in Year 4 to Year 12" (parish request, 2026-10-22).
+    who: 'All teens and young adults aged 11–21',
     description:
         'A welcoming space for young people to grow in faith, build '
         'friendships and have fun together. Each evening includes games, '
@@ -244,6 +245,7 @@ const List<ParishActivity> regularActivities = [
       // 2026-10-16), linked directly rather than via the Google share link.
       url: 'https://www.marysrosarychain.org/prayers/FullRosaryCard.pdf',
     ),
+    showsRosaryMysteries: true,
   ),
 ];
 

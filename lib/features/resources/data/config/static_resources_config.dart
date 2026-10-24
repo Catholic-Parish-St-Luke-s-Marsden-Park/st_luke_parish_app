@@ -1,38 +1,15 @@
-import '../../../../core/constants/external_links.dart';
 import '../../domain/entities/resource_link.dart';
 
 /// The Resources page's groups and links, from the parish web app's
-/// "Catholic Resources" page (parish request, 2026-10-16). Bulletins and
-/// Donate switch to the app's own tabs rather than opening the website.
-/// Faith Formation has its own menu item (see [faithFormationGroups]).
+/// "Catholic Resources" page (parish request, 2026-10-16). Faith Formation
+/// has its own menu item (see [faithFormationGroups]). The Parish Resources
+/// group (Bulletins, Prayer Requests, Donate) was removed: each already has
+/// its own tab or menu item (parish request, 2026-10-22).
 const List<ResourceGroup> resourceGroups = [
   ResourceGroup(
-    title: 'Parish Resources',
-    subtitle: "St Luke's",
-    links: [
-      ResourceLink(
-        title: 'Weekly Bulletins',
-        subtitle: 'On the News tab',
-        kind: ResourceKind.bulletin,
-        destination: AppTabDestination(AppTab.news),
-      ),
-      ResourceLink(
-        title: 'Prayer Requests',
-        subtitle: 'stlukesmarsdenpark.org.au',
-        kind: ResourceKind.prayerRequest,
-        destination: WebDestination(ExternalLinks.prayerRequests),
-      ),
-      ResourceLink(
-        title: 'Donate Online',
-        subtitle: 'On the Donate tab',
-        kind: ResourceKind.donate,
-        destination: AppTabDestination(AppTab.donate),
-      ),
-    ],
-  ),
-  ResourceGroup(
-    // Renamed and trimmed to two links (parish request, 2026-10-16).
-    title: 'Universal & Local Church',
+    // Renamed and trimmed to two links (parish request, 2026-10-16); "Local"
+    // became "National" (2026-10-22).
+    title: 'Universal & National Church',
     links: [
       ResourceLink(
         title: 'Vatican News',
@@ -49,22 +26,23 @@ const List<ResourceGroup> resourceGroups = [
     ],
   ),
   ResourceGroup(
-    title: 'Bible & Liturgy',
-    subtitle: 'Scripture & Readings',
+    // Was "Bible & Liturgy" (parish request, 2026-10-17), then "Scripture &
+    // Readings" (2026-10-22).
+    title: 'Scripture & Mass Readings',
     links: [
       // Parish request, 2026-10-16: the USCCB link is now the daily
       // readings (replacing Universalis), plus Bible Gateway.
+      ResourceLink(
+        title: 'Bible',
+        subtitle: 'biblegateway.com',
+        kind: ResourceKind.bible,
+        destination: WebDestination('https://www.biblegateway.com/'),
+      ),
       ResourceLink(
         title: 'Daily Mass Readings',
         subtitle: 'bible.usccb.org',
         kind: ResourceKind.readings,
         destination: WebDestination('https://bible.usccb.org'),
-      ),
-      ResourceLink(
-        title: 'Catholic Bible Readings',
-        subtitle: 'biblegateway.com',
-        kind: ResourceKind.bible,
-        destination: WebDestination('https://www.biblegateway.com/'),
       ),
     ],
   ),
