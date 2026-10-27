@@ -102,7 +102,22 @@ that already has one. Until then, the steps below will fail with
 "Package not found".
 
 The end result: running **Android Release Build** builds, signs, *and*
-uploads the bundle to Internal testing, with no manual download/upload.
+uploads the bundle to the track you choose (Internal testing or Production),
+with no manual download/upload.
+
+**Production prerequisites** (Play enforces these; the API cannot bypass them):
+
+- The app has completed all Play Console setup tasks (store listing, content
+  rating, data safety, target audience, etc.) and the Dashboard shows no
+  outstanding items. Until then the app is in "draft" state and only
+  `status: draft` uploads are accepted.
+- At least one release has already been uploaded manually (see above).
+- If the developer account is a personal account created after Nov 2023, Play
+  requires a closed test with 12+ testers opted in for 14 days before it grants
+  production access. Apply for production access in the Console (Dashboard →
+  "Apply for production"). Organisation accounts skip this.
+- Every production release goes through Google review, so a successful upload
+  is not the same as being live; allow hours to a few days.
 
 ### 1. Create the service account (Google Cloud)
 
@@ -132,9 +147,10 @@ Play access is separate from Google Cloud IAM.
 1. Play Console → **Users and permissions → Invite new users**.
 2. Email: the service account email from the previous step.
 3. **App permissions → Add app** → select St Luke's.
-4. Under that app's permissions tick **Release to testing tracks** (enough for
-   Internal testing). Add **Release apps to production** only if you later
-   automate production.
+4. Under that app's permissions tick **Release to testing tracks** (Internal
+   testing) **and Release apps to production** (required for the production
+   track in [step 4](#4-add-the-upload-step-to-the-workflow)). Without the
+   production permission, a `track: production` upload fails with a 403.
 5. **Invite user**. Service accounts accept automatically; there is no email
    to click.
 
@@ -159,26 +175,65 @@ after the `upload-artifact` step. Keep the artifact step: it is your backup
 copy and lets you manually upload if the API step fails.
 
 ```yaml
-      - name: Upload to Play Internal testing
+      - name: Upload to Play (${{ inputs.track }})
+        if: ${{ inputs.upload }}
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: au.org.stlukesmarsdenpark.st_luke_parish_app
           releaseFiles: build/app/outputs/bundle/release/app-release.aab
-          track: internal
-          status: completed
+          track: ${{ inputs.track }}
+          status: ${{ inputs.status }}
+          userFraction: ${{ inputs.status == 'inProgress' && inputs.rollout_fraction || '' }}
 ```
+
+and add these inputs to the workflow's `workflow_dispatch` block (alongside
+`branch`) so each run picks where the build goes:
+
+```yaml
+on:
+  workflow_dispatch:
+    inputs:
+      branch: { ... }
+      upload:
+        description: "Upload the bundle to Google Play after building"
+        type: boolean
+        default: true
+      track:
+        description: "Play track"
+        type: choice
+        options: [internal, production]
+        default: internal
+      status:
+        description: "Release status (production: draft = review in Console; inProgress = staged rollout; completed = 100%)"
+        type: choice
+        options: [draft, inProgress, completed]
+        default: draft
+      rollout_fraction:
+        description: "Staged rollout fraction when status is inProgress (0.01-0.99)"
+        type: string
+        default: "0.1"
+```
+
+Defaulting to `internal` + `draft` means an accidental run can never reach
+real users. Pushing to production is always a deliberate choice of
+`track: production`.
 
 Notes on the inputs:
 
-- `track: internal` is the Internal testing track. Use `alpha` (closed
-  testing) or `production` later by changing this one value.
-- `status: completed` rolls the release out to testers immediately. Use
-  `status: draft` if you want the upload to land as a draft you review and roll
-  out by hand in the Console. **Use `draft` while the app itself is still in
-  Play's draft state** (never published to any track beyond internal/review);
-  Play rejects `completed` releases on an app that hasn't completed its setup
-  tasks, with "Only releases with status draft may be created on draft app".
+- `track: internal` is the Internal testing track, `production` is the public
+  store listing. (`alpha` is closed testing, `beta` open testing.)
+- `status: draft` lands the release as a draft you review and roll out by hand
+  in the Console. This is the safest production route: upload, check the
+  release page and notes, then **Send for review** yourself. **Use `draft`
+  while the app is still in Play's draft state**; Play rejects other statuses
+  on an app that hasn't completed its setup tasks, with "Only releases with
+  status draft may be created on draft app".
+- `status: completed` rolls out to 100% of the track once approved.
+- `status: inProgress` with `userFraction` (e.g. `0.1` = 10%) starts a staged
+  production rollout. Increase it afterwards in the Console (Production →
+  Releases → **Update rollout**) or halt it if crash rates rise. `userFraction`
+  is ignored for `internal`, so it is only passed when `inProgress` is set.
 - Optional: `releaseName` (defaults to the version name) and
   `whatsNewDirectory` (a folder of `whatsnew-en-AU` text files) to attach
   release notes. Without notes, Play accepts the release with none.
@@ -190,29 +245,32 @@ Notes on the inputs:
 - Pin the action to a full version tag (e.g. `@v1.x.y`) or commit SHA if you
   want reproducible builds; `@v1` floats.
 
-Optionally, gate it behind a workflow input so a run can build without
-uploading:
+Recommended production flow: run with `track: internal` first, install and
+smoke-test from the opt-in link, then re-run with `track: production`. A
+re-run builds a new bundle (new `versionCode`) rather than promoting the
+tested one. If you need the exact tested bundle in production, promote it in
+the Console instead (Internal testing → Releases → **Promote release →
+Production**).
 
-```yaml
-on:
-  workflow_dispatch:
-    inputs:
-      branch: { ... }
-      upload:
-        description: "Upload the bundle to Play Internal testing"
-        type: boolean
-        default: true
-```
-
-then add `if: ${{ inputs.upload }}` to the upload step.
+To restrict production runs to `main` (so a feature branch can't ship), add
+to the upload step:
+`if: ${{ inputs.upload && (inputs.track != 'production' || (inputs.branch || 'main') == 'main') }}`.
+To require a human sign-off, put the job in a GitHub **Environment** named
+`production` with required reviewers; the run then pauses for approval before
+using the secret.
 
 ### 5. Verify
 
-1. Run **Android Release Build** from GitHub Actions.
-2. Confirm the **Upload to Play Internal testing** step is green.
-3. Play Console → **Testing → Internal testing → Releases**: the new version
-   code appears (processing can take a few minutes).
-4. Install from the opt-in link and confirm the new build.
+1. Run **Android Release Build** from GitHub Actions (start with
+   `track: internal`, `status: draft`).
+2. Confirm the **Upload to Play** step is green.
+3. Play Console → **Testing → Internal testing → Releases** (or **Production →
+   Releases** for a production run): the new version code appears (processing
+   can take a few minutes). A draft production release shows **Send changes
+   for review** under **Publishing overview**.
+4. Internal: install from the opt-in link and confirm the new build.
+   Production: once Google approves it, confirm the new version on the Play
+   Store listing.
 
 ### Alternative: Fastlane `supply`
 
@@ -243,4 +301,8 @@ none. Its auth is the same service account JSON.
 | Upload step: 403 / "caller does not have permission" | Service account not invited in Play Console, lacks **Release to testing tracks** for this app, or the invite hasn't propagated yet |
 | Upload step: "Google Play Android Developer API has not been used" | API not enabled in the Cloud project that owns the service account |
 | Upload step: "Only releases with status draft may be created on draft app" | Set `status: draft` until the app's setup tasks are complete |
+| Production upload: 403 / "user does not have permission" | Service account lacks **Release apps to production** for this app |
+| Production upload: "You cannot rollout this release because it does not allow any existing users to upgrade" | New `versionCode` isn't higher than the live one, or the bundle drops support for devices existing users have |
+| Production: "Changes cannot be sent for review" / no production access | Account hasn't been granted production access (personal accounts: 12 testers for 14 days) or setup tasks remain |
+| Upload succeeds but release isn't live | Production releases await Google review; check **Publishing overview** |
 | Release-readiness gate fails | `assets/app.env` or release config check; see `test/release_readiness_test.dart` |
