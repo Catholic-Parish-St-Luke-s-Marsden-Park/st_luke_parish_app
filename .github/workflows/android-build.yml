@@ -7,6 +7,24 @@ on:
         description: "Branch to build a signed Android App Bundle from"
         required: false
         default: main
+      upload:
+        description: "Upload the bundle to Google Play after building"
+        type: boolean
+        default: true
+      track:
+        description: "Play track"
+        type: choice
+        options: [internal, production]
+        default: internal
+      status:
+        description: "Release status (draft = review in Console; inProgress = staged rollout; completed = 100%)"
+        type: choice
+        options: [draft, inProgress, completed]
+        default: draft
+      rollout_fraction:
+        description: "Staged rollout fraction when status is inProgress (0.01-0.99)"
+        type: string
+        default: "0.1"
 
 concurrency:
   group: android-build-${{ inputs.branch || 'main' }}
@@ -88,3 +106,16 @@ jobs:
           path: build/app/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 30
+
+      # Production uploads are limited to main so a feature branch can't ship.
+      # The artifact step above stays as a manual-upload fallback.
+      - name: Upload to Play (${{ inputs.track }})
+        if: ${{ inputs.upload && (inputs.track != 'production' || (inputs.branch || 'main') == 'main') }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: au.org.stlukesmarsdenpark.st_luke_parish_app
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: ${{ inputs.track }}
+          status: ${{ inputs.status }}
+          userFraction: ${{ inputs.status == 'inProgress' && inputs.rollout_fraction || '' }}
