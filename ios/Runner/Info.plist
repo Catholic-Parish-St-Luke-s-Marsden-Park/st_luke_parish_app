@@ -53,19 +53,23 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<!-- Portrait only, on iPhone and iPad: no screen is laid out for
+	     landscape. Kept in sync with the Android manifest and guarded by
+	     test/app/portrait_lock_test.dart. -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Required by App Store validation (ITMS-90474) for an iPad app that
+	     doesn't support all four orientations. The cost is that iPad loses
+	     Split View and Slide Over. Apple has deprecated this key since
+	     iOS 26, so newer iPadOS windowing may still let the window resize. -->
+	<key>UIRequiresFullScreen</key>
+	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
